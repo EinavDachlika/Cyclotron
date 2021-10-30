@@ -1,1 +1,1 @@
-# schedule-system---cyclotron
+# schedule-system-cyclotron
