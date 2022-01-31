@@ -1,26 +1,87 @@
 from tkinter import *
+from PIL import Image, ImageTk
 import mysql.connector
 from mysql.connector import Error
 
 root = Tk()
 root.geometry("300x300")
-root.title("Hospitals Details")
+root.title("Add Hospital")
+
 
 hospitalFrame = Frame(root,width=300, height=300)
 
 #defult font
-root.option_add("*Font", "Ariel")
+root.option_add("*Font", "Helvetica")
 
 
 # feed label
-feedLabel = Label(hospitalFrame, text = 'Add Hospital', font=('Ariel',30, 'bold'),fg='#034672')
+feedLabel = Label(hospitalFrame, text = 'Add Hospital', font=('Helvetica',30, 'bold'),fg='#034672')
 feedLabel.place(x=20,y=30)
 
+
+toolbarbgcolor = "white"
+toolbar = Frame(root, bg=toolbarbgcolor)
+
+# add logo - toolbar
+LogoImagePath = Image.open("LogoImage.png")
+LogoImageResize = LogoImagePath.resize((120, 57),Image.ANTIALIAS)
+LogoImage = ImageTk.PhotoImage(LogoImageResize)
+Label(toolbar,image=LogoImage).pack(side=LEFT,padx=10,pady=6)
+
+# work plan button - toolbar
+workPlanButton = Button(toolbar, text="Work Plans",font='Helvetica 11')
+workPlanButton.pack(side=LEFT,padx=10,pady=3)
+
+#Orders menu button - toolbar
+MenuBar = Menu(root)
+root.config(menu=MenuBar)
+
+# def Orders_Onclick():
+#         pass
+#
+# menuOrderButton = Menu(MenuBar, tearoff=0)
+# MenuBar.add_cascade(label="Orders", menu=menuOrderButton)
+# menuOrderButton.add_command(label = "New Order", command= Orders_Onclick)
+# menuOrderButton.add_command(label = "View Orders", command= Orders_Onclick)
+#
+# #
+#
+# def Reports_Onclick():
+#         pass
+#
+# menuReportsButton = Menu(MenuBar, tearoff=0)
+# MenuBar.add_cascade(label="Reports", menu=menuReportsButton)
+# menuReportsButton.add_command(label = "Reports1", command= Reports_Onclick)
+# menuReportsButton.add_command(label = "Reports2", command= Reports_Onclick)
+
+# Hospitals button - toolbar
+hospitalsButton = Button (toolbar, text="Hospitals",font='Helvetica 12 bold', bg="#B8CAD7")
+hospitalsButton.pack(side=LEFT,padx=10,pady=3)
+
+# Orders button - toolbar
+ordersButton = Button (toolbar, text="Orders", font='Helvetica 11')
+ordersButton.pack(side=LEFT,padx=10,pady=3)
+
+
+# Reports button - toolbar
+reportsButton = Button (toolbar, text="Reports", font='Helvetica 11')
+reportsButton.pack(side=LEFT,padx=10,pady=3)
+
+# settings Icon - toolbar
+
+settingsIcon = Image.open("gearIcon.png")
+resizedSettingsIcon = settingsIcon.resize((35,35), Image.ANTIALIAS)
+imgSettings = ImageTk.PhotoImage(resizedSettingsIcon)
+Button(toolbar, image=imgSettings, borderwidth=0).pack(side=RIGHT,padx=10,pady=3)
+
+
+toolbar.pack(side=TOP, fill=X)
+
+toolbar.grid_columnconfigure(1, weight=1)
 
 
 
 # connect to MySqL
-
 try:
 
   db = mysql.connector.connect(
@@ -65,15 +126,15 @@ XfirstPosition = 40
 yfirstPosition = 125
 
 # hospital name - label + input
-hospitalNameLabel = Label(hospitalFrame, text = 'Hispital Name:', font=('Ariel',14, 'bold'))
+hospitalNameLabel = Label(hospitalFrame, text = 'Hospital Name:', font=('Helvetica',14, 'bold'))
 hospitalNameLabel.place(x=XfirstPosition,y=yfirstPosition)
 
 inputHospitalName = Entry(hospitalFrame)
-inputHospitalName.place(x=XfirstPosition + 140,y=yfirstPosition+5)
+inputHospitalName.place(x=XfirstPosition + 150,y=yfirstPosition+5)
 
 
 # hospital Fixed Activity - label + input
-hoapitalFixedActivityLabel = Label(hospitalFrame, text = 'Fixed Activity Lavel:', font=('calibre',14, 'bold'))
+hoapitalFixedActivityLabel = Label(hospitalFrame, text = 'Fixed Activity Lavel:', font=('Helvetica',14, 'bold'))
 hoapitalFixedActivityLabel.place(x=XfirstPosition,y=yfirstPosition+ 80)
 
 inputHospitalFixedActivity = Entry(hospitalFrame)
@@ -81,15 +142,15 @@ inputHospitalFixedActivity.place(x=XfirstPosition+200,y=yfirstPosition + 80 +5)
 
 
 # hospital Transport Time - label + input
-hoapitalTransportTimeLabel = Label(hospitalFrame, text = 'Transport Time(minutes):', font=('calibre',14, 'bold'))
+hoapitalTransportTimeLabel = Label(hospitalFrame, text = 'Transport Time(minutes):', font=('Helvetica',14, 'bold'))
 hoapitalTransportTimeLabel.place(x=XfirstPosition,y=yfirstPosition + 160)
 
 inputHospitalTransportTime = Entry(hospitalFrame)
 inputHospitalTransportTime.place(x=XfirstPosition+245,y=yfirstPosition + 160 +5)
 
 # add hospital button
-addHospitalButton = Button(hospitalFrame, text='Add Hospital', command=insertHospital_OnClick,font=('calibre',15, 'bold'), bg="light blue")
-addHospitalButton.place(x=100,y=350)
+addHospitalButton = Button(hospitalFrame, text='Add Hospital', command=insertHospital_OnClick,font=('Helvetica',15, 'bold'), bg="light blue")
+addHospitalButton.place(x=XfirstPosition+150 ,y=yfirstPosition+250)
 
 
 # #show employees from db
