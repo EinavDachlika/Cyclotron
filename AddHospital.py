@@ -1,10 +1,14 @@
 from tkinter import *
+from tkinter import messagebox
+
 from PIL import Image, ImageTk
 import mysql.connector
 from mysql.connector import Error
 
 root = Tk()
 root.geometry("300x300")
+
+
 root.title("Add Hospital")
 
 
@@ -21,6 +25,7 @@ feedLabel.place(x=20,y=30)
 
 toolbarbgcolor = "white"
 toolbar = Frame(root, bg=toolbarbgcolor)
+toolbar.grid(sticky='nesw')
 
 # add logo - toolbar
 LogoImagePath = Image.open("LogoImage.png")
@@ -32,9 +37,9 @@ Label(toolbar,image=LogoImage).pack(side=LEFT,padx=10,pady=6)
 workPlanButton = Button(toolbar, text="Work Plans",font='Helvetica 11')
 workPlanButton.pack(side=LEFT,padx=10,pady=3)
 
-#Orders menu button - toolbar
-MenuBar = Menu(root)
-root.config(menu=MenuBar)
+# #Orders menu button - toolbar
+# MenuBar = Menu(root)
+# root.config(menu=MenuBar)
 
 # def Orders_Onclick():
 #         pass
@@ -55,7 +60,7 @@ root.config(menu=MenuBar)
 # menuReportsButton.add_command(label = "Reports2", command= Reports_Onclick)
 
 # Hospitals button - toolbar
-hospitalsButton = Button (toolbar, text="Hospitals",font='Helvetica 12 bold', bg="#B8CAD7")
+hospitalsButton = Button (toolbar, text="Hospitals",font='Helvetica 12 bold', bg="#B8CAD7", activebackground='gray')
 hospitalsButton.pack(side=LEFT,padx=10,pady=3)
 
 # Orders button - toolbar
@@ -109,7 +114,9 @@ except Error as e:
 def insertHospital_OnClick():
     resMess = ""
     if inputHospitalName.get() =="" or inputHospitalTransportTime.get()=="" or inputHospitalFixedActivity.get()=="":
-      resMess = "all the fields have to be full"
+        messagebox.showerror("Error","All fields must be filled. Try again")
+
+
 
     else:
       # insert HOSPITAL record to db
@@ -117,10 +124,11 @@ def insertHospital_OnClick():
       hospitalRecord = [inputHospitalName.get(), inputHospitalFixedActivity.get(), inputHospitalTransportTime.get()]
       dbCursor.execute(sqlHospital, hospitalRecord)
       db.commit()
+      inputHospitalName.delete(0,)
+      inputHospitalTransportTime.delete(0, )
+      inputHospitalFixedActivity.delete(0, )
+      messagebox._show("Hospital added successfully", "The hospital was successfully added")
 
-      resMess= inputHospitalName.get()+" hospital was successfully added"
-
-    return Label(hospitalFrame, text=resMess).pack()
 
 XfirstPosition = 40
 yfirstPosition = 125
