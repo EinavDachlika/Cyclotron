@@ -60,7 +60,7 @@ workPlanButton.pack(side=LEFT,padx=10,pady=3)
 # menuReportsButton.add_command(label = "Reports2", command= Reports_Onclick)
 
 # Hospitals button - toolbar
-hospitalsButton = Button (toolbar, text="Hospitals",font='Helvetica 12 bold', bg="#B8CAD7", activebackground='gray')
+hospitalsButton = Button (toolbar, text="Hospitals",font='Helvetica 12', bg="#B8CAD7", activebackground='gray')
 hospitalsButton.pack(side=LEFT,padx=10,pady=3)
 
 # Orders button - toolbar
@@ -109,13 +109,25 @@ except Error as e:
 #         dbCursor.close()
 #         db.close()
 #         print("MySQL connection is closed")
-
+# def itsIneger(value):
+#     try:
+#         int(value)
+#         return True
+#     except ValueError:
+#         return False
+#
+# def itsFloat(value):
+#     try:
+#         float(value)
+#         return True
+#     except ValueError:
+#         return False
 
 def insertHospital_OnClick():
     resMess = ""
     if inputHospitalName.get() =="" or inputHospitalTransportTime.get()=="" or inputHospitalFixedActivity.get()=="":
-        messagebox.showerror("Error","All fields must be filled. Try again")
 
+        messagebox.showerror("Error","All fields must be filled. Try again")
 
 
     else:
@@ -124,10 +136,10 @@ def insertHospital_OnClick():
       hospitalRecord = [inputHospitalName.get(), inputHospitalFixedActivity.get(), inputHospitalTransportTime.get()]
       dbCursor.execute(sqlHospital, hospitalRecord)
       db.commit()
-      inputHospitalName.delete(0,)
-      inputHospitalTransportTime.delete(0, )
-      inputHospitalFixedActivity.delete(0, )
-      messagebox._show("Hospital added successfully", "The hospital was successfully added")
+      messagebox._show("Hospital added successfully", "The hospital was added successfully")
+      inputHospitalName.delete(0,'end')
+      inputHospitalTransportTime.delete(0,'end' )
+      inputHospitalFixedActivity.delete(0,'end' )
 
 
 XfirstPosition = 40
@@ -169,6 +181,8 @@ addHospitalButton.place(x=XfirstPosition+150 ,y=yfirstPosition+250)
 # for employee in employeesList:
 #   print(employee)
 
+
 hospitalFrame.pack(fill="both", expand=True)
 #hospitalFrame.pack()
 root.mainloop()
+

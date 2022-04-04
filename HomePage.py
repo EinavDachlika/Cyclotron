@@ -62,7 +62,7 @@ class pages(tk.TK):
             for button in listButtons:
                 if button == buttonName:
                     styleButton = "Helvetica 12 bold"
-                    BT =
+                    #BT =
 
 
 addHospitalPage = pages("Add Hospital")
