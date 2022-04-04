@@ -77,43 +77,52 @@ toolbar.pack(side=TOP, fill=X)
 toolbar.grid_columnconfigure(1, weight=1)
 ##################### ######## #####################
 SettingsFrame = Frame(root)
-SettingsFrame.pack(pady=95,padx=85)
+SettingsFrame.pack(fill=X)
 # feed label
-feedLabel = Label(root, text = 'Settings', font=('Helvetica',26, 'bold'),fg='#034672')
-PlaceLable_X=80
-PlaceLable_Y=90
+feedLabel = Label(SettingsFrame, text = 'Settings', font=('Helvetica',26, 'bold'),fg='#034672')
+PlaceLable_X=50
+PlaceLable_Y=10
+
+feedLabel.pack(side=LEFT)
 feedLabel.place(x=PlaceLable_X,y=PlaceLable_Y)
 
 # Cyclotron Details label
-CyclotronLabel = Label(root, text = 'Cyclotron Details', font=('Helvetica',15, 'bold'),fg='#034672')
-cyclo_Lable_place_x=120
-cyclo_Lable_place_y=150
+CyclotronLabel = Label(SettingsFrame, text = 'Cyclotron Details', font=('Helvetica',15, 'bold'),fg='#034672')
+cyclo_Lable_place_x=80
+cyclo_Lable_place_y=60
+
+CyclotronLabel.pack(side=LEFT)
 CyclotronLabel.place(x=cyclo_Lable_place_x,y=cyclo_Lable_place_y)
 
-# game_frame = Frame(root)
-# game_frame.pack()
+
 
 # scrollbar
-Cyclotron_scroll = Scrollbar(SettingsFrame)
-Cyclotron_scroll.pack(padx=cyclo_Lable_place_x+10)
+Cyclotron_scroll = Scrollbar(SettingsFrame ,orient="vertical",width=20)
+Cyclotron_scroll.pack(side=LEFT)
+Cyclotron_scroll.place(x=613, y= 150)
 
-cyclo_list = ttk.Treeview(SettingsFrame, yscrollcommand=Cyclotron_scroll.set,height=7)
+cyclo_list = ttk.Treeview(SettingsFrame, yscrollcommand=Cyclotron_scroll.set,height=5)
 
-cyclo_list.pack()
+cyclo_list.pack(side=LEFT, padx=cyclo_Lable_place_x+30, pady=cyclo_Lable_place_y+50)
 
-# Cyclotron_scroll.config(command=my_game.yview)
-# Cyclotron_scroll.config(command=my_game.xview)
+# Cyclotron_scroll.config(command=cyclo_list.yview)
+# Cyclotron_scroll.config(command=cyclo_list.xview)
 
 # column define
 
 cyclo_list['columns'] = ('Version', 'Capacity (mci/h)', 'Constant Efficiency (mCi/mA)', 'Description')
 
 # column format
+width_Version=90
+width_Capacity=110
+width_Efficiency=185
+width_Description=110
+
 cyclo_list.column("#0", width=0, stretch=NO)
-cyclo_list.column("Version", anchor=CENTER, width=90)
-cyclo_list.column("Capacity (mci/h)", anchor=CENTER, width=110)
-cyclo_list.column("Constant Efficiency (mCi/mA)", anchor=CENTER, width=185)
-cyclo_list.column("Description", anchor=CENTER, width=110)
+cyclo_list.column("Version", anchor=CENTER, width=width_Version)
+cyclo_list.column("Capacity (mci/h)", anchor=CENTER, width=width_Capacity)
+cyclo_list.column("Constant Efficiency (mCi/mA)", anchor=CENTER, width=width_Efficiency)
+cyclo_list.column("Description", anchor=CENTER, width=width_Description)
 
 # Create Headings
 cyclo_list.heading("#0", text="", anchor=CENTER)
@@ -142,45 +151,61 @@ frame.pack()
 
 def open_popup():
    edit_popup= Toplevel(root)
-   edit_popup.geometry("900x500")
+   edit_popup.geometry("900x400")
    edit_popup.title("Edit Cyclotron Details")
-   Label(edit_popup, text= "Edit Cyclotron Details", font=('Helvetica 14 bold'), fg='#034672').place(x=10,y=18)
+   Label(edit_popup, text= "Edit Cyclotron Details", font=('Helvetica 17 bold'), fg='#034672').place(x=10,y=18)
 
    # labels
-   popup_label_x=20
-   popup_label_y=50
+   popup_label_y=80
    Version = Label(edit_popup, text="Version")
    Version.grid(row=1, column=1)
-   Version.place(x=popup_label_x, y=popup_label_y)
+   version_x = 20
+   Version.place(x=version_x, y=popup_label_y)
 
-   Capacity = Label(edit_popup, text="Capacity (mci/h)")
+
+   Capacity = Label(edit_popup, text="Capacity")
+   Capacity_units = Label(edit_popup, text="(mci/h)")
+   Capacity_units.config(font=("Courier", 9))
    Capacity.grid(row=1, column=2)
-   Capacity.place(x=popup_label_x+110, y=popup_label_y)
+   capacity_x = version_x+Version.winfo_reqwidth()+70
+   Capacity.place(x=capacity_x, y=popup_label_y)
+   capacity_units_x=capacity_x + Capacity.winfo_reqwidth()
+   Capacity_units.place(x=capacity_units_x, y=popup_label_y+7)
 
 
-   Efficiency = Label(edit_popup, text="Constant Efficiency (mCi/mA)")
+   Efficiency = Label(edit_popup, text="Constant Efficiency")
+   Efficiency_units = Label(edit_popup, text="(mCi/mA)")
+   Efficiency_units.config(font=("Courier", 9))
    Efficiency.grid(row=1, column=3)
-   Efficiency.place(x=popup_label_x+90+420, y=popup_label_y)
+   efficiency_x = capacity_units_x + Capacity_units.winfo_reqwidth() + 50
+   Efficiency.place(x=efficiency_x, y=popup_label_y)
+   efficiency_units_x=efficiency_x + Efficiency.winfo_reqwidth()
+   Efficiency_units.place(x=efficiency_units_x, y=popup_label_y+7)
+
 
    Description = Label(edit_popup, text="Description")
    Description.grid(row=1, column=3)
-   Description.place(x=popup_label_x+700, y=popup_label_y)
-
+   description_x = efficiency_units_x+ Efficiency_units.winfo_reqwidth() + 30
+   Description.place(x=description_x, y=popup_label_y)
 
    # Entry boxes
-   popup_Entry_x=50
-   Version_entry = Entry(edit_popup)
+   Version_entry = Entry(edit_popup, width=10)
    Version_entry.grid(row=2, column=1)
-   Version_entry.place(x=popup_Entry_x, y=popup_label_y+20)
+   Version_entry.place(x=version_x+3, y=popup_label_y+30)
 
-   Capacity_entry = Entry(edit_popup)
+   Capacity_entry = Entry(edit_popup, width=14)
    Capacity_entry.grid(row=2, column=2)
+   Capacity_entry.place(x=capacity_x, y=popup_label_y+30)
 
-   Efficiency_entry = Entry(edit_popup)
+
+   Efficiency_entry = Entry(edit_popup, width=15)
    Efficiency_entry.grid(row=2, column=3)
+   Efficiency_entry.place(x=efficiency_x, y=popup_label_y+30)
 
-   Description_entry = Entry(edit_popup)
+
+   Description_entry = Entry(edit_popup,width=15)
    Description_entry.grid(row=2, column=4)
+   Description_entry.place(x=description_x, y=popup_label_y+30)
 
 
    # clear entry boxes
@@ -198,11 +223,28 @@ def open_popup():
    Version_entry.insert(0, values[0])
    Capacity_entry.insert(0, values[1])
    Efficiency_entry.insert(0, values[2])
+   Description_entry.insert(0,values[3])
+
+   select_button = Button(edit_popup, text="Save Changes", command=update_record)
+   select_button.pack(side=LEFT)
+   select_button.place(x=370, y=250)
 
 
 #Create a button in the main Window to open the popup
-edit_button = Button(root, text= "Edit", command= open_popup)
-edit_button.pack(pady=10)
+edit_button = Button(SettingsFrame, text= "Edit", command= open_popup)
+edit_button.pack(side= LEFT)
+edit_button.place(x=270, y=250)
+
+
+def update_record():
+    selected = cyclo_list.focus()
+    # save new data
+    cyclo_list.item(selected, text="", values=(Version_entry.get(), Capacity_entry.get(), Efficiency_entry.get()))
+
+    # clear entry boxes
+    Version_entry.delete(0, END)
+    Capacity_entry.delete(0, END)
+    Efficiency_entry.delete(0, END)
 
 
 # # save Record
@@ -217,17 +259,18 @@ edit_button.pack(pady=10)
 #     Efficiency_entry.delete(0, END)
 
 
-# # Buttons
-# select_button = Button(root, text="Select Record", command= open_popup)
-# select_button.pack(pady=10)
-#
+# Buttons
+select_button = Button(SettingsFrame, text="Add", command= open_popup)
+select_button.pack(side= LEFT)
+select_button.place(x=370, y=250)
+
 # edit_button = Button(root, text="Edit ", command=update_record)
 # edit_button.pack(pady=10)
 
 
-temp_label = Label(root, text="")
-temp_label.pack()
-
+# temp_label = Label(root, text="")
+# temp_label.pack()
+SettingsFrame.pack()
 root.mainloop()
 
 
