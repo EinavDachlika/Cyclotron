@@ -4,7 +4,7 @@ from tkinter import messagebox
 from PIL import Image, ImageTk
 import mysql.connector
 from mysql.connector import Error
-
+#maor test
 root = Tk()
 root.geometry("300x300")
 
