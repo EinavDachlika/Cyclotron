@@ -4,6 +4,7 @@ from PIL import Image, ImageTk, ImageFont
 import mysql.connector
 from mysql.connector import Error
 
+
 ##table code
 #https://pythonguides.com/python-tkinter-table-tutorial/
 
@@ -172,7 +173,69 @@ class Popup(Toplevel):
         #         p_last_label_x += entry_box.winfo_reqwidth() + 30
 
 
-    def insert_value_entry_box(self, labels,valueList):
+    def update_record(self,query, pk,list, update_values_list):
+        selected = list.focus()
+        #show the changes
+        list.item(selected, text="", values = update_values_list)
+
+        #save new values in the db
+        updateCyclotronInDB = query
+
+        updateValues_for_query=[]
+        index=0
+        for val in update_values_list:
+            updateValues_for_query.insert(index, val)
+            index+=1
+        updateValues_for_query.insert(index, pk)
+
+        try:
+            cursor.execute(updateCyclotronInDB, updateValues_for_query)
+            db.commit()
+        except:
+            # Rollback in case there is any error
+            db.rollback()
+
+        self.destroy()
+
+
+    def cancel_popup(self):
+        self.destroy()
+
+
+    def save_cancel_button(self, save_title,on_click_save_fun, *args):
+
+
+        save_button = Button(self, text=save_title,
+                               command=lambda: on_click_save_fun(*args))
+
+        save_button.pack(side=LEFT)
+        save_button_position_x = self.winfo_screenheight() / 2 - save_button.winfo_reqwidth()/2
+        save_button_position_y = 450
+
+        save_button.place(x=save_button_position_x, y=save_button_position_y)
+
+        cancel_button = Button(self, text="Cancle", command=lambda: self.cancel_popup())
+        cancel_button.pack(side=LEFT)
+        cancel_button.place(x=save_button.winfo_reqwidth() + save_button_position_x + 10, y=save_button_position_y)
+
+    def update_if_clicked(self,query, pk,list,entries):
+
+        update_values_list=self.get_entry(entries)
+        if update_values_list is not None:
+            self.update_record(query, pk,list,update_values_list)
+
+
+
+
+    def get_entry(self, entries): # to edit_popup - get user changes in entry box
+        update_values_list=[]
+
+        for entry in entries:
+            update_values_list.append(entry.get())
+        return update_values_list
+
+    # def edit_popup(self, labels,valueList, save_title, query,pk,list):
+    def edit_popup(self, labels, valueList, save_title, *args):
         # labels and entry box
         p_last_label_x = 30
         p_last_label_y = 80
@@ -182,7 +245,7 @@ class Popup(Toplevel):
         # grab record values
 
         # temp_label.config(text=selected)
-
+        entries=[]
         for lab in labels:
             p_label = Label(self, text=lab[0])
             p_label.grid(row=row_num, column=1)
@@ -195,12 +258,11 @@ class Popup(Toplevel):
             entry_box.grid(row=row_num, column=2)
             entry_box.place(x=p_last_label_x + 4, y=p_last_label_y + 30)
 
+
             #insert value into entry box
             entry_box.insert(0, valueList[value_index])
             value_index+=1
-
-
-
+            entries.append(entry_box)
 
             if lab[1] != '':
                 p_label_units = Label(self, text=lab[1])
@@ -212,41 +274,31 @@ class Popup(Toplevel):
             p_last_label_y += entry_box.winfo_reqheight() + 35 + p_label.winfo_reqheight()
             row_num += 1
 
-    def cancel_popup(self):
-        self.destroy()
 
-    def update_record(self, old_version, get_version, get_capacity, get_efficiency, get_description):
-        # print("get_version" + get_version)
-        selected = cyclo_list.focus()
-        # print(cyclo_list.item(selected, 'values'))
-        # save new data
-        cyclo_list.item(selected, text="", values=(get_version, get_capacity, get_efficiency, get_description))
-        print(get_version)
-        updateCyclotronInDB = "UPDATE resourcecyclotron SET version = %s ,capacity= %s, constant_efficiency= %s,description=%s  WHERE version = %s"
-        updateValues = (get_version, get_capacity, get_efficiency, get_description, old_version)
-        try:
-            cursor.execute(updateCyclotronInDB, updateValues)
-            db.commit()
-        except:
-            # Rollback in case there is any error
-            db.rollback()
-
-        self.destroy()
+            self.save_cancel_button(save_title, self.update_if_clicked,*args, entries )
+            # save_button = Button(self, text="save_title",
+            #                      command=lambda: self.update_if_clicked(query, pk,list,entries))
+            #
+            # save_button.pack(side=LEFT)
+            # save_button_position_x = self.winfo_screenheight() / 2 - save_button.winfo_reqwidth() / 2
+            # save_button_position_y = 450
+            #
+            # save_button.place(x=save_button_position_x, y=save_button_position_y)
+            #
+            # cancel_button = Button(self, text="Cancle", command=lambda: self.cancel_popup())
+            # cancel_button.pack(side=LEFT)
+            # cancel_button.place(x=save_button.winfo_reqwidth() + save_button_position_x + 10, y=save_button_position_y)
 
 
+        def update_if_clicked(self, query, pk, list, entries):
 
-    def save_cancel_button(self, save_title,on_click_fun):
+            update_values_list = self.get_entry(entries)
+            if update_values_list is not None:
+                self.update_record(query, pk, list, update_values_list)
 
-        save_button = Button(self, text=save_title,
-                               command=lambda: on_click_fun)
 
-        save_button.pack(side=LEFT)
-        save_button_position = self.winfo_screenheight() / 2 - save_button.winfo_reqwidth() / 2
-        save_button.place(x=save_button_position, y=250)
 
-        cancel_button = Button(self, text="Cancle", command=lambda: self.cancel_popup())
-        cancel_button.pack(side=LEFT)
-        cancel_button.place(x=save_button.winfo_reqwidth() + save_button_position + 10, y=250)
+
 
 
 
@@ -296,17 +348,10 @@ iid=0
 for cyclo in cyclotrons:
     print(cyclo)
     cyclo_list.insert(parent='', index='end', iid=iid, text='',
-               values=(cyclo[1], cyclo[2], cyclo[3],cyclo[4]))
+               values=(cyclo[1], cyclo[2], cyclo[3],cyclo[4], cyclo[0]))
     iid +=1
 
 cyclo_list.pack()
-
-
-
-get_version=""
-get_capacity=""
-get_efficiency=""
-get_description=""
 
 
 
@@ -436,21 +481,25 @@ get_description=""
 #
 #
 #
-def bdika():
+def editCyclotronfun():
     MYpopup = Popup()
     MYpopup.open_pop('Edit Cyclotron Details')
+
     selected = cyclo_list.focus()
     cycloList = cyclo_list.item(selected, 'values')
-    # print(cycloList)
-    MYpopup.insert_value_entry_box(
-        (('Version', ''), ('Capacity', '(mci/h)'), ('Constant Efficiency', '(mCi/mA)'), ('Description', '')), cycloList)
+    query = "UPDATE resourcecyclotron SET version = %s ,capacity= %s, constant_efficiency= %s,description=%s  WHERE idresourceCyclotron = %s"
+    pk = cycloList[4]
+    labels=(('Version', ''), ('Capacity', '(mci/h)'), ('Constant Efficiency', '(mCi/mA)'), ('Description', ''))
+    save_title = "Save Changes"
+
+    MYpopup.edit_popup(labels, cycloList,save_title,query, pk, cyclo_list)
 
 
 # #Create a button in the main Window to edit  record (open the popup) - cyclotron
 cyclotronEditIcon = Image.open("editIcon.jpg")
 resizedCycloEditIcon = cyclotronEditIcon.resize((20, 20), Image.ANTIALIAS)
 imgEditCyclotron = ImageTk.PhotoImage(resizedCycloEditIcon)
-editCyclotronButton = Button(SettingsFrame, image=imgEditCyclotron, borderwidth=0, command= lambda :bdika())
+editCyclotronButton = Button(SettingsFrame, image=imgEditCyclotron, borderwidth=0, command= lambda :editCyclotronfun())
 editCyclotronButton.pack(side= LEFT)
 editCyclotronButton.place(x=cyclo_Lable_place_x+450, y=cyclo_Lable_place_y+15)
 #
