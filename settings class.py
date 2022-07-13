@@ -196,8 +196,8 @@ class Popup(Toplevel):
             entry_box.place(x=p_last_label_x + 4, y=p_last_label_y + 30)
 
             #insert value into entry box
-            # entry_box.insert(0, valueList[value_index])
-            # value_index+=1
+            entry_box.insert(0, valueList[value_index])
+            value_index+=1
 
 
 
@@ -441,7 +441,7 @@ def bdika():
     MYpopup.open_pop('Edit Cyclotron Details')
     selected = cyclo_list.focus()
     cycloList = cyclo_list.item(selected, 'values')
-    # print(cyclo_list[0])
+    # print(cycloList)
     MYpopup.insert_value_entry_box(
         (('Version', ''), ('Capacity', '(mci/h)'), ('Constant Efficiency', '(mCi/mA)'), ('Description', '')), cycloList)
 
