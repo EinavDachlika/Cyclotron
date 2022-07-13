@@ -33,8 +33,11 @@ try:
         # dbCursor.execute("select database();")
         # record = dbCursor.fetchone()
         # print("You're connected to database: ", record)
+
 except Error as e:
     print("Error while connecting to MySQL", e)
+
+cursor = db.cursor()
 ##################### toolbar #####################
 
 toolbarbgcolor = "white"
@@ -104,40 +107,13 @@ CyclotronLabel.place(x=cyclo_Lable_place_x,y=cyclo_Lable_place_y)
 class Popup(Toplevel):
     def __init__(self):
         Toplevel.__init__(self)
-        self.popup = self
+        # self.popup = self
 
     def open_pop(self, title):
         self.geometry("900x550")
         self.title(title)
         Label(self, text=title, font=('Helvetica 17 bold'), fg='#034672').place(x=10, y=18)
 
-        # # labels and entry box
-        # p_last_label_x = 20
-        # p_last_label_y = 80
-        # i = 0
-        # row_num = 1
-        #
-        # for lab in labels:
-        #     p_label = Label(self, text=lab[0])
-        #     p_label.grid(row=row_num, column=1)
-        #     p_label.place(x=p_last_label_x, y=p_last_label_y)
-        #
-        #     row_num += 1
-        #
-        #     # Entry boxes
-        #     entry_box = Entry(self, width=20)
-        #     entry_box.grid(row=row_num, column=2)
-        #     entry_box.place(x=p_last_label_x + 4, y=p_last_label_y + 30)
-        #
-        #     if lab[1] != '':
-        #         p_label_units = Label(self, text=lab[1])
-        #         font = ("Courier", 9)
-        #         p_label_units.config(font=("Courier", 9))
-        #         p_label_units_x = p_last_label_x + p_label.winfo_reqwidth()
-        #         p_label_units.place(x=p_label_units_x, y=p_last_label_y + 7)
-        #
-        #     p_last_label_y += entry_box.winfo_reqheight() + 35 + p_label.winfo_reqheight()
-        #     row_num += 1
 
         ## in line
         # #labels and entry box
@@ -181,15 +157,8 @@ class Popup(Toplevel):
         #save new values in the db
         updateCyclotronInDB = query
 
-        updateValues_for_query=[]
-        index=0
-        for val in update_values_list:
-            updateValues_for_query.insert(index, val)
-            index+=1
-        updateValues_for_query.insert(index, pk)
-
         try:
-            cursor.execute(updateCyclotronInDB, updateValues_for_query)
+            cursor.execute(updateCyclotronInDB, update_values_list)
             db.commit()
         except:
             # Rollback in case there is any error
@@ -204,7 +173,6 @@ class Popup(Toplevel):
 
     def save_cancel_button(self, save_title,on_click_save_fun, *args):
 
-
         save_button = Button(self, text=save_title,
                                command=lambda: on_click_save_fun(*args))
 
@@ -218,12 +186,11 @@ class Popup(Toplevel):
         cancel_button.pack(side=LEFT)
         cancel_button.place(x=save_button.winfo_reqwidth() + save_button_position_x + 10, y=save_button_position_y)
 
-    def update_if_clicked(self,query, pk,list,entries):
-
+    def update_if_clicked(self,query,pk,list,entries):
         update_values_list=self.get_entry(entries)
+        update_values_list.append(pk)
         if update_values_list is not None:
             self.update_record(query, pk,list,update_values_list)
-
 
 
 
@@ -234,18 +201,21 @@ class Popup(Toplevel):
             update_values_list.append(entry.get())
         return update_values_list
 
-    # def edit_popup(self, labels,valueList, save_title, query,pk,list):
+    # def edit_popup(self, labels,valueList, save_title, query,pk,list)
+
+
+
     def edit_popup(self, labels, valueList, save_title, *args):
         # labels and entry box
         p_last_label_x = 30
         p_last_label_y = 80
-        value_index=0
+        value_index = 0
         row_num = 1
 
         # grab record values
 
         # temp_label.config(text=selected)
-        entries=[]
+        entries = []
         for lab in labels:
             p_label = Label(self, text=lab[0])
             p_label.grid(row=row_num, column=1)
@@ -258,10 +228,49 @@ class Popup(Toplevel):
             entry_box.grid(row=row_num, column=2)
             entry_box.place(x=p_last_label_x + 4, y=p_last_label_y + 30)
 
-
-            #insert value into entry box
+            # insert value into entry box
             entry_box.insert(0, valueList[value_index])
-            value_index+=1
+            value_index += 1
+            entries.append(entry_box)
+
+            if lab[1] != '':
+                p_label_units = Label(self, text=lab[1])
+                font = ("Courier", 9)
+                p_label_units.config(font=("Courier", 9))
+                p_label_units_x = p_last_label_x + p_label.winfo_reqwidth()
+                p_label_units.place(x=p_label_units_x, y=p_last_label_y + 7)
+
+            p_last_label_y += entry_box.winfo_reqheight() + 35 + p_label.winfo_reqheight()
+            row_num += 1
+
+            self.save_cancel_button(save_title, self.update_if_clicked, *args, entries)
+
+    def Add_if_legal(self):
+        pass
+
+    def add_popup(self, labels, save_title, *args):
+        # labels and entry box
+        p_last_label_x = 30
+        p_last_label_y = 80
+        value_index=0
+        row_num = 1
+
+        # grab record values
+
+        # temp_label.config(text=selected)
+
+        for lab in labels:
+            p_label = Label(self, text=lab[0])
+            p_label.grid(row=row_num, column=1)
+            p_label.place(x=p_last_label_x, y=p_last_label_y)
+
+            row_num += 1
+
+            entries=[]
+            # Entry boxes
+            entry_box = Entry(self, width=20)
+            entry_box.grid(row=row_num, column=2)
+            entry_box.place(x=p_last_label_x + 4, y=p_last_label_y + 30)
             entries.append(entry_box)
 
             if lab[1] != '':
@@ -275,83 +284,142 @@ class Popup(Toplevel):
             row_num += 1
 
 
-            self.save_cancel_button(save_title, self.update_if_clicked,*args, entries )
-            # save_button = Button(self, text="save_title",
-            #                      command=lambda: self.update_if_clicked(query, pk,list,entries))
-            #
-            # save_button.pack(side=LEFT)
-            # save_button_position_x = self.winfo_screenheight() / 2 - save_button.winfo_reqwidth() / 2
-            # save_button_position_y = 450
-            #
-            # save_button.place(x=save_button_position_x, y=save_button_position_y)
-            #
-            # cancel_button = Button(self, text="Cancle", command=lambda: self.cancel_popup())
-            # cancel_button.pack(side=LEFT)
-            # cancel_button.place(x=save_button.winfo_reqwidth() + save_button_position_x + 10, y=save_button_position_y)
+            self.save_cancel_button(save_title, self.Add_if_legal,*args, entries ) # will add save.cancel buttons (and click on functions)
 
 
-        def update_if_clicked(self, query, pk, list, entries):
-
-            update_values_list = self.get_entry(entries)
-            if update_values_list is not None:
-                self.update_record(query, pk, list, update_values_list)
-
-
-
-
-
-
+class table(ttk.Treeview):
+    def  __init__(self,frame,scroll_width,list_height,side,x_crol,y_crol,lable_place_x,
+                               lable_place_y):
+        self.side = side
+        scroll = Scrollbar(frame, orient="vertical", width=scroll_width)
+        scroll.pack(side=side)
+        scroll.place(x=x_crol, y=y_crol)
+        ttk.Treeview.__init__(self,frame, yscrollcommand=scroll.set, height=list_height)
+        self.pack(side=self.side, padx=lable_place_x + 30, pady=lable_place_y + 50)
 
 
-# scrollbar
-Cyclotron_scroll = Scrollbar(SettingsFrame ,orient="vertical",width=20)
-Cyclotron_scroll.pack(side=LEFT)
-Cyclotron_scroll.place(x=613, y= 160)
+        # list = self.(frame, yscrollcommand=scroll.set, height=list_height)
 
-cyclo_list = ttk.Treeview(SettingsFrame, yscrollcommand=Cyclotron_scroll.set,height=5)
+    # def create_fully_tabel(self,scroll_width,side, x_crol,y_crol, frame, list_height, lable_place_x,lable_place_y, columns_name_list, query):
+    def create_fully_tabel(self, columns_name_list, query):
 
-cyclo_list.pack(side=LEFT, padx=cyclo_Lable_place_x+30, pady=cyclo_Lable_place_y+50)
+        # scroll = Scrollbar(frame, orient="vertical", width=scroll_width)
+        # scroll.pack(side=side)
+        # scroll.place(x=x_crol, y=y_crol)
+        #
+        # list = ttk.Treeview(frame, yscrollcommand=scroll.set, height=list_height)
 
-# Cyclotron_scroll.config(command=cyclo_list.yview)
-# Cyclotron_scroll.config(command=cyclo_list.xview)
 
-# column define
+        self['columns'] = columns_name_list
 
-cyclo_list['columns'] = ('Version', 'Capacity (mci/h)', 'Constant Efficiency (mCi/mA)', 'Description')
+        self.column("#0", width=0, stretch=NO)
+        self.heading("#0", text="", anchor=CENTER)
 
-# column format
-width_Version=90
-width_Capacity=110
-width_Efficiency=185
-width_Description=110
+        i=0
+        len_of_col=len(columns_name_list)
+        for column_name in columns_name_list:
+            # column format
+            if i == 0 or i == len_of_col-2:
+                width = len(column_name)*6 +30
+            else:
+                width = len(column_name)*6
 
-cyclo_list.column("#0", width=0, stretch=NO)
-cyclo_list.column("Version", anchor=CENTER, width=width_Version)
-cyclo_list.column("Capacity (mci/h)", anchor=CENTER, width=width_Capacity)
-cyclo_list.column("Constant Efficiency (mCi/mA)", anchor=CENTER, width=width_Efficiency)
-cyclo_list.column("Description", anchor=CENTER, width=width_Description)
+            self.column(column_name, anchor=CENTER, width=width)
+            # # Create Headings
+            self.heading(column_name, text=column_name, anchor=CENTER)
 
-# Create Headings
-cyclo_list.heading("#0", text="", anchor=CENTER)
-cyclo_list.heading("Version", text="Version", anchor=CENTER)
-cyclo_list.heading("Capacity (mci/h)", text="Capacity (mci/h)", anchor=CENTER)
-cyclo_list.heading("Constant Efficiency (mCi/mA)", text="Constant Efficiency (mCi/mA)", anchor=CENTER)
-cyclo_list.heading("Description", text="Description", anchor=CENTER)
+        # add data from db
+        # cursor = db.cursor()
+        cursor.execute(query)
 
-# add data from db
-cursor = db.cursor()
-cursor.execute("SELECT * FROM resourcecyclotron")
+        data = cursor.fetchall()
 
-cyclotrons = cursor.fetchall()
+        iid=0
+        for recorf in data:
+            val=[]
+            for i in range (0,len_of_col): # plus 1 is for the pk that will not show in the table
+                val.append(recorf[i+1])
+            val.append(recorf[0])
 
-iid=0
-for cyclo in cyclotrons:
-    print(cyclo)
-    cyclo_list.insert(parent='', index='end', iid=iid, text='',
-               values=(cyclo[1], cyclo[2], cyclo[3],cyclo[4], cyclo[0]))
-    iid +=1
+            self.insert(parent='', index='end', iid=iid, text='',
+                       values=val)
+            iid +=1
 
-cyclo_list.pack()
+            self.pack()
+
+    def selected(self):
+        selected = self.focus()
+        selected_record = self.item(selected, 'values')
+        return selected_record
+
+
+
+scroll_width=20
+tab_side=LEFT
+x=613
+y= 160
+frame=SettingsFrame
+list_height=5
+lable_place_x = 80
+lable_place_y=70
+columns_name_list=('Version', 'Capacity (mci/h)', 'Constant Efficiency (mCi/mA)', 'Description')
+
+query = "SELECT * FROM resourcecyclotron"
+
+# cyclo_tabel=table(scroll_width,tab_side, x,y,frame,list_height,lable_place_x,lable_place_y, columns_name_list, query )
+cyclo_tabel=table(frame,scroll_width,list_height,tab_side,x,y,lable_place_x,
+                               lable_place_y,)
+cyclo_tabel.create_fully_tabel( columns_name_list, query)
+#
+# # scrollbar
+# Cyclotron_scroll = Scrollbar(SettingsFrame ,orient="vertical",width=20)
+# Cyclotron_scroll.pack(side=LEFT)
+# Cyclotron_scroll.place(x=613, y= 160)
+#
+# cyclo_list = ttk.Treeview(SettingsFrame, yscrollcommand=Cyclotron_scroll.set,height=5)
+#
+# # cyclo_list.pack(side=LEFT, padx=cyclo_Lable_place_x+30, pady=cyclo_Lable_place_y+50)
+#
+# # Cyclotron_scroll.config(command=cyclo_list.yview)
+# # Cyclotron_scroll.config(command=cyclo_list.xview)
+#
+# # column define
+#
+# cyclo_list['columns'] = ('Version', 'Capacity (mci/h)', 'Constant Efficiency (mCi/mA)', 'Description')
+#
+# # column format
+# width_Version=90
+# width_Capacity=110
+# width_Efficiency=185
+# width_Description=110
+#
+# cyclo_list.column("#0", width=0, stretch=NO)
+# cyclo_list.column("Version", anchor=CENTER, width=width_Version)
+# cyclo_list.column("Capacity (mci/h)", anchor=CENTER, width=width_Capacity)
+# cyclo_list.column("Constant Efficiency (mCi/mA)", anchor=CENTER, width=width_Efficiency)
+# cyclo_list.column("Description", anchor=CENTER, width=width_Description)
+#
+# # Create Headings
+# cyclo_list.heading("#0", text="", anchor=CENTER)
+# cyclo_list.heading("Version", text="Version", anchor=CENTER)
+# cyclo_list.heading("Capacity (mci/h)", text="Capacity (mci/h)", anchor=CENTER)
+# cyclo_list.heading("Constant Efficiency (mCi/mA)", text="Constant Efficiency (mCi/mA)", anchor=CENTER)
+# cyclo_list.heading("Description", text="Description", anchor=CENTER)
+#
+# # add data from db
+# cursor = db.cursor()
+# cursor.execute("SELECT * FROM resourcecyclotron")
+#
+# cyclotrons = cursor.fetchall()
+#
+# iid=0
+# for cyclo in cyclotrons:
+#     print(cyclo)
+#     cyclo_list.insert(parent='', index='end', iid=iid, text='',
+#                values=(cyclo[1], cyclo[2], cyclo[3],cyclo[4], cyclo[0]))
+#     iid +=1
+#
+# cyclo_list.pack()
 
 
 
@@ -482,29 +550,62 @@ cyclo_list.pack()
 #
 #
 def editCyclotronfun():
-    MYpopup = Popup()
-    MYpopup.open_pop('Edit Cyclotron Details')
+    selected_rec = cyclo_tabel.selected()
+    if  cyclo_tabel.focus() =='':
+        print('empty') #message
+    else:
 
-    selected = cyclo_list.focus()
-    cycloList = cyclo_list.item(selected, 'values')
-    query = "UPDATE resourcecyclotron SET version = %s ,capacity= %s, constant_efficiency= %s,description=%s  WHERE idresourceCyclotron = %s"
-    pk = cycloList[4]
-    labels=(('Version', ''), ('Capacity', '(mci/h)'), ('Constant Efficiency', '(mCi/mA)'), ('Description', ''))
-    save_title = "Save Changes"
+        editCyclPopup = Popup()
+        editCyclPopup.open_pop('Edit Cyclotron Details')
 
-    MYpopup.edit_popup(labels, cycloList,save_title,query, pk, cyclo_list)
+        # selected = cyclo_list.focus()
+        # cycloList = cyclo_list.item(selected, 'values')
+        # query = "UPDATE resourcecyclotron SET version = %s ,capacity= %s, constant_efficiency= %s,description=%s  WHERE idresourceCyclotron = %s"
+        # pk = cycloList[4]
+        # labels=(('Version', ''), ('Capacity', '(mci/h)'), ('Constant Efficiency', '(mCi/mA)'), ('Description', ''))
+        # save_title = "Save Changes"
+        #
+        # MYpopup.edit_popup(labels, cycloList,save_title,query, pk, cyclo_list)
+
+        query = "UPDATE resourcecyclotron SET version = %s ,capacity= %s, constant_efficiency= %s,description=%s  WHERE idresourceCyclotron = %s"
+        # print(cyclo_tabel.focus())
+        print(selected_rec)
+        pk = selected_rec[4]
+
+        labels = (('Version', ''), ('Capacity', '(mci/h)'), ('Constant Efficiency', '(mCi/mA)'), ('Description', ''))
+        save_title = "Save Changes"
+
+        editCyclPopup.edit_popup(labels, selected_rec, save_title, query, pk, cyclo_tabel)
+
+def addCyclotronfun():
+        addCyclPopup = Popup()
+        addCyclPopup.open_pop('Add Cyclotron Details')
+        labels = (('Version', ''), ('Capacity', '(mci/h)'), ('Constant Efficiency', '(mCi/mA)'), ('Description', ''))
+        save_title = "Add Cyclotron"
+
+        addCyclPopup.add_popup(labels, save_title, query)
+
 
 
 # #Create a button in the main Window to edit  record (open the popup) - cyclotron
 cyclotronEditIcon = Image.open("editIcon.jpg")
 resizedCycloEditIcon = cyclotronEditIcon.resize((20, 20), Image.ANTIALIAS)
 imgEditCyclotron = ImageTk.PhotoImage(resizedCycloEditIcon)
+# editCyclotronButton = Button(SettingsFrame, image=imgEditCyclotron, borderwidth=0, command= lambda :editCyclotronfun())
 editCyclotronButton = Button(SettingsFrame, image=imgEditCyclotron, borderwidth=0, command= lambda :editCyclotronfun())
+
 editCyclotronButton.pack(side= LEFT)
 editCyclotronButton.place(x=cyclo_Lable_place_x+450, y=cyclo_Lable_place_y+15)
-#
-#
-# SettingsFrame.pack()
+
+#Create a button in the main Window to add record - cyclotron
+cyclotronAddIcon = Image.open("addIcon.png")
+resizedCycloAddIcon = cyclotronAddIcon.resize((25, 25), Image.ANTIALIAS)
+imgAddCyclotron = ImageTk.PhotoImage(resizedCycloAddIcon)
+addCyclotronButton = Button(SettingsFrame, image=imgAddCyclotron, borderwidth=0, command=lambda : addCyclotronfun())
+addCyclotronButton.pack(side= LEFT)
+addCyclotronButton.place(x=cyclo_Lable_place_x+400, y=cyclo_Lable_place_y+14)
+
+SettingsFrame.pack()
 root.mainloop()
 
 
