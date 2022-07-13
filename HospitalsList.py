@@ -11,7 +11,7 @@ root = Tk()
 #root.geometry("300x300")
 
 
-root.title("Settings")
+root.title("Hospital list")
 
 #defult font
 root.option_add("*Font", "Helvetica")

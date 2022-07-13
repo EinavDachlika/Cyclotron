@@ -161,17 +161,17 @@ hospitals_list.pack()
 
 
 
-def open_popup_hospital():
-    pass
-
-def delete_hospital():
-    pass
+# def open_popup_hospital():
+#     pass
+#
+# def delete_hospital():
+#     pass
 
 #Create a button in the main Window to open the popup
 editIcon = Image.open("editIcon.jpg")
 resizedEditIcon = editIcon.resize((20,20), Image.ANTIALIAS)
 imgEdit = ImageTk.PhotoImage(resizedEditIcon)
-editButton=Button(hospitalFrame, image=imgEdit, borderwidth=0, command=delete_hospital)
+editButton=Button(hospitalFrame, image=imgEdit, borderwidth=0)
 editButton.pack()
 editButton.place(x=425, y=55)
 
@@ -180,7 +180,7 @@ editButton.place(x=425, y=55)
 deleteIcon = Image.open("‏‏deleteIcon.png")
 resizedDeleteIcon = deleteIcon.resize((20,20), Image.ANTIALIAS)
 imgDelete = ImageTk.PhotoImage(resizedDeleteIcon)
-deleteButton=Button(hospitalFrame, image=imgDelete, borderwidth=0, command=delete_hospital)
+deleteButton=Button(hospitalFrame, image=imgDelete, borderwidth=0)
 deleteButton.pack()
 deleteButton.place(x=470, y=55)
 
@@ -189,9 +189,171 @@ deleteButton.place(x=470, y=55)
 def hospital_page():
     """ this function is swap function for hospital frame/page"""
     settingButton.config(bg='#F0F0F0');
+    ordersButton.config(bg='#F0F0F0');
     hospitalsButton.config(bg='gray');
     hospitalFrame.pack(fill='both',expand=1);
     SettingsFrame.forget();
+    ordersFrame.forget();
+
+##################Orders page############################################
+
+ordersFrame = Frame(root)
+h = Scrollbar(ordersFrame, orient='horizontal')
+
+# feed label
+feedLabel = Label(ordersFrame, text ='Orders', font=('Helvetica', 26, 'bold'), fg='#034672')
+PlaceLable_X=50
+PlaceLable_Y=10
+
+feedLabel.pack(side=LEFT)
+feedLabel.place(x=PlaceLable_X,y=PlaceLable_Y)
+
+
+# scrollbar
+Cyclotron_scroll = Scrollbar(ordersFrame, orient="vertical", width=25)
+# Cyclotron_scroll.pack(side=LEFT)
+# Cyclotron_scroll.place(x=550, y= 160)
+
+OrdersTree = ttk.Treeview(ordersFrame, yscrollcommand=Cyclotron_scroll.set, height=12)
+
+OrdersTree.pack(side=LEFT, padx=PlaceLable_X+50, pady=PlaceLable_Y+80)
+my_label=Label(root,text='');
+
+def openExcelFile():
+    """This is function for open Orders excel file"""
+    filename= fd.askopenfilename(
+        initialdir="D:\PythonProjects\Cyclotron",
+        title="Open a file",
+        filetype=(("xlsx files","*.xlsx"),("All Files","*.*"),("Word files","*.docx"),("PDF files","*.pdf"))
+    )
+
+    if filename:
+        try:
+            filename=r"{}".format(filename)
+            df=pd.read_excel(filename)
+        except ValueError:
+            my_label.config(text="File couldn't be open,try again");
+        except FileNotFoundError:
+            my_label.config(text="File couldn't be open,try again");
+
+    clear_tree();
+
+    OrdersTree["column"] =  list(df.columns);
+    OrdersTree["show"] = "headings";
+
+    for column in OrdersTree["column"]:
+        OrdersTree.heading(column,text=column)
+
+    df_rows=df.to_numpy().tolist()
+    for row in df_rows:
+        OrdersTree.insert("","end",values=row)
+
+
+    OrdersTree.pack();
+    return;
+
+def clear_tree():
+    OrdersTree.delete(*OrdersTree.get_children())
+
+
+
+#
+# # Cyclotron_scroll.config(command=cyclo_list.yview)
+# # Cyclotron_scroll.config(command=cyclo_list.xview)
+#
+# # column define
+#
+# hospitals_list['columns'] = ('Quantity', 'Injection time', 'Activation','Comments')
+#
+# # column format
+# width_Version=110
+# width_Capacity=110
+# width_Efficiency=185
+# width_Description=110
+#
+# hospitals_list.column("#0", width=0, stretch=NO)
+# hospitals_list.column("Quantity", anchor=CENTER, width=width_Version)
+# hospitals_list.column("Injection time", anchor=CENTER, width=width_Capacity)
+# hospitals_list.column("Activation", anchor=CENTER, width=width_Efficiency)
+# hospitals_list.column("Comments", anchor=CENTER, width=width_Efficiency)
+#
+# # Create Headings
+# hospitals_list.heading("#0", text="", anchor=CENTER)
+# hospitals_list.heading("Quantity", text="Name", anchor=CENTER)
+# hospitals_list.heading("Injection time", text="Injection time", anchor=CENTER)
+# hospitals_list.heading("Activation", text="Activation", anchor=CENTER)
+# hospitals_list.heading("Comments", text="Comments", anchor=CENTER)
+#
+# # add data from db
+# cursor = db.cursor()
+# cursor.execute("SELECT * FROM hospital")
+# hospitals_in_db = cursor.fetchall()
+#
+# iid=0
+# for hospital in hospitals_in_db:
+#     #print(hospital)
+#     hospitals_list.insert(parent='', index='end', iid=iid, text='',
+#                           values=(hospital[1], hospital[2], hospital[3]))
+#     iid +=1
+#
+# hospitals_list.pack()
+
+
+
+# def open_popup_hospital():
+#     pass
+#
+# def delete_hospital():
+#     pass
+###################Buttons for edit,delete,import file and etc.###################################
+#Create a button in the main Window to open the popup
+# edit_button = Button(hospitalFrame, text= "Edit", command= open_popup_hospital)
+# edit_button.pack(side= LEFT)
+# edit_button.place(x=450, y=50)
+# edit_button.pack(side=LEFT, padx=PlaceLable_X+100, pady=PlaceLable_Y+50)
+
+#Create a button in the main Window to open the popup
+editIcon = Image.open("editIcon.jpg")
+resizedEditIcon = editIcon.resize((20,20), Image.ANTIALIAS)
+imgEdit = ImageTk.PhotoImage(resizedEditIcon)
+editButton=Button(ordersFrame, image=imgEdit, borderwidth=0)
+editButton.pack()
+editButton.place(x=425, y=55)
+
+#Create a button for import order from files(Excel or Word)
+ImportFileIcon = Image.open("imporFile.png")
+resized_Edit_Icon = ImportFileIcon.resize((20,20), Image.ANTIALIAS)
+img_Edit = ImageTk.PhotoImage(resized_Edit_Icon)
+importFileButton=Button(ordersFrame, image=img_Edit, borderwidth=0,command=openExcelFile)
+importFileButton.pack()
+importFileButton.place(x=380, y=55)
+
+# edit_button = Button(hospitalFrame, text= "Edit", command= open_popup_hospital)
+# edit_button.pack(side= LEFT)
+# edit_button.place(x=450, y=50)
+
+
+# delete button (Icon) - List
+deleteIcon = Image.open("‏‏deleteIcon.png")
+resizedDeleteIcon = deleteIcon.resize((20,20), Image.ANTIALIAS)
+imgDelete = ImageTk.PhotoImage(resizedDeleteIcon)
+deleteButton=Button(ordersFrame, image=imgDelete, borderwidth=0)
+deleteButton.pack()
+deleteButton.place(x=470, y=55)
+
+##############end of Orders page#########################################
+
+def Orders_page():
+    """ this function is swap function for Orders frame/page"""
+    settingButton.config(bg='#F0F0F0');  ##F0F0F0 is default color(gray)
+    hospitalsButton.config(bg='#F0F0F0');
+    ordersButton.config(bg="gray");
+    ordersFrame.pack(fill='both',expand=1);
+    hospitalFrame.forget();
+    SettingsFrame.forget();
+
+
+
 
 ##################### toolbar #####################
 toolbarbgcolor = "white"
@@ -213,7 +375,7 @@ hospitalsButton = Button(toolbar, text="Hospitals",command=hospital_page,font='H
 hospitalsButton.pack(side=LEFT, padx=10, pady=3)
 
 # Orders button - toolbar
-ordersButton = Button(toolbar, text="Orders", font='Helvetica 11')
+ordersButton = Button(toolbar, text="Orders", font='Helvetica 11',command=Orders_page)
 ordersButton.pack(side=LEFT, padx=10, pady=3)
 
 # Reports button - toolbar
@@ -226,9 +388,11 @@ reportsButton.pack(side=LEFT, padx=10, pady=3)
 def setting_page():
     """ this function is swap function for viewing setting frame/page"""
     hospitalsButton.config(bg='#F0F0F0')
-    settingButton.config(bg="gray")
+    ordersButton.config(bg='#F0F0F0');
+    settingButton.config(bg="gray");
     SettingsFrame.pack(fill='both',expand=1);
     hospitalFrame.forget();
+    ordersFrame.forget();
 
 # settings Icon - toolbar
 
