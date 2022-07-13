@@ -185,6 +185,6 @@ deleteButton.place(x=470, y=55)
 
 
 
-hospitalFrame.pack()
+#hospitalFrame.pack()
 
 root.mainloop()
