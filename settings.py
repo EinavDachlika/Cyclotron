@@ -188,6 +188,8 @@ deleteButton.place(x=470, y=55)
 
 def hospital_page():
     """ this function is swap function for hospital frame/page"""
+    settingButton.config(bg='#F0F0F0');
+    hospitalsButton.config(bg='gray');
     hospitalFrame.pack(fill='both',expand=1);
     SettingsFrame.forget();
 
@@ -207,7 +209,7 @@ workPlanButton = Button(toolbar, text="Work Plans", font='Helvetica 11')
 workPlanButton.pack(side=LEFT, padx=10, pady=3)
 
 # Hospitals button - toolbar
-hospitalsButton = Button(toolbar, text="Hospitals",command=hospital_page,font='Helvetica 11', activebackground='gray')
+hospitalsButton = Button(toolbar, text="Hospitals",command=hospital_page,font='Helvetica 11', activebackground='red')
 hospitalsButton.pack(side=LEFT, padx=10, pady=3)
 
 # Orders button - toolbar
@@ -223,6 +225,8 @@ reportsButton.pack(side=LEFT, padx=10, pady=3)
 #########################################################################
 def setting_page():
     """ this function is swap function for viewing setting frame/page"""
+    hospitalsButton.config(bg='#F0F0F0')
+    settingButton.config(bg="gray")
     SettingsFrame.pack(fill='both',expand=1);
     hospitalFrame.forget();
 
@@ -231,7 +235,8 @@ def setting_page():
 settingsIcon = Image.open("gearIcon.png")
 resizedSettingsIcon = settingsIcon.resize((35, 35), Image.ANTIALIAS)
 imgSettings = ImageTk.PhotoImage(resizedSettingsIcon)
-Button(toolbar,command=setting_page ,image=imgSettings, borderwidth=0).pack(side=RIGHT, padx=10, pady=3)
+settingButton=Button(toolbar,command=setting_page ,image=imgSettings,activebackground='red', borderwidth=0)
+settingButton.pack(side=RIGHT, padx=10, pady=3)
 
 
 toolbar.pack(side=TOP, fill=X)
