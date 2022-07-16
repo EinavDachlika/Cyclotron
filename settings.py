@@ -225,13 +225,12 @@ OrdersTree.pack(side=LEFT, padx=PlaceLable_X+50, pady=PlaceLable_Y+80)
 my_label=Label(root,text='');
 
 def openFile():
-    """This is function for open Orders excel file"""
+    """This is function for importing order files"""
     filename = fd.askopenfilename(
         initialdir="D:\PythonProjects\Cyclotron",
         title="Open a file",
         filetype=(("Word files","*.docx"),("Word files","*.doc"),("xlsx files","*.xlsx"),("All Files","*.*"),("PDF files","*.pdf"))
     )
-    #print(filename)
 
 
     if filename :
@@ -300,34 +299,6 @@ def openFile():
                 OrdersTree.pack();
 
 
-# wordFile=open(filename,  errors="ignore");
-# #stuff = wordFile.read();#convert to string
-# new_filename1 = filename.split("/", 3);
-# new_filename2 = new_filename1[3].split(".", 1);
-# tempString=str(new_filename2[0])+".pdf";
-# # # wordFile=open(filename, encoding="Latin-1");
-# # convert(str(new_filename1[3]))
-# # convert(str(new_filename1[3]), str(tempString))
-# # convert("D:\PythonProjects\Cyclotron")
-# pdfFile=PyPDF2.PdfFileReader(str(tempString));
-# # Extract all text fron PDF-if pdf include a couple of pages
-# # count = pdfFile.numPages
-# # for i in range(count):
-# #   page = pdfFile.getPage(i)
-# #   output = []
-# #   output.append(page.extractText())
-# page=pdfFile.getPage(0);#Extract only from first page
-# page_stuff=page.extractText();
-# print(page_stuff);
-# #not working need to be with text box and not tree
-# for i in range(len(page_stuff)):
-#  OrdersTree.insert('', 'end',values=i)
-# #OrdersTree.insert(1.0,page_stuff);#not working well-need to be fixed-need to be with text box and not trre
-# OrdersTree.pack();
-# wordFile.close();
-
-
-
 
 
 def clear_tree():
@@ -335,60 +306,7 @@ def clear_tree():
 
 
 
-#
-# # Cyclotron_scroll.config(command=cyclo_list.yview)
-# # Cyclotron_scroll.config(command=cyclo_list.xview)
-#
-# # column define
-#
-# hospitals_list['columns'] = ('Quantity', 'Injection time', 'Activation','Comments')
-#
-# # column format
-# width_Version=110
-# width_Capacity=110
-# width_Efficiency=185
-# width_Description=110
-#
-# hospitals_list.column("#0", width=0, stretch=NO)
-# hospitals_list.column("Quantity", anchor=CENTER, width=width_Version)
-# hospitals_list.column("Injection time", anchor=CENTER, width=width_Capacity)
-# hospitals_list.column("Activation", anchor=CENTER, width=width_Efficiency)
-# hospitals_list.column("Comments", anchor=CENTER, width=width_Efficiency)
-#
-# # Create Headings
-# hospitals_list.heading("#0", text="", anchor=CENTER)
-# hospitals_list.heading("Quantity", text="Name", anchor=CENTER)
-# hospitals_list.heading("Injection time", text="Injection time", anchor=CENTER)
-# hospitals_list.heading("Activation", text="Activation", anchor=CENTER)
-# hospitals_list.heading("Comments", text="Comments", anchor=CENTER)
-#
-# # add data from db
-# cursor = db.cursor()
-# cursor.execute("SELECT * FROM hospital")
-# hospitals_in_db = cursor.fetchall()
-#
-# iid=0
-# for hospital in hospitals_in_db:
-#     #print(hospital)
-#     hospitals_list.insert(parent='', index='end', iid=iid, text='',
-#                           values=(hospital[1], hospital[2], hospital[3]))
-#     iid +=1
-#
-# hospitals_list.pack()
 
-
-
-# def open_popup_hospital():
-#     pass
-#
-# def delete_hospital():
-#     pass
-###################Buttons for edit,delete,import file and etc.###################################
-#Create a button in the main Window to open the popup
-# edit_button = Button(hospitalFrame, text= "Edit", command= open_popup_hospital)
-# edit_button.pack(side= LEFT)
-# edit_button.place(x=450, y=50)
-# edit_button.pack(side=LEFT, padx=PlaceLable_X+100, pady=PlaceLable_Y+50)
 
 #Create a button in the main Window to open the popup
 editIcon = Image.open("editIcon.jpg")
