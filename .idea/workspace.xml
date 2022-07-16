@@ -2,8 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="57af6b52-10f3-4b95-8aa9-f5e855756cf2" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Orders.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/HospitalsList.py" beforeDir="false" afterPath="$PROJECT_DIR$/HospitalsList.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/codestream.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/codestream.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Orders.py" beforeDir="false" afterPath="$PROJECT_DIR$/Orders.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/settings.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -31,7 +32,13 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="app.teamhub.trackedBranches" value="-1d1kg0j/main" />
-    <property name="settings.editor.selected.configurable" value="org.jetbrains.plugins.github.ui.GithubSettingsConfigurable" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\PythonProjects\Cyclotron" />
+    </key>
   </component>
   <component name="RunManager" selected="Python.settings">
     <configuration name="AddHospital" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
@@ -163,18 +170,18 @@
     <list>
       <item itemvalue="Python.Unnamed" />
       <item itemvalue="Python.AddHospital" />
-      <item itemvalue="Python.settings" />
       <item itemvalue="Python.HospitalsList" />
-      <item itemvalue="Python.settings class" />
       <item itemvalue="Python.Orders" />
+      <item itemvalue="Python.settings class" />
+      <item itemvalue="Python.settings" />
     </list>
     <recent_temporary>
       <list>
         <item itemvalue="Python.settings" />
         <item itemvalue="Python.Orders" />
+        <item itemvalue="Python.settings class" />
         <item itemvalue="Python.HospitalsList" />
         <item itemvalue="Python.AddHospital" />
-        <item itemvalue="Python.settings class" />
       </list>
     </recent_temporary>
   </component>

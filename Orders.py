@@ -5,6 +5,9 @@ import mysql.connector
 from mysql.connector import Error
 from tkinter import filedialog as fd
 import pandas as pd
+from docx.api import Document
+import aspose.words as aw
+
 ##table code
 #https://pythonguides.com/python-tkinter-table-tutorial/
 
@@ -86,11 +89,11 @@ toolbar.pack(side=TOP, fill=X)
 
 toolbar.grid_columnconfigure(1, weight=1)
 
-##################### Hospitals List #####################
+##################### Start od Order page #####################
 
 ordersFrame = Frame(root)
 h = Scrollbar(ordersFrame, orient='horizontal')
-ordersFrame.pack(fill=X)
+#ordersFrame.pack(fill=X)
 
 
 # feed label
@@ -112,38 +115,111 @@ OrdersTree = ttk.Treeview(ordersFrame, yscrollcommand=Cyclotron_scroll.set, heig
 OrdersTree.pack(side=LEFT, padx=PlaceLable_X+50, pady=PlaceLable_Y+80)
 my_label=Label(root,text='');
 
-def openExcelFile():
+def openFile():
    """This is function for open Orders excel file"""
-   filename= fd.askopenfilename(
+   filename = fd.askopenfilename(
        initialdir="D:\PythonProjects\Cyclotron",
        title="Open a file",
-       filetype=(("xlsx files","*.xlsx"),("All Files","*.*"),("Word files","*.docx"),("PDF files","*.pdf"))
+       filetype=(("Word files","*.docx"),("Word files","*.doc"),("xlsx files","*.xlsx"),("All Files","*.*"),("PDF files","*.pdf"))
    )
+   #print(filename)
 
-   if filename:
+
+   if filename :
+     if  "xlsx" in filename :#Excel file
        try:
-            filename=r"{}".format(filename)
-            df=pd.read_excel(filename)
+        filename=r"{}".format(filename)
+        df=pd.read_excel(filename)
        except ValueError:
         my_label.config(text="File couldn't be open,try again");
        except FileNotFoundError:
         my_label.config(text="File couldn't be open,try again");
 
-   clear_tree();
+       clear_tree();
 
-   OrdersTree["column"] =  list(df.columns);
-   OrdersTree["show"] = "headings";
+       OrdersTree["column"] =  list(df.columns);
+       OrdersTree["show"] = "headings";
 
-   for column in OrdersTree["column"]:
-       OrdersTree.heading(column,text=column)
+       for column in OrdersTree["column"]:
+        OrdersTree.heading(column,text=column)
 
-   df_rows=df.to_numpy().tolist()
-   for row in df_rows:
-       OrdersTree.insert("","end",values=row)
+       df_rows=df.to_numpy().tolist();
+
+       for row in df_rows:
+        OrdersTree.insert("","end",values=row)
+
+        OrdersTree.pack();
 
 
-   OrdersTree.pack();
-   return;
+
+     if "docx" in filename or "doc" in filename:#word files
+      #convert word to excel
+
+         if (("doc" in filename) and ("docx" not in filename)):#convert docx to doc
+             doc = aw.Document(filename)
+             filename="NewWordOutput1.docx";
+             doc.save(filename)
+
+
+         document = Document(filename)
+         tables = document.tables
+         df = pd.DataFrame()
+
+         for table in document.tables:
+            for row in table.rows:
+                text = [cell.text for cell in row.cells]
+                df = df.append([text], ignore_index=True)
+
+         #df.columns = ["Column1", "Column2","Column3","Column4","Column5","Column6","Column7","Column8"]
+         df.to_excel("D:/PythonProjects/Cyclotron/OrderOutputTest.xlsx")
+         #print(df);
+
+
+         clear_tree();
+
+         OrdersTree["column"] =  list(df.columns);
+         OrdersTree["show"] = "headings";
+
+         for column in OrdersTree["column"]:
+            OrdersTree.heading(column,text=column)
+
+         df_rows=df.to_numpy().tolist();
+
+         for row in df_rows:
+            OrdersTree.insert("","end",values=row)
+
+            OrdersTree.pack();
+
+
+# wordFile=open(filename,  errors="ignore");
+      # #stuff = wordFile.read();#convert to string
+      # new_filename1 = filename.split("/", 3);
+      # new_filename2 = new_filename1[3].split(".", 1);
+      # tempString=str(new_filename2[0])+".pdf";
+      # # # wordFile=open(filename, encoding="Latin-1");
+      # # convert(str(new_filename1[3]))
+      # # convert(str(new_filename1[3]), str(tempString))
+      # # convert("D:\PythonProjects\Cyclotron")
+      # pdfFile=PyPDF2.PdfFileReader(str(tempString));
+      # # Extract all text fron PDF-if pdf include a couple of pages
+      # # count = pdfFile.numPages
+      # # for i in range(count):
+      # #   page = pdfFile.getPage(i)
+      # #   output = []
+      # #   output.append(page.extractText())
+      # page=pdfFile.getPage(0);#Extract only from first page
+      # page_stuff=page.extractText();
+      # print(page_stuff);
+      # #not working need to be with text box and not tree
+      # for i in range(len(page_stuff)):
+      #  OrdersTree.insert('', 'end',values=i)
+      # #OrdersTree.insert(1.0,page_stuff);#not working well-need to be fixed-need to be with text box and not trre
+      # OrdersTree.pack();
+      # wordFile.close();
+
+
+
+
 
 def clear_tree():
     OrdersTree.delete(*OrdersTree.get_children())
@@ -217,7 +293,7 @@ editButton.place(x=425, y=55)
 ImportFileIcon = Image.open("imporFile.png")
 resized_Edit_Icon = ImportFileIcon.resize((20,20), Image.ANTIALIAS)
 img_Edit = ImageTk.PhotoImage(resized_Edit_Icon)
-importFileButton=Button(ordersFrame, image=img_Edit, borderwidth=0,command=openExcelFile)
+importFileButton=Button(ordersFrame, image=img_Edit, borderwidth=0,command=openFile)
 importFileButton.pack()
 importFileButton.place(x=380, y=55)
 
