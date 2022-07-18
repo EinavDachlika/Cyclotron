@@ -325,12 +325,13 @@ editButton.pack()
 editButton.place(x=425, y=55)
 
 #Create a button for import order from files(Excel or Word)
-ImportFileIcon = Image.open("imporFile.png")
-resized_Edit_Icon = ImportFileIcon.resize((20,20), Image.ANTIALIAS)
+ImportFileIcon = Image.open("ImportFile2.png")
+resized_Edit_Icon = ImportFileIcon.resize((80,20), Image.ANTIALIAS)
 img_Edit = ImageTk.PhotoImage(resized_Edit_Icon)
 importFileButton=Button(ordersFrame, image=img_Edit, borderwidth=0,command=openFile)
 importFileButton.pack()
-importFileButton.place(x=380, y=55)
+importFileButton.place(x=230, y=65)
+
 
 # edit_button = Button(hospitalFrame, text= "Edit", command= open_popup_hospital)
 # edit_button.pack(side= LEFT)

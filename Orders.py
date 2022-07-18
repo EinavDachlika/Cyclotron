@@ -1,5 +1,6 @@
 from tkinter import *
 from tkinter import ttk
+import tkinter as tk
 from PIL import Image, ImageTk
 import mysql.connector
 from mysql.connector import Error
@@ -89,11 +90,11 @@ toolbar.pack(side=TOP, fill=X)
 
 toolbar.grid_columnconfigure(1, weight=1)
 
-##################### Start od Order page #####################
+##################### Start Order page #####################
 
 ordersFrame = Frame(root)
-h = Scrollbar(ordersFrame, orient='horizontal')
-#ordersFrame.pack(fill=X)
+#h = Scrollbar(ordersFrame, orient='horizontal')
+ordersFrame.pack(fill=X)
 
 
 # feed label
@@ -110,10 +111,80 @@ Cyclotron_scroll = Scrollbar(ordersFrame, orient="vertical", width=25)
 # Cyclotron_scroll.pack(side=LEFT)
 # Cyclotron_scroll.place(x=550, y= 160)
 
-OrdersTree = ttk.Treeview(ordersFrame, yscrollcommand=Cyclotron_scroll.set, height=12)
-
-OrdersTree.pack(side=LEFT, padx=PlaceLable_X+50, pady=PlaceLable_Y+80)
 my_label=Label(root,text='');
+
+#Empty page/table for new order
+OrdersTree = ttk.Treeview(ordersFrame,yscrollcommand=Cyclotron_scroll.set, show='headings', columns=('one', 'two','tree','four','five','six'),height=12)
+OrdersTree.pack(side=LEFT, padx=PlaceLable_X+50, pady=PlaceLable_Y+80)
+
+OrdersTree.heading("one", text="1");
+OrdersTree.heading("two", text="2");
+OrdersTree.heading("tree", text="3");
+OrdersTree.heading("four", text="4");
+OrdersTree.heading("five", text="5");
+OrdersTree.heading("six", text="6");
+
+OrdersTree.insert("" , 0,    text="ID", values=("ID","Batch","Suppling Date","Activition/Dose(mCi)","Injection time"));
+
+for i in range(3):
+    OrdersTree.insert("", "end", values=(i,"2","30.06.2022","15.00 mCi","00:00"))
+
+
+#############################Batch quantity Event ######################
+
+BatchList = [
+    "0","1","2","3","4","5"
+]
+
+status = tk.StringVar()
+status.set("0")
+
+#Catch event
+def treeBatchselect(event):
+    row = OrdersTree.focus()
+    if row:
+        status.set(OrdersTree.set(row, 'two'))
+
+OrdersTree.bind('<<TreeviewSelect>>', treeBatchselect)
+
+def set_batch(value):
+    row = OrdersTree.focus()
+    if row:
+        OrdersTree.set(row, '1', value)
+
+
+drop = ttk.OptionMenu(root, status, "0", *BatchList, command=set_batch);
+drop.pack();
+
+#############################Batch Event over######################
+
+############################Injection Time event#########################
+TimeList = [
+    "06:00","06:30","07:00","07:30","08:00","08:30"
+]
+
+status = tk.StringVar()
+status.set("00:00")
+
+#Catch Injection  event
+def InjectionTimeselect(event):
+    row = OrdersTree.focus()
+    if row:
+        status.set(OrdersTree.set(row, 'five'))
+
+OrdersTree.bind('<<TreeviewSelect>>', InjectionTimeselect)
+
+def setInjectionTime(value):
+    row = OrdersTree.focus()
+    if row:
+        OrdersTree.set(row, '4', value)
+
+
+drop = ttk.OptionMenu(root, status, "00:00", *TimeList, command=setInjectionTime);
+drop.pack();
+
+############################Injection Time event over#########################
+
 
 def openFile():
    """This is function for open Orders excel file"""
@@ -274,6 +345,8 @@ def clear_tree():
 #
 # def delete_hospital():
 #     pass
+
+
 ###################Buttons for edit,delete,import file and etc.###################################
 #Create a button in the main Window to open the popup
 # edit_button = Button(hospitalFrame, text= "Edit", command= open_popup_hospital)
@@ -282,34 +355,143 @@ def clear_tree():
 # edit_button.pack(side=LEFT, padx=PlaceLable_X+100, pady=PlaceLable_Y+50)
 
 #Create a button in the main Window to open the popup
-editIcon = Image.open("editIcon.jpg")
-resizedEditIcon = editIcon.resize((20,20), Image.ANTIALIAS)
-imgEdit = ImageTk.PhotoImage(resizedEditIcon)
-editButton=Button(ordersFrame, image=imgEdit, borderwidth=0)
-editButton.pack()
-editButton.place(x=425, y=55)
 
-#Create a button for import order from files(Excel or Word)
-ImportFileIcon = Image.open("imporFile.png")
-resized_Edit_Icon = ImportFileIcon.resize((20,20), Image.ANTIALIAS)
+#######################Add new order page##########################################
+def PopUpForNewOrder():
+
+    # Absorb hosital list data from db
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM hospital")
+    hospitals_in_db = cursor.fetchall()
+    #print(hospitals_in_db);
+
+    """This is function for Add new order page """
+    NewOrderMainPage = Toplevel(root);
+    NewOrderMainPage.geometry("900x400");
+    NewOrderMainPage.title("New Order");
+    Label(NewOrderMainPage, text="New Order", font=('Helvetica 17 bold'), fg='#034672').place(x=350, y=18);
+
+    # labels
+    #Create hospital Drop-down menu
+    HospitalListLabel = Label(NewOrderMainPage, text="Hospital",bg='white');
+    HospitalListLabel.place(x=20, y=70);
+    HospitalList = hospitals_in_db;
+    CLickOnHospitalDropMenu = StringVar();
+    CLickOnHospitalDropMenu.set("Select Hospital"); #default value
+    HospitalDropDown = OptionMenu(NewOrderMainPage, CLickOnHospitalDropMenu, *HospitalList);
+    HospitalDropDown.config(bg='white');#color of dropdown menu
+    HospitalDropDown.pack();
+    HospitalDropDown.place(x=20, y=100);
+
+    #Create Amount of Doses input
+    AmountOfDosesLabel = Label(NewOrderMainPage, text="Amount of Doses",bg="white");
+    AmountOfDosesLabel.place(x=500, y=80);
+    AmountOfDosesLabelEntry = Entry(NewOrderMainPage,font=("Halvetica",12));
+    AmountOfDosesLabelEntry.config(width=7);#width of window
+    AmountOfDosesLabelEntry.insert(0, '');
+    AmountOfDosesLabelEntry.pack();
+    AmountOfDosesLabelEntry.place(x=500, y=120);
+
+
+    #Create Injection time input/entry
+    InjectionTimeLabel = Label(NewOrderMainPage, text="Injection Date",bg="white");
+    InjectionTimeLabel.place(x=20, y=150);
+    InjectionTimeLabelEntry = Entry(NewOrderMainPage,font=("Halvetica",12));
+    InjectionTimeLabelEntry.insert(0, '');
+    InjectionTimeLabelEntry.pack();
+    InjectionTimeLabelEntry.place(x=20, y=180);
+
+    #
+    #Create Time range input/Entry
+    TimerangeLabel = Label(NewOrderMainPage, text="Time Range",bg="white");
+    TimerangeLabel.place(x=500, y=150);
+    TimerangeLabelEntry = Entry(NewOrderMainPage,font=("Halvetica",12));
+    TimerangeLabelEntry.config(width=7);#width of window
+    TimerangeLabelEntry.insert(0, '');
+    TimerangeLabelEntry.pack();
+    TimerangeLabelEntry.place(x=500, y=180);
+
+    #Create Beginng time input
+    AmountOfDosesLabel = Label(NewOrderMainPage, text="Beginning time",bg="white");
+    AmountOfDosesLabel.place(x=20, y=240);
+    AmountOfDosesLabelEntry = Entry(NewOrderMainPage,font=("Halvetica",12));
+    AmountOfDosesLabelEntry.insert(0, '');
+    AmountOfDosesLabelEntry.pack();
+    AmountOfDosesLabelEntry.place(x=20, y=270);
+
+    #Create a next button
+    nextFileIcon = Image.open("nextButton.png");
+    resized_next_Icon = nextFileIcon.resize((100,50), Image.ANTIALIAS);
+    nextImg = ImageTk.PhotoImage(resized_next_Icon);
+    NExtFileButton=Button(NewOrderMainPage, image=nextImg, borderwidth=0);
+    NExtFileButton.pack();
+    NExtFileButton.place(x=210, y=320);
+
+    #Create a Cancel button
+    CancelIcon = Image.open("CancelButton.png");
+    resized_Cancel_Icon = CancelIcon.resize((100,50), Image.ANTIALIAS);
+    CancelImg = ImageTk.PhotoImage(resized_Cancel_Icon);
+    CancelButton=Button(NewOrderMainPage, image=CancelImg, borderwidth=0);
+    CancelButton.pack();
+    CancelButton.place(x=350, y=320);
+
+
+    NewOrderMainPage.mainloop();
+
+
+
+
+###########################Oreders main page#######################################
+#Create Search window
+searchEntry = Entry(root,font=("Halvetica",12));
+searchEntry.insert(0, 'Search Hospital Name');
+searchEntry.pack();
+searchEntry.place(x=640, y=138);
+
+#Create search icon
+searchIcon = Image.open("SearchButton.png");
+resizedSearchedEditIcon = searchIcon.resize((23,23), Image.ANTIALIAS);
+SearchImg = ImageTk.PhotoImage(resizedSearchedEditIcon);
+SearchLabelicon=Label(image=SearchImg);
+SearchLabelicon.pack();
+SearchLabelicon.place(x=610, y=135);
+
+#Create edit icon
+# editIcon = Image.open("editIcon.jpg")
+# resizedEditIcon = editIcon.resize((20,20), Image.ANTIALIAS)
+# imgEdit = ImageTk.PhotoImage(resizedEditIcon)
+# editButton=Button(ordersFrame, image=imgEdit, borderwidth=0)
+# editButton.pack()
+# editButton.place(x=425, y=55)
+
+#Create a button for import orders files (Excel or Word)
+ImportFileIcon = Image.open("ImportFile2.png")
+resized_Edit_Icon = ImportFileIcon.resize((80,20), Image.ANTIALIAS)
 img_Edit = ImageTk.PhotoImage(resized_Edit_Icon)
 importFileButton=Button(ordersFrame, image=img_Edit, borderwidth=0,command=openFile)
 importFileButton.pack()
-importFileButton.place(x=380, y=55)
+importFileButton.place(x=230, y=65)
 
 # edit_button = Button(hospitalFrame, text= "Edit", command= open_popup_hospital)
 # edit_button.pack(side= LEFT)
 # edit_button.place(x=450, y=50)
 
 
-# delete button (Icon) - List
-deleteIcon = Image.open("‏‏deleteIcon.png")
-resizedDeleteIcon = deleteIcon.resize((20,20), Image.ANTIALIAS)
+# Remove button (Icon) - List
+deleteIcon = Image.open("RemoveButton2.png")
+resizedDeleteIcon = deleteIcon.resize((105,20), Image.ANTIALIAS)
 imgDelete = ImageTk.PhotoImage(resizedDeleteIcon)
 deleteButton=Button(ordersFrame, image=imgDelete, borderwidth=0)
 deleteButton.pack()
-deleteButton.place(x=470, y=55)
+deleteButton.place(x=830, y=65)
 
+#Create New order button
+NewOrderIcon = Image.open("AddnewOrder2.png")
+resizedNewOrderIconIcon = NewOrderIcon.resize((120,20), Image.ANTIALIAS)
+NewOrderIconimg = ImageTk.PhotoImage(resizedNewOrderIconIcon)
+editButton=Button(ordersFrame, image=NewOrderIconimg, borderwidth=0,command=PopUpForNewOrder)
+editButton.pack()
+editButton.place(x=100, y=65)
 
 
 
