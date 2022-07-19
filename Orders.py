@@ -16,7 +16,7 @@ root = Tk()
 #root.geometry("300x300")
 
 
-root.title("Orders")
+#root.title("Orders")
 
 #defult font
 root.option_add("*Font", "Helvetica")
@@ -124,10 +124,10 @@ OrdersTree.heading("four", text="4");
 OrdersTree.heading("five", text="5");
 OrdersTree.heading("six", text="6");
 
-OrdersTree.insert("" , 0,    text="ID", values=("ID","Batch","Suppling Date","Activition/Dose(mCi)","Injection time"));
-
-for i in range(3):
-    OrdersTree.insert("", "end", values=(i,"2","30.06.2022","15.00 mCi","00:00"))
+OrdersTree.insert("" , 0,    text="ID", values=("Hospital","Injection Date","Doses"));
+#
+# for i in range(3):
+#     OrdersTree.insert("", "end", values=(i,"2","30.06.2022","15.00 mCi","00:00"))
 
 
 #############################Batch quantity Event ######################
@@ -186,80 +186,158 @@ drop.pack();
 ############################Injection Time event over#########################
 
 
-def openFile():
-   """This is function for open Orders excel file"""
-   filename = fd.askopenfilename(
-       initialdir="D:\PythonProjects\Cyclotron",
-       title="Open a file",
-       filetype=(("Word files","*.docx"),("Word files","*.doc"),("xlsx files","*.xlsx"),("All Files","*.*"),("PDF files","*.pdf"))
-   )
-   #print(filename)
 
 
-   if filename :
-     if  "xlsx" in filename :#Excel file
-       try:
-        filename=r"{}".format(filename)
-        df=pd.read_excel(filename)
-       except ValueError:
-        my_label.config(text="File couldn't be open,try again");
-       except FileNotFoundError:
-        my_label.config(text="File couldn't be open,try again");
+def importFileFunc():
 
-       clear_tree();
+    def ImportFilefunction():
+        """This is function for open Orders  files"""
+        filename = fd.askopenfilename(
+        initialdir="D:\PythonProjects\Cyclotron",
+        title="Open a file",
+        filetype=(("Word files","*.docx"),("Word files","*.doc"),("xlsx files","*.xlsx"),("All Files","*.*"),("PDF files","*.pdf")))
 
-       OrdersTree["column"] =  list(df.columns);
-       OrdersTree["show"] = "headings";
+        if filename==True :
+            if  "xlsx" in filename :                  #Excel file
+                try:
+                    filename=r"{}".format(filename)
+                    df=pd.read_excel(filename)
+                except ValueError:
+                    my_label.config(text="File couldn't be open,try again");
+                except FileNotFoundError:
+                    my_label.config(text="File couldn't be open,try again");
 
-       for column in OrdersTree["column"]:
-        OrdersTree.heading(column,text=column)
+                clear_tree();
 
-       df_rows=df.to_numpy().tolist();
+                OrdersTree["column"] =  list(df.columns);
+                OrdersTree["show"] = "headings";
 
-       for row in df_rows:
-        OrdersTree.insert("","end",values=row)
+                for column in OrdersTree["column"]:
+                    OrdersTree.heading(column,text=column)
 
-        OrdersTree.pack();
+                df_rows=df.to_numpy().tolist();
 
+                for row in df_rows:
+                    OrdersTree.insert("","end",values=row)
 
-
-     if "docx" in filename or "doc" in filename:#word files
-      #convert word to excel
-
-         if (("doc" in filename) and ("docx" not in filename)):#convert docx to doc
-             doc = aw.Document(filename)
-             filename="NewWordOutput1.docx";
-             doc.save(filename)
-
-
-         document = Document(filename)
-         tables = document.tables
-         df = pd.DataFrame()
-
-         for table in document.tables:
-            for row in table.rows:
-                text = [cell.text for cell in row.cells]
-                df = df.append([text], ignore_index=True)
-
-         #df.columns = ["Column1", "Column2","Column3","Column4","Column5","Column6","Column7","Column8"]
-         df.to_excel("D:/PythonProjects/Cyclotron/OrderOutputTest.xlsx")
-         #print(df);
+                    OrdersTree.pack();
 
 
-         clear_tree();
 
-         OrdersTree["column"] =  list(df.columns);
-         OrdersTree["show"] = "headings";
+            if "docx" in filename or "doc" in filename:     #word files
+                #convert word to excel
 
-         for column in OrdersTree["column"]:
-            OrdersTree.heading(column,text=column)
+                if (("doc" in filename) and ("docx" not in filename)):#convert docx to doc
+                    doc = aw.Document(filename)
+                    filename="NewWordOutput1.docx";
+                    doc.save(filename)
 
-         df_rows=df.to_numpy().tolist();
 
-         for row in df_rows:
-            OrdersTree.insert("","end",values=row)
+                document = Document(filename)
+                tables = document.tables
+                df = pd.DataFrame()
 
-            OrdersTree.pack();
+                for table in document.tables:
+                    for row in table.rows:
+                        text = [cell.text for cell in row.cells]
+                        df = df.append([text], ignore_index=True)
+
+                #df.columns = ["Column1", "Column2","Column3","Column4","Column5","Column6","Column7","Column8"]
+                df.to_excel("D:/PythonProjects/Cyclotron/OrderOutputTest.xlsx")
+                #print(df);
+
+
+                clear_tree();
+
+                OrdersTree["column"] =  list(df.columns);
+                OrdersTree["show"] = "headings";
+
+                for column in OrdersTree["column"]:
+                    OrdersTree.heading(column,text=column)
+
+                df_rows=df.to_numpy().tolist();
+
+                for row in df_rows:
+                    OrdersTree.insert("","end",values=row)
+
+                    OrdersTree.pack();
+
+
+    # Absorb hosital list data from db
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM hospital")
+    hospitals_in_db2 = cursor.fetchall()
+
+    #root = tk.Tk()
+
+
+    ImportFilePage = Toplevel(root);
+    ImportFilePage.geometry("900x400");
+    ImportFilePage.title("Import File");
+    #NewOrdersecondaryPage = tk.Frame(root);
+
+    ImpoerFilePageLabel=Label(ImportFilePage, text="Import File - Order", font=('Helvetica 17 bold'), fg='#034672');
+    ImpoerFilePageLabel.pack();
+
+    HospitalListLabel = Label(ImportFilePage, text="Hospital",bg='white');
+    HospitalListLabel.pack();
+    HospitalListLabel.place(x=20, y=70);
+    HospitalList2 = hospitals_in_db2;
+
+    CLickOnHospitalDropMenu2 = StringVar();
+    CLickOnHospitalDropMenu2.set("Select Hospital"); #default value
+
+    HospitalDropDown = OptionMenu(ImportFilePage, CLickOnHospitalDropMenu2, *HospitalList2);
+    HospitalDropDown.config(width=15,bg='white');#color of dropdown menu
+    HospitalDropDown.pack();
+    HospitalDropDown.place(x=20, y=100);
+
+    #Create a save button
+    saveFileIcon = Image.open("saveIcon.png");
+    save_next_Icon = saveFileIcon.resize((100,50), Image.ANTIALIAS);
+    saveImg = ImageTk.PhotoImage(save_next_Icon);
+    saveButton=Button(ImportFilePage,image=saveImg, borderwidth=0);
+    saveButton.pack();
+    saveButton.place(x=250, y=320);
+
+    #Create a Cancel button
+    CancelIcon2 = Image.open("CancelIcon.png");
+    resized_Cancel_Icon2 = CancelIcon2.resize((100,50), Image.ANTIALIAS);
+    CancelImg2 = ImageTk.PhotoImage(resized_Cancel_Icon2);
+    CancelButton2=Button(ImportFilePage,image=CancelImg2, borderwidth=0,command=lambda: [ImportFilePage.destroy()]);#close window-not working
+    CancelButton2.pack();
+    CancelButton2.place(x=450, y=320);
+
+    #Create a File button+Label
+    FileLabel = Label(ImportFilePage, text="File",bg='white');
+    FileLabel.pack();
+    FileLabel.place(x=500, y=65);
+
+    FileIcon = Image.open("FileIcon.png")
+    resized_File_Icon = FileIcon.resize((60,60), Image.ANTIALIAS)
+    file_Image = ImageTk.PhotoImage(resized_File_Icon)
+    FileButton=Button(ImportFilePage, image=file_Image, borderwidth=0,command=ImportFilefunction)
+    FileButton.pack()
+    FileButton.place(x=500, y=95);
+
+    #Create a Injection Date
+    InjectionDateLabel = Label(ImportFilePage, text="Injection Date",bg='white');
+    InjectionDateLabel.pack();
+    InjectionDateLabel.place(x=20, y=180);
+
+    InjectionDateLabel2 = Label(ImportFilePage, text="Pick a date");
+    InjectionDateLabel2.pack();
+    InjectionDateLabel2.place(x=20, y=210);
+
+    dateLabelEntry = Entry(ImportFilePage,font=("Halvetica",12));
+    dateLabelEntry.config(width=25);#width of window
+    dateLabelEntry.insert(0, '');
+    dateLabelEntry.pack();
+    dateLabelEntry.place(x=20, y=240);
+
+    ImportFilePage.pack();
+
+
 
 
 # wordFile=open(filename,  errors="ignore");
@@ -358,7 +436,14 @@ def clear_tree():
 
 #######################Add new order page##########################################
 def PopUpForNewOrder():
+    def nextButtonSwap():
+        """ this function is swap function for viewing New order page,frame 2,after pressing "next" """
+        NewOrderMainPage.forget();
+        NewOrdersecondaryPage.pack(fill='both',expand=1);
 
+    # def outputSelectedHospital():
+    #     HospitalLabelSelected=Label(NewOrdersecondaryPage,text=CLickOnHospitalDropMenu.get())
+    #     HospitalLabelSelected.pack();
     # Absorb hosital list data from db
     cursor = db.cursor()
     cursor.execute("SELECT * FROM hospital")
@@ -366,23 +451,33 @@ def PopUpForNewOrder():
     #print(hospitals_in_db);
 
     """This is function for Add new order page """
-    NewOrderMainPage = Toplevel(root);
-    NewOrderMainPage.geometry("900x400");
-    NewOrderMainPage.title("New Order");
-    Label(NewOrderMainPage, text="New Order", font=('Helvetica 17 bold'), fg='#034672').place(x=350, y=18);
+    root = tk.Tk()
+    root.geometry("900x400");
+    root.title("New Order");
 
+    NewOrderMainPage = tk.Frame(root);
+    NewOrdersecondaryPage = tk.Frame(root);
+
+
+    NeworderTitleLabel=Label(NewOrderMainPage, text="New Order", font=('Helvetica 17 bold'), fg='#034672');
+    NeworderTitleLabel.pack();
     # labels
     #Create hospital Drop-down menu
     HospitalListLabel = Label(NewOrderMainPage, text="Hospital",bg='white');
+    HospitalListLabel.pack();
     HospitalListLabel.place(x=20, y=70);
     HospitalList = hospitals_in_db;
+
     CLickOnHospitalDropMenu = StringVar();
     CLickOnHospitalDropMenu.set("Select Hospital"); #default value
+
     HospitalDropDown = OptionMenu(NewOrderMainPage, CLickOnHospitalDropMenu, *HospitalList);
-    HospitalDropDown.config(bg='white');#color of dropdown menu
+    HospitalDropDown.config(width=20,bg='white');#color of dropdown menu
     HospitalDropDown.pack();
     HospitalDropDown.place(x=20, y=100);
 
+    # val1=CLickOnHospitalDropMenu.get();
+    # print(val1)
     #Create Amount of Doses input
     AmountOfDosesLabel = Label(NewOrderMainPage, text="Amount of Doses",bg="white");
     AmountOfDosesLabel.place(x=500, y=80);
@@ -419,11 +514,19 @@ def PopUpForNewOrder():
     AmountOfDosesLabelEntry.pack();
     AmountOfDosesLabelEntry.place(x=20, y=270);
 
+#################page number 2 at New order window##################
+  #  NewOrderMainPage = Toplevel(root);
+   # NewOrdersecondaryLabel=Label(NewOrderMainPage, text="New order-page numer 2", font=('Helvetica 17 bold'), fg='#034672').place(x=350, y=18);
+    # NewOrdersecondaryLabel.pack();
+    # NewOrdersecondaryLabel.geometry("900x400");
+    # NewOrdersecondaryLabel.title("New Order");
+
+########################buttons at New page window#######################
     #Create a next button
     nextFileIcon = Image.open("nextButton.png");
     resized_next_Icon = nextFileIcon.resize((100,50), Image.ANTIALIAS);
     nextImg = ImageTk.PhotoImage(resized_next_Icon);
-    NExtFileButton=Button(NewOrderMainPage, image=nextImg, borderwidth=0);
+    NExtFileButton=Button(NewOrderMainPage,text="Next", borderwidth=0,command=nextButtonSwap);
     NExtFileButton.pack();
     NExtFileButton.place(x=210, y=320);
 
@@ -431,12 +534,35 @@ def PopUpForNewOrder():
     CancelIcon = Image.open("CancelButton.png");
     resized_Cancel_Icon = CancelIcon.resize((100,50), Image.ANTIALIAS);
     CancelImg = ImageTk.PhotoImage(resized_Cancel_Icon);
-    CancelButton=Button(NewOrderMainPage, image=CancelImg, borderwidth=0);
+    CancelButton=Button(NewOrderMainPage,text="cancel", borderwidth=0,command=lambda: [NewOrderMainPage.destroy()]);#close window-not working
     CancelButton.pack();
     CancelButton.place(x=350, y=320);
 
+#########################secondery page for New order page################
+    NewOrdersecondaryLabel=Label(NewOrdersecondaryPage, text="New order", font=('Helvetica 17 bold'), fg='#034672');
+    NewOrdersecondaryLabel.place(x=350, y=18);
 
-    NewOrderMainPage.mainloop();
+    # nextFileIcon = Image.open("nextButton.png");
+    # resized_next_Icon = nextFileIcon.resize((100,50), Image.ANTIALIAS);
+    # nextImg = ImageTk.PhotoImage(resized_next_Icon);
+    AddButton=Button(NewOrdersecondaryPage,text="Add", borderwidth=0,command=nextButtonSwap);
+    AddButton.pack();
+    AddButton.place(x=210, y=320);
+
+    #Create a Cancel button
+    # CancelIcon = Image.open("CancelButton.png");
+    # resized_Cancel_Icon = CancelIcon.resize((100,50), Image.ANTIALIAS);
+    # CancelImg = ImageTk.PhotoImage(resized_Cancel_Icon);
+    CancelButton2=Button(NewOrdersecondaryPage,text="cancel", borderwidth=0,command=lambda: [NewOrdersecondaryPage.destroy()]);#close window-not working
+    CancelButton2.pack();
+    CancelButton2.place(x=350, y=320);
+
+
+    NewOrderMainPage.pack(fill='both',expand=1);
+
+###############################################################################
+
+    #NewOrderMainPage.mainloop();
 
 
 
@@ -468,7 +594,7 @@ SearchLabelicon.place(x=610, y=135);
 ImportFileIcon = Image.open("ImportFile2.png")
 resized_Edit_Icon = ImportFileIcon.resize((80,20), Image.ANTIALIAS)
 img_Edit = ImageTk.PhotoImage(resized_Edit_Icon)
-importFileButton=Button(ordersFrame, image=img_Edit, borderwidth=0,command=openFile)
+importFileButton=Button(ordersFrame, image=img_Edit, borderwidth=0,command=importFileFunc)
 importFileButton.pack()
 importFileButton.place(x=230, y=65)
 

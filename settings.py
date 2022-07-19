@@ -209,7 +209,7 @@ def hospital_page():
 ##################Orders page############################################
 
 ordersFrame = Frame(root)
-h = Scrollbar(ordersFrame, orient='horizontal')
+#h = Scrollbar(ordersFrame, orient='horizontal')
 #ordersFrame.pack(fill=X)
 
 
@@ -411,11 +411,11 @@ settingButton.pack(side=RIGHT, padx=10, pady=3)
 toolbar.pack(side=TOP, fill=X)
 
 toolbar.grid_columnconfigure(1, weight=1)
-#########################################################
+#####################################Setting frame####################
 
 
 SettingsFrame = Frame(root)
-h = Scrollbar(SettingsFrame, orient='horizontal')
+#h = Scrollbar(SettingsFrame, orient='horizontal')
 SettingsFrame.pack(fill='both',expand=1)
 
 # feed label
