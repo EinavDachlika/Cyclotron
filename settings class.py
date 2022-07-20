@@ -165,7 +165,6 @@ class Popup(Toplevel):
 
         #save new values in the db
         updateCyclotronInDB = query
-
         try:
             cursor.execute(updateCyclotronInDB, update_values_list)
             db.commit()
@@ -254,13 +253,16 @@ class Popup(Toplevel):
 
         self.save_cancel_button(save_title, self.update_if_clicked, *args, entries)
 
-    def Add_if_legal(self, query, entries):
+    def Add_if_legal(self, query, list,entries):
         legal=True #check if not null
         input_values_list = self.get_entry(entries)
         if legal:
             try:
                 cursor.execute(query, input_values_list)
                 db.commit()
+                # insert(parent, index, iid=None, **kw)
+                list.insert(parent='', index='end', iid=None, text='',
+                            values=input_values_list)
             except:
                 # Rollback in case there is any error
                 db.rollback()
@@ -287,7 +289,6 @@ class Popup(Toplevel):
             p_label.place(x=p_last_label_x, y=p_last_label_y)
 
             row_num += 1
-
 
             # Entry boxes
             entry_box = Entry(self, width=20)
@@ -566,10 +567,8 @@ cyclo_tabel.create_fully_tabel( columns_name_list, query)
 #
 #
 #    edit_popup.destroy()
-#
-#
-#
-#
+
+
 def editCyclotronfun():
     selected_rec = cyclo_tabel.selected()
     if  cyclo_tabel.focus() =='':
@@ -578,7 +577,6 @@ def editCyclotronfun():
 
         editCyclPopup = Popup()
         editCyclPopup.open_pop('Edit Cyclotron Details')
-
 
         query = "UPDATE resourcecyclotron SET version = %s ,capacity= %s, constant_efficiency= %s,description=%s  WHERE idresourceCyclotron = %s"
         # print(cyclo_tabel.focus())
@@ -597,7 +595,7 @@ def addCyclotronfun():
         save_title = "Add Cyclotron"
         query = "INSERT INTO resourcecyclotron SET version = %s ,capacity= %s, constant_efficiency= %s,description=%s"
 
-        addCyclPopup.add_popup(labels, save_title, query)
+        addCyclPopup.add_popup(labels, save_title, query,cyclo_tabel)
 
 
 # #Create a button in the main Window to edit  record (open the popup) - cyclotron
