@@ -586,7 +586,6 @@ def addCyclotronfun():
         addCyclPopup.add_popup(labels, save_title, query)
 
 
-
 # #Create a button in the main Window to edit  record (open the popup) - cyclotron
 cyclotronEditIcon = Image.open("editIcon.jpg")
 resizedCycloEditIcon = cyclotronEditIcon.resize((20, 20), Image.ANTIALIAS)
