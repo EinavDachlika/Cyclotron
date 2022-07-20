@@ -20,20 +20,20 @@ root.option_add("*Font", "Helvetica")
 # connect to MySqL
 try:
 
-    # Maor local DB Mysql
-    db = mysql.connector.connect(
-        host="localhost",
-        port=3308,
-        user="root",
-        password="root",
-        database="cyclotron")
+    # # Maor local DB Mysql
+    # db = mysql.connector.connect(
+    #     host="localhost",
+    #     port=3308,
+    #     user="root",
+    #     password="root",
+    #     database="cyclotron")
 
     # Einav local DB-Mysql
-    # db = mysql.connector.connect(
-    #   host="localhost",
-    #   user="root",
-    #   password="Cyclotron2022@?%",
-    #   database= "cyclotron")
+    db = mysql.connector.connect(
+      host="localhost",
+      user="root",
+      password="Cyclotron2022@?%",
+      database= "cyclotron")
 
     if db.is_connected():
         # db_Info = db.get_server_info()
@@ -252,10 +252,23 @@ class Popup(Toplevel):
             p_last_label_y += entry_box.winfo_reqheight() + 35 + p_label.winfo_reqheight()
             row_num += 1
 
-            self.save_cancel_button(save_title, self.update_if_clicked, *args, entries)
+        self.save_cancel_button(save_title, self.update_if_clicked, *args, entries)
 
-    def Add_if_legal(self):
-        pass
+    def Add_if_legal(self, query, entries):
+        legal=True #check if not null
+        input_values_list = self.get_entry(entries)
+        if legal:
+            try:
+                cursor.execute(query, input_values_list)
+                db.commit()
+            except:
+                # Rollback in case there is any error
+                db.rollback()
+
+            self.destroy()
+
+        else:
+            print("elegal input")
 
     def add_popup(self, labels, save_title, *args):
         # labels and entry box
@@ -267,7 +280,7 @@ class Popup(Toplevel):
         # grab record values
 
         # temp_label.config(text=selected)
-
+        entries = []
         for lab in labels:
             p_label = Label(self, text=lab[0])
             p_label.grid(row=row_num, column=1)
@@ -275,12 +288,12 @@ class Popup(Toplevel):
 
             row_num += 1
 
-            entries=[]
+
             # Entry boxes
             entry_box = Entry(self, width=20)
             entry_box.grid(row=row_num, column=2)
             entry_box.place(x=p_last_label_x + 4, y=p_last_label_y + 30)
-            entries.append(entry_box)
+            entries.append( entry_box)
 
             if lab[1] != '':
                 p_label_units = Label(self, text=lab[1])
@@ -292,8 +305,7 @@ class Popup(Toplevel):
             p_last_label_y += entry_box.winfo_reqheight() + 35 + p_label.winfo_reqheight()
             row_num += 1
 
-
-            self.save_cancel_button(save_title, self.Add_if_legal,*args, entries ) # will add save.cancel buttons (and click on functions)
+        self.save_cancel_button(save_title, self.Add_if_legal,*args, entries ) # will add save.cancel buttons (and click on functions)
 
 
 class table(ttk.Treeview):
@@ -567,14 +579,6 @@ def editCyclotronfun():
         editCyclPopup = Popup()
         editCyclPopup.open_pop('Edit Cyclotron Details')
 
-        # selected = cyclo_list.focus()
-        # cycloList = cyclo_list.item(selected, 'values')
-        # query = "UPDATE resourcecyclotron SET version = %s ,capacity= %s, constant_efficiency= %s,description=%s  WHERE idresourceCyclotron = %s"
-        # pk = cycloList[4]
-        # labels=(('Version', ''), ('Capacity', '(mci/h)'), ('Constant Efficiency', '(mCi/mA)'), ('Description', ''))
-        # save_title = "Save Changes"
-        #
-        # MYpopup.edit_popup(labels, cycloList,save_title,query, pk, cyclo_list)
 
         query = "UPDATE resourcecyclotron SET version = %s ,capacity= %s, constant_efficiency= %s,description=%s  WHERE idresourceCyclotron = %s"
         # print(cyclo_tabel.focus())
@@ -591,6 +595,7 @@ def addCyclotronfun():
         addCyclPopup.open_pop('Add Cyclotron Details')
         labels = (('Version', ''), ('Capacity', '(mci/h)'), ('Constant Efficiency', '(mCi/mA)'), ('Description', ''))
         save_title = "Add Cyclotron"
+        query = "INSERT INTO resourcecyclotron SET version = %s ,capacity= %s, constant_efficiency= %s,description=%s"
 
         addCyclPopup.add_popup(labels, save_title, query)
 
@@ -613,9 +618,6 @@ addCyclotronButton = Button(SettingsFrame, image=imgAddCyclotron, borderwidth=0,
 addCyclotronButton.pack(side= LEFT)
 addCyclotronButton.place(x=cyclo_Lable_place_x+400, y=cyclo_Lable_place_y+14)
 
+
 SettingsFrame.pack()
 root.mainloop()
-
-
-
-
