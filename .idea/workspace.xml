@@ -16,8 +16,12 @@
     <list default="true" id="57af6b52-10f3-4b95-8aa9-f5e855756cf2" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/codestream.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/codestream.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CancelIcon.png" beforeDir="false" afterPath="$PROJECT_DIR$/Images/CancelIcon.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FileIcon.png" beforeDir="false" afterPath="$PROJECT_DIR$/Images/FileIcon.png" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Orders.py" beforeDir="false" afterPath="$PROJECT_DIR$/Orders.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/settings.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SearchButton.png" beforeDir="false" afterPath="$PROJECT_DIR$/Images/SearchButton.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/nextButton.png" beforeDir="false" afterPath="$PROJECT_DIR$/Images/nextButton.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/saveIcon.png" beforeDir="false" />
     </list>
 >>>>>>> c8e71727cfef34f53067afe1b6a94b8a94ed3fba
     <option name="SHOW_DIALOG" value="false" />
@@ -266,6 +270,9 @@
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="D:\PythonProjects\Cyclotron" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\PythonProjects\Cyclotron\Images" />
     </key>
   </component>
   <component name="RunManager" selected="Python.Orders">

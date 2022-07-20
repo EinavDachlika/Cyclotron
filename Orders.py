@@ -293,7 +293,7 @@ def importFileFunc():
     HospitalDropDown.place(x=20, y=100);
 
     #Create a save button
-    saveFileIcon = Image.open("saveIcon.png");
+    saveFileIcon = Image.open("./Images/saveIcon.png");
     save_next_Icon = saveFileIcon.resize((100,50), Image.ANTIALIAS);
     saveImg = ImageTk.PhotoImage(save_next_Icon);
     saveButton=Button(ImportFilePage,image=saveImg, borderwidth=0);
@@ -301,7 +301,7 @@ def importFileFunc():
     saveButton.place(x=250, y=320);
 
     #Create a Cancel button
-    CancelIcon2 = Image.open("CancelIcon.png");
+    CancelIcon2 = Image.open("./Images/CancelIcon.png");
     resized_Cancel_Icon2 = CancelIcon2.resize((100,50), Image.ANTIALIAS);
     CancelImg2 = ImageTk.PhotoImage(resized_Cancel_Icon2);
     CancelButton2=Button(ImportFilePage,image=CancelImg2, borderwidth=0,command=lambda: [ImportFilePage.destroy()]);#close window-not working
@@ -313,7 +313,7 @@ def importFileFunc():
     FileLabel.pack();
     FileLabel.place(x=500, y=65);
 
-    FileIcon = Image.open("FileIcon.png")
+    FileIcon = Image.open("./Images/FileIcon.png")
     resized_File_Icon = FileIcon.resize((60,60), Image.ANTIALIAS)
     file_Image = ImageTk.PhotoImage(resized_File_Icon)
     FileButton=Button(ImportFilePage, image=file_Image, borderwidth=0,command=ImportFilefunction)
@@ -523,7 +523,7 @@ def PopUpForNewOrder():
 
 ########################buttons at New page window#######################
     #Create a next button
-    nextFileIcon = Image.open("nextButton.png");
+    nextFileIcon = Image.open("./Images/nextButton.png");
     resized_next_Icon = nextFileIcon.resize((100,50), Image.ANTIALIAS);
     nextImg = ImageTk.PhotoImage(resized_next_Icon);
     NExtFileButton=Button(NewOrderMainPage,text="Next", borderwidth=0,command=nextButtonSwap);
@@ -531,7 +531,7 @@ def PopUpForNewOrder():
     NExtFileButton.place(x=210, y=320);
 
     #Create a Cancel button
-    CancelIcon = Image.open("CancelButton.png");
+    CancelIcon = Image.open("./Images/CancelButton.png");
     resized_Cancel_Icon = CancelIcon.resize((100,50), Image.ANTIALIAS);
     CancelImg = ImageTk.PhotoImage(resized_Cancel_Icon);
     CancelButton=Button(NewOrderMainPage,text="cancel", borderwidth=0,command=lambda: [NewOrderMainPage.destroy()]);#close window-not working
@@ -575,7 +575,7 @@ searchEntry.pack();
 searchEntry.place(x=640, y=138);
 
 #Create search icon
-searchIcon = Image.open("SearchButton.png");
+searchIcon = Image.open("./Images/SearchButton.png");
 resizedSearchedEditIcon = searchIcon.resize((23,23), Image.ANTIALIAS);
 SearchImg = ImageTk.PhotoImage(resizedSearchedEditIcon);
 SearchLabelicon=Label(image=SearchImg);
@@ -592,6 +592,7 @@ SearchLabelicon.place(x=610, y=135);
 
 #Create a button for import orders files (Excel or Word)
 ImportFileIcon = Image.open("ImportFile2.png")
+ImportFileIcon = Image.open("ImportFile2.png")
 resized_Edit_Icon = ImportFileIcon.resize((80,20), Image.ANTIALIAS)
 img_Edit = ImageTk.PhotoImage(resized_Edit_Icon)
 importFileButton=Button(ordersFrame, image=img_Edit, borderwidth=0,command=importFileFunc)
@@ -604,7 +605,7 @@ importFileButton.place(x=230, y=65)
 
 
 # Remove button (Icon) - List
-deleteIcon = Image.open("RemoveButton2.png")
+deleteIcon = Image.open("./Images/RemoveButton2.png")
 resizedDeleteIcon = deleteIcon.resize((105,20), Image.ANTIALIAS)
 imgDelete = ImageTk.PhotoImage(resizedDeleteIcon)
 deleteButton=Button(ordersFrame, image=imgDelete, borderwidth=0)
@@ -612,7 +613,7 @@ deleteButton.pack()
 deleteButton.place(x=830, y=65)
 
 #Create New order button
-NewOrderIcon = Image.open("AddnewOrder2.png")
+NewOrderIcon = Image.open("./Images/AddnewOrder2.png")
 resizedNewOrderIconIcon = NewOrderIcon.resize((120,20), Image.ANTIALIAS)
 NewOrderIconimg = ImageTk.PhotoImage(resizedNewOrderIconIcon)
 editButton=Button(ordersFrame, image=NewOrderIconimg, borderwidth=0,command=PopUpForNewOrder)
