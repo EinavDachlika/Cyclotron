@@ -89,13 +89,23 @@ toolbar.grid_columnconfigure(1, weight=1)
 # connect to MySqL
 try:
 
-  db = mysql.connector.connect(
-    host="localhost",
-    user="root",
-    password="Cyclotron2022@?%",
-    database= "cyclotron")
+    #Maor local DB Mysql
+    db = mysql.connector.connect(
+        host="localhost",
+        port=3308,
+        user="root",
+        password="root",
+        database= "cyclotron")
 
-  if db.is_connected():
+    #Einav local DB Mysql
+
+  # db = mysql.connector.connect(
+  #   host="localhost",
+  #   user="root",
+  #   password="Cyclotron2022@?%",
+  #   database= "cyclotron")
+
+    if db.is_connected():
         # db_Info = db.get_server_info()
         # print("Connected to MySQL Server version ", db_Info)
         dbCursor = db.cursor(buffered=True)
