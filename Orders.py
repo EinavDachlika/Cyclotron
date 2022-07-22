@@ -8,11 +8,13 @@ from tkinter import filedialog as fd
 import pandas as pd
 from docx.api import Document
 import aspose.words as aw
+from tkcalendar import Calendar,DateEntry
+from datetime import datetime
 
 ##table code
 #https://pythonguides.com/python-tkinter-table-tutorial/
 
-root = Tk()
+root = tk.Tk();
 #root.geometry("300x300")
 
 
@@ -111,77 +113,79 @@ Cyclotron_scroll = Scrollbar(ordersFrame, orient="vertical", width=25)
 # Cyclotron_scroll.pack(side=LEFT)
 # Cyclotron_scroll.place(x=550, y= 160)
 
-my_label=Label(root,text='');
+#my_label=Label(root,text='');
 
 #Empty page/table for new order
-OrdersTree = ttk.Treeview(ordersFrame,yscrollcommand=Cyclotron_scroll.set, show='headings', columns=('one', 'two','tree','four','five','six'),height=12)
+OrdersTree = ttk.Treeview(ordersFrame,yscrollcommand=Cyclotron_scroll.set,columns=('1', '2'),height=12)
+OrdersTree['show'] = 'tree headings';
 OrdersTree.pack(side=LEFT, padx=PlaceLable_X+50, pady=PlaceLable_Y+80)
 
-OrdersTree.heading("one", text="1");
-OrdersTree.heading("two", text="2");
-OrdersTree.heading("tree", text="3");
-OrdersTree.heading("four", text="4");
-OrdersTree.heading("five", text="5");
-OrdersTree.heading("six", text="6");
+#Foramte Columns
+OrdersTree.column("#0");
+OrdersTree.column("1");
+OrdersTree.column("2");
 
-OrdersTree.insert("" , 0,    text="ID", values=("Hospital","Injection Date","Doses"));
+#Define headers/titles in table
+OrdersTree.heading("#0", text="Hospital");
+OrdersTree.heading("1", text="Injection Date");
+OrdersTree.heading("2", text="Doses");
 #
 # for i in range(3):
 #     OrdersTree.insert("", "end", values=(i,"2","30.06.2022","15.00 mCi","00:00"))
 
 
-#############################Batch quantity Event ######################
-
-BatchList = [
-    "0","1","2","3","4","5"
-]
-
-status = tk.StringVar()
-status.set("0")
-
-#Catch event
-def treeBatchselect(event):
-    row = OrdersTree.focus()
-    if row:
-        status.set(OrdersTree.set(row, 'two'))
-
-OrdersTree.bind('<<TreeviewSelect>>', treeBatchselect)
-
-def set_batch(value):
-    row = OrdersTree.focus()
-    if row:
-        OrdersTree.set(row, '1', value)
-
-
-drop = ttk.OptionMenu(root, status, "0", *BatchList, command=set_batch);
-drop.pack();
+# #############################Batch quantity Event ######################
+#
+# BatchList = [
+#     "0","1","2","3","4","5"
+# ]
+#
+# status = tk.StringVar()
+# status.set("0")
+#
+# #Catch event
+# def treeBatchselect(event):
+#     row = OrdersTree.focus()
+#     if row:
+#         status.set(OrdersTree.set(row, 'two'))
+#
+# OrdersTree.bind('<<TreeviewSelect>>', treeBatchselect)
+#
+# def set_batch(value):
+#     row = OrdersTree.focus()
+#     if row:
+#         OrdersTree.set(row, '1', value)
+#
+#
+# drop = ttk.OptionMenu(root, status, "0", *BatchList, command=set_batch);
+# drop.pack();
 
 #############################Batch Event over######################
 
-############################Injection Time event#########################
-TimeList = [
-    "06:00","06:30","07:00","07:30","08:00","08:30"
-]
+# ############################Injection Time event#########################
+# TimeList = [
+#     "06:00","06:30","07:00","07:30","08:00","08:30"
+# ]
+#
+# status = tk.StringVar()
+# status.set("00:00")
+#
+# #Catch Injection  event
+# def InjectionTimeselect(event):
+#     row = OrdersTree.focus()
+#     if row:
+#         status.set(OrdersTree.set(row, 'five'))
 
-status = tk.StringVar()
-status.set("00:00")
+#OrdersTree.bind('<<TreeviewSelect>>', InjectionTimeselect)
 
-#Catch Injection  event
-def InjectionTimeselect(event):
-    row = OrdersTree.focus()
-    if row:
-        status.set(OrdersTree.set(row, 'five'))
-
-OrdersTree.bind('<<TreeviewSelect>>', InjectionTimeselect)
-
-def setInjectionTime(value):
-    row = OrdersTree.focus()
-    if row:
-        OrdersTree.set(row, '4', value)
-
-
-drop = ttk.OptionMenu(root, status, "00:00", *TimeList, command=setInjectionTime);
-drop.pack();
+# def setInjectionTime(value):
+#     row = OrdersTree.focus()
+#     if row:
+#         OrdersTree.set(row, '4', value)
+#
+#
+# drop = ttk.OptionMenu(root, status, "00:00", *TimeList, command=setInjectionTime);
+# drop.pack();
 
 ############################Injection Time event over#########################
 
@@ -189,15 +193,16 @@ drop.pack();
 
 
 def importFileFunc():
-
+    TempList=["",""];
     def ImportFilefunction():
+
         """This is function for open Orders  files"""
         filename = fd.askopenfilename(
         initialdir="D:\PythonProjects\Cyclotron",
         title="Open a file",
-        filetype=(("Word files","*.docx"),("Word files","*.doc"),("xlsx files","*.xlsx"),("All Files","*.*"),("PDF files","*.pdf")))
+        filetype=(("Word files","*.docx"),("Word files","*.doc"),("Excel files","*.xlsx"),("All Files","*.*"),("PDF files","*.pdf")))
 
-        if filename==True :
+        if filename:
             if  "xlsx" in filename :                  #Excel file
                 try:
                     filename=r"{}".format(filename)
@@ -268,11 +273,11 @@ def importFileFunc():
     cursor.execute("SELECT * FROM hospital")
     hospitals_in_db2 = cursor.fetchall()
 
-    #root = tk.Tk()
-
+################################################Import File page###########################
 
     ImportFilePage = Toplevel(root);
     ImportFilePage.geometry("900x400");
+    ImportFilePage.config(bg="#F0F3F4");#color of page-white-gray
     ImportFilePage.title("Import File");
     #NewOrdersecondaryPage = tk.Frame(root);
 
@@ -284,13 +289,36 @@ def importFileFunc():
     HospitalListLabel.place(x=20, y=70);
     HospitalList2 = hospitals_in_db2;
 
+
     CLickOnHospitalDropMenu2 = StringVar();
     CLickOnHospitalDropMenu2.set("Select Hospital"); #default value
 
-    HospitalDropDown = OptionMenu(ImportFilePage, CLickOnHospitalDropMenu2, *HospitalList2);
+    # def my_upd(*args):                                    # triggered when value of string varaible changes
+    #     l1.config(text=CLickOnHospitalDropMenu2.get());
+    #     # read and display date
+    #
+    # l1=tk.Label(ImportFilePage);  # Label to display date
+    # print(type(l1));
+    # l1.pack();
+    #
+    # CLickOnHospitalDropMenu2.trace('w',my_upd) ;#
+    # on change of string variable
+    #val1=CLickOnHospitalDropMenu2.get();
+    #print(val1)
+    def HospitalChoosecallback(selection):
+           ChoosenHospital=selection;
+           TempList[0]=ChoosenHospital[1];
+           print(TempList[0])
+           # for i in range(30):
+           #  OrdersTree.insert("", "end", values=(ChoosenHospital[1]));
+           #print(selection[1]);
+           return ChoosenHospital;
+
+    HospitalDropDown = OptionMenu(ImportFilePage, CLickOnHospitalDropMenu2, *HospitalList2,command=HospitalChoosecallback);
     HospitalDropDown.config(width=15,bg='white');#color of dropdown menu
     HospitalDropDown.pack();
     HospitalDropDown.place(x=20, y=100);
+
 
     #Create a save button
     saveFileIcon = Image.open("./Images/saveIcon.png");
@@ -321,21 +349,58 @@ def importFileFunc():
     FileButton.place(x=500, y=95);
 
     #Create a Injection Date
+
     InjectionDateLabel = Label(ImportFilePage, text="Injection Date",bg='white');
     InjectionDateLabel.pack();
     InjectionDateLabel.place(x=20, y=180);
-
-    InjectionDateLabel2 = Label(ImportFilePage, text="Pick a date");
+    InjectionDateLabel2 = Label(ImportFilePage, text="Pick a date",fg="gray",font=("Halvetica",10));#fg=color of text
     InjectionDateLabel2.pack();
     InjectionDateLabel2.place(x=20, y=210);
 
-    dateLabelEntry = Entry(ImportFilePage,font=("Halvetica",12));
-    dateLabelEntry.config(width=25);#width of window
-    dateLabelEntry.insert(0, '');
-    dateLabelEntry.pack();
-    dateLabelEntry.place(x=20, y=240);
+    #Calender
+    #add calender icon
+    CalendarIcon = Image.open("./Images/CalendarIcon.png");
+    resizedCalenderIcon = CalendarIcon.resize((23,23), Image.ANTIALIAS);
+    CalenderImg = ImageTk.PhotoImage(resizedCalenderIcon);
+    CalenderLabelicon=Label(ImportFilePage,image=CalenderImg);
+    CalenderLabelicon.pack();
+    CalenderLabelicon.place(x=180, y=238);
 
-    ImportFilePage.pack();
+
+    #Add calender widget/method
+    sel=tk.StringVar() # declaring string variable
+    def print_sel(e):
+        ChoosenDate=cal.get_date();
+        TempList[1]=ChoosenDate;
+        print( TempList[1]);
+        # if ((counter==0) or (counter==null)):
+        counter=0;
+        #Loop throw the tree/table
+        for recordInrow in range(len(TempList)-1):
+         OrdersTree.insert(parent="",index= "end",iid=counter, values=(TempList[0],TempList[1]));
+         OrdersTree.insert(parent=counter,index= "end",iid=counter+2,text=TempList[0]);
+         counter=counter+1;
+
+    cal1=DateEntry(ImportFilePage,selectmode='day',textvariable=sel);
+    cal1.pack(pady = 20);
+    cal1.place(x=20, y=240);
+    cal1.bind("<<DateEntrySelected>>", print_sel);#catch date event
+    # for i in range(len(page_stuff)):
+    #  OrdersTree.insert('', 'end',values=i)
+    #OrdersTree.insert(parent='', index=0, text='', values=(TempList[0],TempList[1]));
+
+
+    # def my_upd(*args): # triggered when value of string varaible changes
+    #     l1.config(text=sel.get()); # read and display date
+    #
+    # l1=tk.Label(ImportFilePage,bg='yellow');  # Label to display date
+    # l1.pack();
+    #
+    # sel.trace('w',my_upd) ;# on change of string variable
+    # print(sel);
+
+    #print(TempList);
+    ImportFilePage.mainloop();
 
 
 
@@ -435,11 +500,15 @@ def clear_tree():
 #Create a button in the main Window to open the popup
 
 #######################Add new order page##########################################
+
+
+############################new order page#########################################
+
 def PopUpForNewOrder():
-    def nextButtonSwap():
-        """ this function is swap function for viewing New order page,frame 2,after pressing "next" """
-        NewOrderMainPage.forget();
-        NewOrdersecondaryPage.pack(fill='both',expand=1);
+    # def nextButtonSwap():
+    #     """ this function is swap function for viewing New order page,frame 2,after pressing "next" """
+    #     NewOrderMainPage.forget();
+    #     NewOrdersecondaryPage.pack(fill='both',expand=1);
 
     # def outputSelectedHospital():
     #     HospitalLabelSelected=Label(NewOrdersecondaryPage,text=CLickOnHospitalDropMenu.get())
@@ -451,16 +520,30 @@ def PopUpForNewOrder():
     #print(hospitals_in_db);
 
     """This is function for Add new order page """
-    root = tk.Tk()
-    root.geometry("900x400");
-    root.title("New Order");
-
-    NewOrderMainPage = tk.Frame(root);
-    NewOrdersecondaryPage = tk.Frame(root);
+    #root = tk.Tk()
 
 
-    NeworderTitleLabel=Label(NewOrderMainPage, text="New Order", font=('Helvetica 17 bold'), fg='#034672');
-    NeworderTitleLabel.pack();
+    NewOrderMainPage =Toplevel(root);
+    NewOrderMainPage.title("New Order");
+    NewOrderMainPage.geometry("1200x600");
+    #NewOrderMainPage.config(bg="#F0F3F4");#Color of page(White-Gray)-Not working
+
+#NewOrderMainPage.place(x=450,y=70);
+
+    #NewOrdersecondaryPage = tk.Frame(root);
+
+# ##################### Module #####################
+# # Module Details label
+# moduleLabel = Label(SettingsFrame, text = 'Module Details', font=('Helvetica',15, 'bold'),fg='#034672')
+# module_Lable_place_x=700
+# module_Lable_place_y=70
+#
+# moduleLabel.pack(side=RIGHT)
+# moduleLabel.place(x=module_Lable_place_x,y=module_Lable_place_y)
+#########################page number 1,New order page#########################################################
+    NeworderTitleLabel=Label(NewOrderMainPage, text="New Order #1",bg="#F0F3F4", font=('Helvetica 17 bold'), fg='#034672');
+    NeworderTitleLabel.pack(side=LEFT,fill = BOTH, expand = True)
+    #NeworderTitleLabel.place(x=80,y=70);
     # labels
     #Create hospital Drop-down menu
     HospitalListLabel = Label(NewOrderMainPage, text="Hospital",bg='white');
@@ -472,7 +555,7 @@ def PopUpForNewOrder():
     CLickOnHospitalDropMenu.set("Select Hospital"); #default value
 
     HospitalDropDown = OptionMenu(NewOrderMainPage, CLickOnHospitalDropMenu, *HospitalList);
-    HospitalDropDown.config(width=20,bg='white');#color of dropdown menu
+    HospitalDropDown.config(width=12,bg='white');#color of dropdown menu
     HospitalDropDown.pack();
     HospitalDropDown.place(x=20, y=100);
 
@@ -480,85 +563,113 @@ def PopUpForNewOrder():
     # print(val1)
     #Create Amount of Doses input
     AmountOfDosesLabel = Label(NewOrderMainPage, text="Amount of Doses",bg="white");
-    AmountOfDosesLabel.place(x=500, y=80);
+    AmountOfDosesLabel.place(x=400, y=80);
     AmountOfDosesLabelEntry = Entry(NewOrderMainPage,font=("Halvetica",12));
     AmountOfDosesLabelEntry.config(width=7);#width of window
     AmountOfDosesLabelEntry.insert(0, '');
     AmountOfDosesLabelEntry.pack();
-    AmountOfDosesLabelEntry.place(x=500, y=120);
+    AmountOfDosesLabelEntry.place(x=400, y=120);
 
 
     #Create Injection time input/entry
     InjectionTimeLabel = Label(NewOrderMainPage, text="Injection Date",bg="white");
-    InjectionTimeLabel.place(x=20, y=150);
-    InjectionTimeLabelEntry = Entry(NewOrderMainPage,font=("Halvetica",12));
-    InjectionTimeLabelEntry.insert(0, '');
-    InjectionTimeLabelEntry.pack();
-    InjectionTimeLabelEntry.place(x=20, y=180);
+    InjectionTimeLabel.place(x=20, y=200);
+
+    #Calender
+    #add calender icon
+    CalendarIcon1 = Image.open("./Images/CalendarIcon.png");
+    resizedCalenderIcon1 = CalendarIcon1.resize((23,23), Image.ANTIALIAS);
+    CalenderImg1 = ImageTk.PhotoImage(resizedCalenderIcon1);
+    CalenderLabelicon1=Label(NewOrderMainPage,image=CalenderImg1);
+    CalenderLabelicon1.pack();
+    CalenderLabelicon1.place(x=180, y=238);
+
+
+    #Add calender widget/method
+    selectDateEvent=tk.StringVar() # declaring string variable
+    def print_sel(e):
+        """ This function print to the tree/table """
+        ChoosenDate=cal.get_date();
+        TempList[1]=ChoosenDate;
+        print( TempList[1]);
+        # if ((counter==0) or (counter==null)):
+        counter=0;
+        #Loop throw the tree/table
+        for recordInrow in range(len(TempList)-1):
+            OrdersTree.insert(parent="",index= "end",iid=counter, values=(TempList[0],TempList[1]));
+            OrdersTree.insert(parent=counter,index= "end",iid=counter+2,text=TempList[0]);
+            counter=counter+1;
+
+    cal=DateEntry(NewOrderMainPage,selectmode='day',textvariable=selectDateEvent);
+    cal.pack(pady = 20);
+    cal.config(width=20);#width of window
+    cal.place(x=20, y=240);
+    cal.bind("<<DateEntrySelected>>", print_sel);#catch date event
+
+
+
+# InjectionTimeLabelEntry = Entry(NewOrderMainPage,font=("Halvetica",12));
+    # InjectionTimeLabelEntry.insert(0, '');
+    # InjectionTimeLabelEntry.pack();
+    # InjectionTimeLabelEntry.place(x=20, y=180);
 
     #
     #Create Time range input/Entry
     TimerangeLabel = Label(NewOrderMainPage, text="Time Range",bg="white");
-    TimerangeLabel.place(x=500, y=150);
+    TimerangeLabel.place(x=400, y=200);
     TimerangeLabelEntry = Entry(NewOrderMainPage,font=("Halvetica",12));
     TimerangeLabelEntry.config(width=7);#width of window
     TimerangeLabelEntry.insert(0, '');
     TimerangeLabelEntry.pack();
-    TimerangeLabelEntry.place(x=500, y=180);
+    TimerangeLabelEntry.place(x=400, y=240);
 
     #Create Beginng time input
     AmountOfDosesLabel = Label(NewOrderMainPage, text="Beginning time",bg="white");
-    AmountOfDosesLabel.place(x=20, y=240);
-    AmountOfDosesLabelEntry = Entry(NewOrderMainPage,font=("Halvetica",12));
-    AmountOfDosesLabelEntry.insert(0, '');
-    AmountOfDosesLabelEntry.pack();
-    AmountOfDosesLabelEntry.place(x=20, y=270);
+    AmountOfDosesLabel.place(x=20, y=300);
+    # AmountOfDosesLabelEntry = Entry(NewOrderMainPage,font=("Halvetica",12));
+    # AmountOfDosesLabelEntry.insert(0, '');
+    # AmountOfDosesLabelEntry.pack();
+    # AmountOfDosesLabelEntry.place(x=20, y=270);
+    InjectionDateLabel2 = Label(NewOrderMainPage, text="Pick a time",fg="gray",font=("Halvetica",10));#fg=color of text
+    InjectionDateLabel2.pack();
+    InjectionDateLabel2.place(x=20, y=330);
 
-#################page number 2 at New order window##################
-  #  NewOrderMainPage = Toplevel(root);
-   # NewOrdersecondaryLabel=Label(NewOrderMainPage, text="New order-page numer 2", font=('Helvetica 17 bold'), fg='#034672').place(x=350, y=18);
-    # NewOrdersecondaryLabel.pack();
-    # NewOrdersecondaryLabel.geometry("900x400");
-    # NewOrdersecondaryLabel.title("New Order");
+    ################FIxed hour,minutes,and secondes########################
+    #Hours
+    sp1 = Spinbox(NewOrderMainPage, from_= 0, to = 24,wrap=True,width=2);
+    sp1.pack();
+    sp1.place(x=20, y=350);
+    # Minutes
+    sp2 = Spinbox(NewOrderMainPage, from_= 0, to = 59,wrap=True,width=2);
+    sp2.pack();
+    sp2.place(x=65, y=350);
 
-########################buttons at New page window#######################
-    #Create a next button
-    nextFileIcon = Image.open("./Images/nextButton.png");
-    resized_next_Icon = nextFileIcon.resize((100,50), Image.ANTIALIAS);
-    nextImg = ImageTk.PhotoImage(resized_next_Icon);
-    NExtFileButton=Button(NewOrderMainPage,text="Next", borderwidth=0,command=nextButtonSwap);
-    NExtFileButton.pack();
-    NExtFileButton.place(x=210, y=320);
 
-    #Create a Cancel button
-    CancelIcon = Image.open("./Images/CancelButton.png");
-    resized_Cancel_Icon = CancelIcon.resize((100,50), Image.ANTIALIAS);
-    CancelImg = ImageTk.PhotoImage(resized_Cancel_Icon);
-    CancelButton=Button(NewOrderMainPage,text="cancel", borderwidth=0,command=lambda: [NewOrderMainPage.destroy()]);#close window-not working
-    CancelButton.pack();
-    CancelButton.place(x=350, y=320);
 
-#########################secondery page for New order page################
-    NewOrdersecondaryLabel=Label(NewOrdersecondaryPage, text="New order", font=('Helvetica 17 bold'), fg='#034672');
-    NewOrdersecondaryLabel.place(x=350, y=18);
+    #####################################New order page numer 2###################################################
 
-    # nextFileIcon = Image.open("nextButton.png");
-    # resized_next_Icon = nextFileIcon.resize((100,50), Image.ANTIALIAS);
-    # nextImg = ImageTk.PhotoImage(resized_next_Icon);
-    AddButton=Button(NewOrdersecondaryPage,text="Add", borderwidth=0,command=nextButtonSwap);
+    NewOrdersecondaryLabel=Label(NewOrderMainPage, text="New order #2",bg="#F0F3F4", font=('Helvetica 17 bold'), fg='#034672');
+    NewOrdersecondaryLabel.pack(side=RIGHT,fill=BOTH, expand=True);
+    #NewOrdersecondaryLabel.place(x=700,y=70);
+
+     #Create ADD button
+    # AddFileIcon = Image.open("./Images/nextButton.png");
+    # resized_add_Icon = AddFileIcon.resize((100,50), Image.ANTIALIAS);
+    # addImg = ImageTk.PhotoImage(resized_add_Icon);
+    AddButton=Button(NewOrderMainPage,text="Add", borderwidth=0);
     AddButton.pack();
-    AddButton.place(x=210, y=320);
+    AddButton.place(x=900, y=320);
 
     #Create a Cancel button
-    # CancelIcon = Image.open("CancelButton.png");
+    # CancelIcon = Image.open("./Images/CancelButton.png");
     # resized_Cancel_Icon = CancelIcon.resize((100,50), Image.ANTIALIAS);
     # CancelImg = ImageTk.PhotoImage(resized_Cancel_Icon);
-    CancelButton2=Button(NewOrdersecondaryPage,text="cancel", borderwidth=0,command=lambda: [NewOrdersecondaryPage.destroy()]);#close window-not working
+    CancelButton2=Button(NewOrderMainPage,text="Cancel", borderwidth=0,command=lambda: [NewOrderMainPage.destroy()]);#close window-not working
     CancelButton2.pack();
-    CancelButton2.place(x=350, y=320);
+    CancelButton2.place(x=1000, y=320);
 
 
-    NewOrderMainPage.pack(fill='both',expand=1);
+    #NewOrderMainPage.pack(fill='both',expand=1);
 
 ###############################################################################
 
@@ -611,6 +722,12 @@ imgDelete = ImageTk.PhotoImage(resizedDeleteIcon)
 deleteButton=Button(ordersFrame, image=imgDelete, borderwidth=0)
 deleteButton.pack()
 deleteButton.place(x=830, y=65)
+
+#remove record
+# def deleteCyclotronfun():
+#     query = "DELETE FROM resourcecyclotron WHERE idresourceCyclotron = %s"
+#     cyclo_tabel.delete_record(query)
+
 
 #Create New order button
 NewOrderIcon = Image.open("./Images/AddnewOrder2.png")
