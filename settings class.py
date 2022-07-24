@@ -88,38 +88,6 @@ Button(toolbar, image=imgSettings, borderwidth=0).pack(side=RIGHT,padx=10,pady=3
 toolbar.pack(side=TOP, fill=X)
 
 toolbar.grid_columnconfigure(1, weight=1)
-##################### ######## #####################
-
-SettingsFrame = Frame(root)
-h = Scrollbar(SettingsFrame, orient='horizontal')
-SettingsFrame.pack(fill=X)
-
-
-# feed label
-feedLabel = Label(SettingsFrame, text = 'Settings', font=('Helvetica',26, 'bold'),fg='#034672')
-PlaceLable_X=50
-PlaceLable_Y=10
-
-feedLabel.pack(side=LEFT)
-feedLabel.place(x=PlaceLable_X,y=PlaceLable_Y)
-
-##################### Cyclotron #####################
-# Cyclotron Details label
-CyclotronLabel = Label(SettingsFrame, text = 'Cyclotron Details', font=('Helvetica',15, 'bold'),fg='#034672')
-cyclo_Lable_place_x=80
-cyclo_Lable_place_y=70
-
-CyclotronLabel.pack(side=LEFT)
-CyclotronLabel.place(x=cyclo_Lable_place_x,y=cyclo_Lable_place_y)
-
-##################### Module #####################
-# Module Details label
-moduleLabel = Label(SettingsFrame, text = 'Module Details', font=('Helvetica',15, 'bold'),fg='#034672')
-module_Lable_place_x=700
-module_Lable_place_y=70
-
-moduleLabel.pack(side=RIGHT)
-moduleLabel.place(x=module_Lable_place_x,y=module_Lable_place_y)
 
 class Popup(Toplevel):
     def __init__(self):
@@ -130,7 +98,6 @@ class Popup(Toplevel):
         self.geometry("900x550")
         self.title(title)
         Label(self, text=title, font=('Helvetica 17 bold'), fg='#034672').place(x=10, y=18)
-
 
         ## in line
         # #labels and entry box
@@ -261,26 +228,28 @@ class Popup(Toplevel):
 
         self.save_cancel_button(save_title, self.update_if_clicked, *args, entries)
 
-    def Add_if_legal(self, query, list, entries):
+    def Add_if_legal(self, Addquery, list,selectMaxIDquery, entries):
         legal=True #check if not null
         input_values_list = self.get_entry(entries)
         if legal:
             try:
-                cursor.execute(query, input_values_list)
+                #insert the record to db
+                cursor.execute(Addquery, input_values_list)
                 db.commit()
-                # cursor.execute("Select From )
-                # data = cursor.fetchall()
+
+                #insert the id from db to values list (not in table) to allow deleting the record without refreshing the page
+                cursor.execute(selectMaxIDquery)
+                data = cursor.fetchall()
+                print(data[0])
+                input_values_list.append(data[0][0])
                 list.insert(parent='', index='end', iid=None, text='',
                             values=input_values_list)
-
 
             except:
                 # Rollback in case there is any error
                 db.rollback()
 
             self.destroy()
-
-
         else:
             print("elegal input")
 
@@ -293,7 +262,6 @@ class Popup(Toplevel):
 
         # grab record values
 
-        # temp_label.config(text=selected)
         entries = []
         for lab in labels:
             p_label = Label(self, text=lab[0])
@@ -400,8 +368,34 @@ class table(ttk.Treeview):
             db.rollback()
 
         self.delete(self.selection()[0])
+#general
+label_font = ('Helvetica',26, 'bold')
+sub_label_font = ('Helvetica',15, 'bold')
+label_color = '#034672'
 
-###cycortion functions###
+##################### settings #####################
+SettingsFrame = Frame(root)
+h = Scrollbar(SettingsFrame, orient='horizontal')
+SettingsFrame.pack(fill=X)
+
+# feed label
+feedLabel = Label(SettingsFrame, text = 'Settings', font=label_font,fg=label_color)
+PlaceLable_X=50
+PlaceLable_Y=10
+
+feedLabel.pack(side=LEFT)
+feedLabel.place(x=PlaceLable_X,y=PlaceLable_Y)
+
+##################### Cyclotron #####################
+# Cyclotron Details label
+CyclotronLabel = Label(SettingsFrame, text = 'Cyclotron Details', font=sub_label_font,fg=label_color)
+cyclo_Lable_place_x=80
+cyclo_Lable_place_y=70
+
+CyclotronLabel.pack(side=LEFT)
+CyclotronLabel.place(x=cyclo_Lable_place_x,y=cyclo_Lable_place_y)
+
+###cycortion tabel###
 scroll_width=20
 tab_side=LEFT
 x=613
@@ -420,8 +414,7 @@ cyclo_tabel=table(frame,scroll_width,list_height,tab_side,x,y,lable_place_x,
 cyclo_tabel.create_fully_tabel( columns_name_list, query)
 
 
-
-
+###cycortion functions###
 def editCyclotronfun():
 
     selected_rec = cyclo_tabel.selected()
@@ -452,12 +445,21 @@ def addCyclotronfun():
     addCyclPopup.open_pop('Add Cyclotron Details')
     labels = (('Version', ''), ('Capacity', '(mci/h)'), ('Constant Efficiency', '(mCi/mA)'), ('Description', ''))
     save_title = "Add Cyclotron"
-    query = "INSERT INTO resourcecyclotron SET version = %s ,capacity= %s, constant_efficiency= %s,description=%s"
+    insertquery = "INSERT INTO resourcecyclotron SET version = %s ,capacity= %s, constant_efficiency= %s,description=%s"
+    selectIDquery = "SELECT MAX(idresourceCyclotron) FROM resourcecyclotron"
+    addCyclPopup.add_popup(labels, save_title, insertquery, cyclo_tabel,selectIDquery)
 
-    addCyclPopup.add_popup(labels, save_title, query, cyclo_tabel)
 
+##################### Module #####################
+# Module Details label
+moduleLabel = Label(SettingsFrame, text = 'Module Details', font=sub_label_font,fg=label_color)
+module_Lable_place_x=700
+module_Lable_place_y=70
 
-###module functions###
+moduleLabel.pack(side=RIGHT)
+moduleLabel.place(x=module_Lable_place_x,y=module_Lable_place_y)
+
+###module tabel###
 
 scroll_width=20
 tab_side=RIGHT
@@ -475,7 +477,7 @@ module_tabel=table(frame,scroll_width,list_height,tab_side,x,y,module_tabel_plac
                    module_Lable_place_y)
 module_tabel.create_fully_tabel( columns_name_list, queryModule)
 
-
+###module functions###
 def editModulefun():
 
     selected_rec = module_tabel.selected()
@@ -501,9 +503,9 @@ def addModulefun():
     addCyclPopup.open_pop('Add Module Details')
     labels = (('Version', ''), ('Capacity', '(mci/h)'), ('Description', ''))
     save_title = "Add Module"
-    query = "INSERT INTO resourcemodule SET version = %s ,capacity= %s,description=%s"
-
-    addCyclPopup.add_popup(labels, save_title, query, module_tabel)
+    insetQuery = "INSERT INTO resourcemodule SET version = %s ,capacity= %s,description=%s"
+    selectIDquery = "SELECT MAX(idresourcemodule) FROM resourcemodule"
+    addCyclPopup.add_popup(labels, save_title, insetQuery, module_tabel,selectIDquery)
 
 def deleteModulefun():
     query = "DELETE FROM resourcecyclotron WHERE idresourcemodule = %s"
@@ -548,7 +550,6 @@ editModuleButton.pack(side= LEFT)
 editModuleButton.place(x=module_Lable_place_x+250, y=module_Lable_place_y+15)
 
 
-
 #Create a button in the main Window to Delete record - module
 moduleDeleteIcon = Image.open("‏‏deleteIcon.png")
 resizedModuleDeleteIcon = moduleDeleteIcon.resize((20, 20), Image.ANTIALIAS)
@@ -566,6 +567,38 @@ addModuleButton.pack(side= LEFT)
 addModuleButton.place(x=module_Lable_place_x+200, y=module_Lable_place_y+14)
 
 
+##################### Hospitals List #####################
+hospitalFrame = Frame(root)
+hospitalFrame.pack(fill=X)
 
-SettingsFrame.pack()
+# hospital label
+hospitalLabel = Label(hospitalFrame, text = 'Hospitals Details', font=label_font,fg=label_color)
+hospital_Lable_place_x=50
+hospital_Lable_place_y=10
+
+hospitalLabel.pack(side=LEFT)
+hospitalLabel.place(x=hospital_Lable_place_x,y=hospital_Lable_place_y)
+
+scroll_width=20
+tab_side=LEFT
+x=613
+y= 160
+frame=hospitalFrame
+list_height=20
+
+columns_name_list=('Name', 'Fixed Activity Level (mci)', 'Transport Time (minutes)')
+
+hospital_query="SELECT * FROM hospital"
+
+hospital_tabel=table(frame,scroll_width,list_height,tab_side,x,y,hospital_Lable_place_x,
+                     hospital_Lable_place_y)
+hospital_tabel.create_fully_tabel( columns_name_list, hospital_query)
+
+hospitalFrame.pack(fill='both',expand=1)
+
+
+
+# SettingsFrame.pack()
+# SettingsFrame.forget()
+hospitalFrame.forget()
 root.mainloop()
