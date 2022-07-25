@@ -22,20 +22,20 @@ root.option_add("*Font", "Helvetica")
 
 # connect to MySqL
 try:
-    # Maor local DB Mysql
-    db = mysql.connector.connect(
-        host="localhost",
-        port=3308,
-        user="root",
-        password="root",
-        database="cyclotron")
+    # # Maor local DB Mysql
+    # db = mysql.connector.connect(
+    #     host="localhost",
+    #     port=3308,
+    #     user="root",
+    #     password="root",
+    #     database="cyclotron")
 
     # Einav local DB-Mysql
-    # db = mysql.connector.connect(
-    #   host="localhost",
-    #   user="root",
-    #   password="Cyclotron2022@?%",
-    #   database= "cyclotron")
+    db = mysql.connector.connect(
+      host="localhost",
+      user="root",
+      password="Cyclotron2022@?%",
+      database= "cyclotron")
 
     if db.is_connected():
         # db_Info = db.get_server_info()
@@ -669,181 +669,181 @@ addCyclotronButton.place(x=cyclo_Lable_place_x + 400, y=cyclo_Lable_place_y + 14
 # add_button.place(x=370, y=265)
 
 
-#
-#
-# ##################### Module #####################
-# # Module Details label
-# moduleLabel = Label(SettingsFrame, text = 'Module Details', font=('Helvetica',15, 'bold'),fg='#034672')
-# module_Lable_place_x=700
-# module_Lable_place_y=70
-#
-# moduleLabel.pack(side=RIGHT)
-# moduleLabel.place(x=module_Lable_place_x,y=module_Lable_place_y)
-#
-#
-# # scrollbar
-# Module_scroll = Scrollbar(SettingsFrame ,orient="vertical",width=20)
-# Module_scroll.pack(side=RIGHT)
-# Module_scroll.place(x=1035, y= 160)
-#
-# module_list = ttk.Treeview(SettingsFrame, yscrollcommand=Module_scroll.set,height=5)
-#
-# module_list.pack(side=LEFT, padx=0, pady=module_Lable_place_y+50)
-#
-#
-#
-# # Module_scroll.config(command=cyclo_list.yview)
-# # Module_scroll.config(command=cyclo_list.xview)
-#
-# # column define
-#
-# module_list['columns'] = ('Version', 'Capacity (mci/h)', 'Description')
-#
-#
-# module_list.column("#0", width=0, stretch=NO)
-# module_list.column("Version", anchor=CENTER, width=width_Version)
-# module_list.column("Capacity (mci/h)", anchor=CENTER, width=width_Capacity)
-# module_list.column("Description", anchor=CENTER, width=width_Description)
-#
-# # Create Headings
-# module_list.heading("#0", text="", anchor=CENTER)
-# module_list.heading("Version", text="Version", anchor=CENTER)
-# module_list.heading("Capacity (mci/h)", text="Capacity (mci/h)", anchor=CENTER)
-# module_list.heading("Description", text="Description", anchor=CENTER)
-#
-# # add data from db
-# cursor = db.cursor()
-# cursor.execute("SELECT * FROM resourcemodule")
-# modules = cursor.fetchall()
-#
-# iid=0
-# for module in modules:
-#     print(module)
-#     cyclo_list.insert(parent='', index='end', iid=iid, text='',
-#                values=(module[1], module[2], module[3]))
-#     iid +=1
-#
-# module_list.pack()
-#
-# get_version=""
-# get_capacity=""
-# get_efficiency=""
-# get_description=""
-#
-# def open_popup_module():
-#    edit_popup= Toplevel(root)
-#    edit_popup.geometry("900x400")
-#    edit_popup.title("Edit Module Details")
-#    Label(edit_popup, text= "Edit Module Details", font=('Helvetica 17 bold'), fg='#034672').place(x=10,y=18)
-#
-#    # labels
-#    popup_label_y=80
-#    Version = Label(edit_popup, text="Version")
-#    Version.grid(row=1, column=1)
-#    version_x = 20
-#    Version.place(x=version_x, y=popup_label_y)
-#
-#
-#    Capacity = Label(edit_popup, text="Capacity")
-#    Capacity_units = Label(edit_popup, text="(mci/h)")
-#    Capacity_units.config(font=("Courier", 9))
-#    Capacity.grid(row=1, column=2)
-#    capacity_x = version_x+Version.winfo_reqwidth()+70
-#    Capacity.place(x=capacity_x, y=popup_label_y)
-#    capacity_units_x=capacity_x + Capacity.winfo_reqwidth()
-#    Capacity_units.place(x=capacity_units_x, y=popup_label_y+7)
-#
-#
-#    Description = Label(edit_popup, text="Description")
-#    Description.grid(row=1, column=3)
-#    description_x = capacity_units_x + Capacity_units.winfo_reqwidth() + 50
-#    Description.place(x=description_x, y=popup_label_y)
-#
-#    # Entry boxes
-#    Version_entry = Entry(edit_popup, width=10)
-#    Version_entry.grid(row=2, column=1)
-#    Version_entry.place(x=version_x+3, y=popup_label_y+30)
-#
-#    Capacity_entry = Entry(edit_popup, width=14)
-#    Capacity_entry.grid(row=2, column=2)
-#    Capacity_entry.place(x=capacity_x, y=popup_label_y+30)
-#
-#
-#    Description_entry = Entry(edit_popup,width=15)
-#    Description_entry.grid(row=2, column=4)
-#    Description_entry.place(x=description_x, y=popup_label_y+30)
-#
-#
-#    # clear entry boxes
-#    Version_entry.delete(0, END)
-#    Capacity_entry.delete(0, END)
-#    Description_entry.delete(0, END)
-#
-#    # grab record
-#    selected = module_list.focus()
-#    # grab record values
-#    values = module_list.item(selected, 'values')
-#    # temp_label.config(text=selected)
-#
-#    # output to entry boxes
-#    Version_entry.insert(0, values[0])
-#    Capacity_entry.insert(0, values[1])
-#    Description_entry.insert(0, values[2])
-#
-#    get_version = Version_entry.get()
-#    print(get_version)
-#    get_capacity = Capacity_entry.get()
-#    get_description = Description_entry.get()
-#
-#    select_button = Button(edit_popup, text="Save Changes", command=update_record)
-#    select_button.pack(side=LEFT)
-#    select_button.place(x=370, y=250)
-#
-#
-# #Create a button in the main Window to edit  record (open the popup) - module
-# moduleEditIcon = Image.open("editIcon.jpg")
-# resizedModuleEditIcon = moduleEditIcon.resize((20, 20), Image.ANTIALIAS)
-# imgEditModule = ImageTk.PhotoImage(resizedModuleEditIcon)
-# editModuleButton = Button(SettingsFrame, image=imgEditModule, borderwidth=0, command=open_popup_module)
-# editModuleButton.pack(side= LEFT)
-# editModuleButton.place(x=module_Lable_place_x+250, y=module_Lable_place_y+15)
-#
-# # edit_button = Button(SettingsFrame, text= "Edit", command= open_popup_module)
-# # edit_button.pack(side= LEFT)
-# # edit_button.place(x=790, y=270)
-#
-# #Create a button in the main Window to Delete record - module
-# moduleDeleteIcon = Image.open("‏‏deleteIcon.png")
-# resizedModuleDeleteIcon = moduleDeleteIcon.resize((20, 20), Image.ANTIALIAS)
-# imgDeleteModule = ImageTk.PhotoImage(resizedModuleDeleteIcon)
-# deleteModuleButton = Button(SettingsFrame, image=imgDeleteModule, borderwidth=0, command=open_popup_module)
-# deleteModuleButton.pack(side= LEFT)
-# deleteModuleButton.place(x=module_Lable_place_x+300, y=module_Lable_place_y+15)
-#
-# #Create a button in the main Window to add record - module
-# moduleAddIcon = Image.open("addIcon.png")
-# resizedModuleAddIcon = moduleAddIcon.resize((25, 25), Image.ANTIALIAS)
-# imgAddModule = ImageTk.PhotoImage(resizedModuleAddIcon)
-# addModuleButton = Button(SettingsFrame, image=imgAddModule, borderwidth=0, command=open_popup_cyclotron)
-# addModuleButton.pack(side= LEFT)
-# addModuleButton.place(x=module_Lable_place_x+200, y=module_Lable_place_y+14)
-#
-# # add_button = Button(SettingsFrame, text="Add", command= open_popup_cyclotron)
-# # add_button.pack(side= LEFT)
-# # add_button.place(x=890, y=270)
-#
-# def update_record():
-#     selected = cyclo_list.focus()
-#     # save new data
-#     print("get_version"+get_version)
-#     cyclo_list.item(selected, text="", values=(get_version, get_capacity, get_efficiency, get_description))
-#
-#     # # clear entry boxes
-#     # Version_entry.delete(0, END)
-#     # Capacity_entry.delete(0, END)
-#     # Efficiency_entry.delete(0, END)
-#
-#
+
+
+##################### Module #####################
+# Module Details label
+moduleLabel = Label(SettingsFrame, text = 'Module Details', font=('Helvetica',15, 'bold'),fg='#034672')
+module_Lable_place_x=700
+module_Lable_place_y=70
+
+moduleLabel.pack(side=RIGHT)
+moduleLabel.place(x=module_Lable_place_x,y=module_Lable_place_y)
+
+
+# scrollbar
+Module_scroll = Scrollbar(SettingsFrame ,orient="vertical",width=20)
+Module_scroll.pack(side=RIGHT)
+Module_scroll.place(x=1035, y= 160)
+
+module_list = ttk.Treeview(SettingsFrame, yscrollcommand=Module_scroll.set,height=5)
+
+module_list.pack(side=LEFT, padx=0, pady=module_Lable_place_y+50)
+
+
+
+# Module_scroll.config(command=cyclo_list.yview)
+# Module_scroll.config(command=cyclo_list.xview)
+
+# column define
+
+module_list['columns'] = ('Version', 'Capacity (mci/h)', 'Description')
+
+
+module_list.column("#0", width=0, stretch=NO)
+module_list.column("Version", anchor=CENTER, width=width_Version)
+module_list.column("Capacity (mci/h)", anchor=CENTER, width=width_Capacity)
+module_list.column("Description", anchor=CENTER, width=width_Description)
+
+# Create Headings
+module_list.heading("#0", text="", anchor=CENTER)
+module_list.heading("Version", text="Version", anchor=CENTER)
+module_list.heading("Capacity (mci/h)", text="Capacity (mci/h)", anchor=CENTER)
+module_list.heading("Description", text="Description", anchor=CENTER)
+
+# add data from db
+cursor = db.cursor()
+cursor.execute("SELECT * FROM resourcemodule")
+modules = cursor.fetchall()
+
+iid=0
+for module in modules:
+    print(module)
+    cyclo_list.insert(parent='', index='end', iid=iid, text='',
+               values=(module[1], module[2], module[3]))
+    iid +=1
+
+module_list.pack()
+
+get_version=""
+get_capacity=""
+get_efficiency=""
+get_description=""
+
+def open_popup_module():
+   edit_popup= Toplevel(root)
+   edit_popup.geometry("900x400")
+   edit_popup.title("Edit Module Details")
+   Label(edit_popup, text= "Edit Module Details", font=('Helvetica 17 bold'), fg='#034672').place(x=10,y=18)
+
+   # labels
+   popup_label_y=80
+   Version = Label(edit_popup, text="Version")
+   Version.grid(row=1, column=1)
+   version_x = 20
+   Version.place(x=version_x, y=popup_label_y)
+
+
+   Capacity = Label(edit_popup, text="Capacity")
+   Capacity_units = Label(edit_popup, text="(mci/h)")
+   Capacity_units.config(font=("Courier", 9))
+   Capacity.grid(row=1, column=2)
+   capacity_x = version_x+Version.winfo_reqwidth()+70
+   Capacity.place(x=capacity_x, y=popup_label_y)
+   capacity_units_x=capacity_x + Capacity.winfo_reqwidth()
+   Capacity_units.place(x=capacity_units_x, y=popup_label_y+7)
+
+
+   Description = Label(edit_popup, text="Description")
+   Description.grid(row=1, column=3)
+   description_x = capacity_units_x + Capacity_units.winfo_reqwidth() + 50
+   Description.place(x=description_x, y=popup_label_y)
+
+   # Entry boxes
+   Version_entry = Entry(edit_popup, width=10)
+   Version_entry.grid(row=2, column=1)
+   Version_entry.place(x=version_x+3, y=popup_label_y+30)
+
+   Capacity_entry = Entry(edit_popup, width=14)
+   Capacity_entry.grid(row=2, column=2)
+   Capacity_entry.place(x=capacity_x, y=popup_label_y+30)
+
+
+   Description_entry = Entry(edit_popup,width=15)
+   Description_entry.grid(row=2, column=4)
+   Description_entry.place(x=description_x, y=popup_label_y+30)
+
+
+   # clear entry boxes
+   Version_entry.delete(0, END)
+   Capacity_entry.delete(0, END)
+   Description_entry.delete(0, END)
+
+   # grab record
+   selected = module_list.focus()
+   # grab record values
+   values = module_list.item(selected, 'values')
+   # temp_label.config(text=selected)
+
+   # output to entry boxes
+   Version_entry.insert(0, values[0])
+   Capacity_entry.insert(0, values[1])
+   Description_entry.insert(0, values[2])
+
+   get_version = Version_entry.get()
+   print(get_version)
+   get_capacity = Capacity_entry.get()
+   get_description = Description_entry.get()
+
+   select_button = Button(edit_popup, text="Save Changes", command=update_record)
+   select_button.pack(side=LEFT)
+   select_button.place(x=370, y=250)
+
+
+#Create a button in the main Window to edit  record (open the popup) - module
+moduleEditIcon = Image.open("editIcon.jpg")
+resizedModuleEditIcon = moduleEditIcon.resize((20, 20), Image.ANTIALIAS)
+imgEditModule = ImageTk.PhotoImage(resizedModuleEditIcon)
+editModuleButton = Button(SettingsFrame, image=imgEditModule, borderwidth=0, command=open_popup_module)
+editModuleButton.pack(side= LEFT)
+editModuleButton.place(x=module_Lable_place_x+250, y=module_Lable_place_y+15)
+
+# edit_button = Button(SettingsFrame, text= "Edit", command= open_popup_module)
+# edit_button.pack(side= LEFT)
+# edit_button.place(x=790, y=270)
+
+#Create a button in the main Window to Delete record - module
+moduleDeleteIcon = Image.open("‏‏deleteIcon.png")
+resizedModuleDeleteIcon = moduleDeleteIcon.resize((20, 20), Image.ANTIALIAS)
+imgDeleteModule = ImageTk.PhotoImage(resizedModuleDeleteIcon)
+deleteModuleButton = Button(SettingsFrame, image=imgDeleteModule, borderwidth=0, command=open_popup_module)
+deleteModuleButton.pack(side= LEFT)
+deleteModuleButton.place(x=module_Lable_place_x+300, y=module_Lable_place_y+15)
+
+#Create a button in the main Window to add record - module
+moduleAddIcon = Image.open("addIcon.png")
+resizedModuleAddIcon = moduleAddIcon.resize((25, 25), Image.ANTIALIAS)
+imgAddModule = ImageTk.PhotoImage(resizedModuleAddIcon)
+addModuleButton = Button(SettingsFrame, image=imgAddModule, borderwidth=0, command=open_popup_cyclotron)
+addModuleButton.pack(side= LEFT)
+addModuleButton.place(x=module_Lable_place_x+200, y=module_Lable_place_y+14)
+
+# add_button = Button(SettingsFrame, text="Add", command= open_popup_cyclotron)
+# add_button.pack(side= LEFT)
+# add_button.place(x=890, y=270)
+
+def update_record():
+    selected = cyclo_list.focus()
+    # save new data
+    print("get_version"+get_version)
+    cyclo_list.item(selected, text="", values=(get_version, get_capacity, get_efficiency, get_description))
+
+    # # clear entry boxes
+    # Version_entry.delete(0, END)
+    # Capacity_entry.delete(0, END)
+    # Efficiency_entry.delete(0, END)
+
+
 # # # save Record
 # # def update_record():
 # #     selected = cyclo_list.focus()

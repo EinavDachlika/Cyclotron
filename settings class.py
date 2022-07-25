@@ -298,7 +298,7 @@ class table(ttk.Treeview):
         scroll.place(x=x_crol, y=y_crol)
         ttk.Treeview.__init__(self,frame, yscrollcommand=scroll.set, height=list_height)
         self.pack(side=LEFT, padx=lable_place_x + 30, pady=lable_place_y + 50)
-
+        scroll.config(command=self.yview)
 
         # list = self.(frame, yscrollcommand=scroll.set, height=list_height)
 
@@ -332,7 +332,6 @@ class table(ttk.Treeview):
 
 
         cursor.execute(query)
-
         data = cursor.fetchall()
 
         iid=0
@@ -449,6 +448,34 @@ def addCyclotronfun():
     selectIDquery = "SELECT MAX(idresourceCyclotron) FROM resourcecyclotron"
     addCyclPopup.add_popup(labels, save_title, insertquery, cyclo_tabel,selectIDquery)
 
+#cyclotron buttons
+#Create a button in the main Window to edit  record (open the popup) - cyclotron
+cyclotronEditIcon = Image.open("editIcon.jpg")
+resizedCycloEditIcon = cyclotronEditIcon.resize((20, 20), Image.ANTIALIAS)
+imgEditCyclotron = ImageTk.PhotoImage(resizedCycloEditIcon)
+# editCyclotronButton = Button(SettingsFrame, image=imgEditCyclotron, borderwidth=0, command= lambda :editCyclotronfun())
+editCyclotronButton = Button(SettingsFrame, image=imgEditCyclotron, borderwidth=0, command= lambda :editCyclotronfun())
+
+editCyclotronButton.pack(side= LEFT)
+editCyclotronButton.place(x=cyclo_Lable_place_x+450, y=cyclo_Lable_place_y+15)
+
+#Create a button in the main Window to add record - cyclotron
+cyclotronAddIcon = Image.open("addIcon.png")
+resizedCycloAddIcon = cyclotronAddIcon.resize((25, 25), Image.ANTIALIAS)
+imgAddCyclotron = ImageTk.PhotoImage(resizedCycloAddIcon)
+addCyclotronButton = Button(SettingsFrame, image=imgAddCyclotron, borderwidth=0, command=lambda : addCyclotronfun())
+addCyclotronButton.pack(side= LEFT)
+addCyclotronButton.place(x=cyclo_Lable_place_x+400, y=cyclo_Lable_place_y+14)
+
+
+# Create a button in the main Window to Delete record - cyclotron
+cyclotronDeleteIcon = Image.open("‏‏deleteIcon.png")
+resizedCycloDeleteIcon = cyclotronDeleteIcon.resize((20, 20), Image.ANTIALIAS)
+imgDeleteCyclotron = ImageTk.PhotoImage(resizedCycloDeleteIcon)
+deleteCyclotronButton = Button(SettingsFrame, image=imgDeleteCyclotron, borderwidth=0, command=lambda : deleteCyclotronfun())
+deleteCyclotronButton.pack(side=LEFT)
+deleteCyclotronButton.place(x=cyclo_Lable_place_x + 500, y=cyclo_Lable_place_y + 15)
+
 
 ##################### Module #####################
 # Module Details label
@@ -460,7 +487,6 @@ moduleLabel.pack(side=RIGHT)
 moduleLabel.place(x=module_Lable_place_x,y=module_Lable_place_y)
 
 ###module tabel###
-
 scroll_width=20
 tab_side=RIGHT
 x=1035
@@ -512,34 +538,6 @@ def deleteModulefun():
     module_tabel.delete_record(query)
 
 
-# #Create a button in the main Window to edit  record (open the popup) - cyclotron
-cyclotronEditIcon = Image.open("editIcon.jpg")
-resizedCycloEditIcon = cyclotronEditIcon.resize((20, 20), Image.ANTIALIAS)
-imgEditCyclotron = ImageTk.PhotoImage(resizedCycloEditIcon)
-# editCyclotronButton = Button(SettingsFrame, image=imgEditCyclotron, borderwidth=0, command= lambda :editCyclotronfun())
-editCyclotronButton = Button(SettingsFrame, image=imgEditCyclotron, borderwidth=0, command= lambda :editCyclotronfun())
-
-editCyclotronButton.pack(side= LEFT)
-editCyclotronButton.place(x=cyclo_Lable_place_x+450, y=cyclo_Lable_place_y+15)
-
-#Create a button in the main Window to add record - cyclotron
-cyclotronAddIcon = Image.open("addIcon.png")
-resizedCycloAddIcon = cyclotronAddIcon.resize((25, 25), Image.ANTIALIAS)
-imgAddCyclotron = ImageTk.PhotoImage(resizedCycloAddIcon)
-addCyclotronButton = Button(SettingsFrame, image=imgAddCyclotron, borderwidth=0, command=lambda : addCyclotronfun())
-addCyclotronButton.pack(side= LEFT)
-addCyclotronButton.place(x=cyclo_Lable_place_x+400, y=cyclo_Lable_place_y+14)
-
-
-# Create a button in the main Window to Delete record - cyclotron
-cyclotronDeleteIcon = Image.open("‏‏deleteIcon.png")
-resizedCycloDeleteIcon = cyclotronDeleteIcon.resize((20, 20), Image.ANTIALIAS)
-imgDeleteCyclotron = ImageTk.PhotoImage(resizedCycloDeleteIcon)
-deleteCyclotronButton = Button(SettingsFrame, image=imgDeleteCyclotron, borderwidth=0, command=lambda : deleteCyclotronfun())
-deleteCyclotronButton.pack(side=LEFT)
-deleteCyclotronButton.place(x=cyclo_Lable_place_x + 500, y=cyclo_Lable_place_y + 15)
-
-
 #module buttons
 #Create a button in the main Window to edit  record (open the popup) - module
 moduleEditIcon = Image.open("editIcon.jpg")
@@ -573,32 +571,97 @@ hospitalFrame.pack(fill=X)
 
 # hospital label
 hospitalLabel = Label(hospitalFrame, text = 'Hospitals Details', font=label_font,fg=label_color)
-hospital_Lable_place_x=50
-hospital_Lable_place_y=10
+hospital_Lable_place_x=60
+hospital_Lable_place_y=40
 
 hospitalLabel.pack(side=LEFT)
 hospitalLabel.place(x=hospital_Lable_place_x,y=hospital_Lable_place_y)
 
 scroll_width=20
 tab_side=LEFT
-x=613
+x=650
 y= 160
 frame=hospitalFrame
 list_height=20
+c = 80
 
-columns_name_list=('Name', 'Fixed Activity Level (mci)', 'Transport Time (minutes)')
+lable_place_x = 80
+lable_place_y=70
+
+columns_name_list=('        Name        ', 'Fixed Activity Level (mci)', 'Transport Time (minutes)')
 
 hospital_query="SELECT * FROM hospital"
 
-hospital_tabel=table(frame,scroll_width,list_height,tab_side,x,y,hospital_Lable_place_x,
-                     hospital_Lable_place_y)
+hospital_tabel=table(frame,scroll_width,list_height,tab_side,x,y,lable_place_x,
+                     lable_place_y)
 hospital_tabel.create_fully_tabel( columns_name_list, hospital_query)
 
 hospitalFrame.pack(fill='both',expand=1)
 
+###hospital functions###
+def editHospitalfun():
+    selected_rec = hospital_tabel.selected()
+    if  hospital_tabel.focus() =='':
+        print('empty') #message
+    else:
+        editHospitalPopup = Popup()
+        editHospitalPopup.open_pop('Edit Hospital Details')
+
+        query = "UPDATE hospital SET Name = %s ,Fixed_activity_level= %s, Transport_time=%s  WHERE idhospital = %s"
+
+        pk = selected_rec[3]
+
+        labels = (('Name', ''), ('Fixed activity level', '(mci/h)'),  ('Transport time', '(min)'))
+        save_title = "Save Changes"
+
+        editHospitalPopup.edit_popup(labels, selected_rec, save_title, query, pk, hospital_tabel)
+
+
+def addHospitalfun():
+    addHospitalPopup = Popup()
+    addHospitalPopup.open_pop('Add Hospital Details')
+    labels = (('Name', ''), ('Fixed activity level', '(mci/h)'), ('Description', ''))
+    save_title = "Add Hospital"
+    insetQuery = "INSERT INTO hospital SET Name = %s ,Fixed_activity_level= %s,Transport_time=%s"
+    selectIDquery = "SELECT MAX(idhospital) FROM hospital"
+    addHospitalPopup.add_popup(labels, save_title, insetQuery, hospital_tabel,selectIDquery)
+
+def deleteHospitalfun():
+    query = "DELETE FROM hospital WHERE idhospital = %s"
+    hospital_tabel.delete_record(query)
+
+
+#hospital buttons
+#Create a button in the main Window to edit  record (open the popup) - hospital
+hospitalEditIcon = Image.open("editIcon.jpg")
+resizedHospitalEditIcon = hospitalEditIcon.resize((20, 20), Image.ANTIALIAS)
+imgEditHospital = ImageTk.PhotoImage(resizedHospitalEditIcon)
+editHospitalButton = Button(hospitalFrame, image=imgEditHospital, borderwidth=0, command= lambda :editHospitalfun())
+
+editHospitalButton.pack(side= LEFT)
+editHospitalButton.place(x=lable_place_x+450, y=lable_place_y+15)
+
+#Create a button in the main Window to add record - hospital
+hospitalAddIcon = Image.open("addIcon.png")
+resizedHospitalAddIcon = hospitalAddIcon.resize((25, 25), Image.ANTIALIAS)
+imgAddHospital = ImageTk.PhotoImage(resizedHospitalAddIcon)
+addHospitalButton = Button(hospitalFrame, image=imgAddHospital, borderwidth=0, command=lambda : addHospitalfun())
+addHospitalButton.pack(side= LEFT)
+addHospitalButton.place(x=lable_place_x+400, y=lable_place_y+14)
+
+
+# Create a button in the main Window to Delete record - hospital
+hospitalDeleteIcon = Image.open("‏‏deleteIcon.png")
+resizedHospitalDeleteIcon = hospitalDeleteIcon.resize((20, 20), Image.ANTIALIAS)
+imgDeleteHospital = ImageTk.PhotoImage(resizedHospitalDeleteIcon)
+deleteHospitalButton = Button(hospitalFrame, image=imgDeleteHospital, borderwidth=0, command=lambda : deleteHospitalfun())
+deleteHospitalButton.pack(side=LEFT)
+deleteHospitalButton.place(x=lable_place_x + 500, y=lable_place_y + 15)
+
+
 
 
 # SettingsFrame.pack()
-# SettingsFrame.forget()
-hospitalFrame.forget()
+SettingsFrame.forget()
+# hospitalFrame.forget()
 root.mainloop()
