@@ -129,65 +129,7 @@ OrdersTree.heading("1", text="Injection Date");
 OrdersTree.heading("2", text="Doses");
 #
 # for i in range(3):
-#     OrdersTree.insert("", "end", values=(i,"2","30.06.2022","15.00 mCi","00:00"))
-
-
-# #############################Batch quantity Event ######################
-#
-# BatchList = [
-#     "0","1","2","3","4","5"
-# ]
-#
-# status = tk.StringVar()
-# status.set("0")
-#
-# #Catch event
-# def treeBatchselect(event):
-#     row = OrdersTree.focus()
-#     if row:
-#         status.set(OrdersTree.set(row, 'two'))
-#
-# OrdersTree.bind('<<TreeviewSelect>>', treeBatchselect)
-#
-# def set_batch(value):
-#     row = OrdersTree.focus()
-#     if row:
-#         OrdersTree.set(row, '1', value)
-#
-#
-# drop = ttk.OptionMenu(root, status, "0", *BatchList, command=set_batch);
-# drop.pack();
-
-#############################Batch Event over######################
-
-# ############################Injection Time event#########################
-# TimeList = [
-#     "06:00","06:30","07:00","07:30","08:00","08:30"
-# ]
-#
-# status = tk.StringVar()
-# status.set("00:00")
-#
-# #Catch Injection  event
-# def InjectionTimeselect(event):
-#     row = OrdersTree.focus()
-#     if row:
-#         status.set(OrdersTree.set(row, 'five'))
-
-#OrdersTree.bind('<<TreeviewSelect>>', InjectionTimeselect)
-
-# def setInjectionTime(value):
-#     row = OrdersTree.focus()
-#     if row:
-#         OrdersTree.set(row, '4', value)
-#
-#
-# drop = ttk.OptionMenu(root, status, "00:00", *TimeList, command=setInjectionTime);
-# drop.pack();
-
-############################Injection Time event over#########################
-
-
+#     OrdersTree.insert("", "end", values=(i,"2","30.06.2022"))
 
 
 def importFileFunc():
@@ -568,28 +510,32 @@ def PopUpForNewOrder():
     HospitalDropDown.pack();
     HospitalDropDown.place(x=20, y=100);
 
-    # declaring string variable
-    # for storing amount and and time
+    # declaring string variable for storing amount
     amountVar=tk.StringVar();
-    #passw_var=tk.StringVar();
-    # defining a function that will
-    # get the amount and time and
-    # print them on the screen
+    # declaring string variable for storing time
     HoursVar = StringVar();
     MinutesVar = StringVar();
-
+    #global amount;
+    global idCounter;
+    ListofVal=["","",""];
     def submit():
         #Get Time varibles avent,hous and minutes
         Minutes_Var=MinutesVar.get();
         Hours_Var=HoursVar.get();
         BeginigHour=int(Hours_Var);
-        #i=0;
         #get amount event variable
         amount=amountVar.get();
         IntAmount=(int(amount));
+        ListofVal[0]=idCounter=0;
+        ListofVal[1]=amountIndividual=(IntAmount/IntAmount);
+        ListofVal[2]=BeginigHour;
         #Enter data to the the table
-        for i,j in zip(range(IntAmount),range(BeginigHour,IntAmount)):
-            NewOrderTree_P2.insert("", "end", values=(i,IntAmount/IntAmount,j))
+        # for idCounter,j in zip(range(IntAmount),range(BeginigHour,IntAmount)):
+        #     NewOrderTree_P2.insert("", "end", values=(idCounter,amount2,j));
+        for record in range(int(IntAmount)):
+            NewOrderTree_P2.insert("", "end", values=( ListofVal[0],ListofVal[1],ListofVal[2]));
+            ListofVal[0]= ListofVal[0]+1;
+
 
         amountVar.set("");
         MinutesVar.set("");
@@ -724,7 +670,7 @@ def PopUpForNewOrder():
     CancelButton2.place(x=1000, y=520);
 
 
-    #Empty page/table for new order
+    #Empty page/table for new order,create New tree for page 2
     NewOrderTree_P2 = ttk.Treeview(NewOrderMainPage,yscrollcommand=Cyclotron_scroll.set,height=15);
     NewOrderTree_P2['columns']= ("ID","Amount","Injection time")
     #NewOrderTree_P2['show'] = 'tree headings';
@@ -742,6 +688,70 @@ def PopUpForNewOrder():
     NewOrderTree_P2.heading("Amount", text="Amount",anchor=CENTER);
     NewOrderTree_P2.heading("Injection time", text="Injection time",anchor=W);
 
+    #############################Amount quantity Event ######################
+
+    AmountList = [
+        "0","1","2","3","4","5"
+    ]
+
+    status = tk.StringVar()
+    status.set("0")
+
+    #Catch event
+    def treeBatchselect(event):
+        row = NewOrderTree_P2.focus()
+        if row:
+            status.set(NewOrderTree_P2.set(row, 'two'))
+
+    NewOrderTree_P2.bind('<<TreeviewSelect>>', treeBatchselect)
+
+    def set_batch(value):
+        row = NewOrderTree_P2.focus()
+        if row:
+            NewOrderTree_P2.set(row, '1', value)
+
+
+    dropDownAmountM = ttk.OptionMenu(NewOrderMainPage, status, "0", *AmountList, command=set_batch);
+    dropDownAmountM.pack();
+    dropDownAmountM.place(x=900, y=490);
+    #Change Amount time manual label
+    ChangeAmountLabel=Label(NewOrderMainPage, text="Change Amount : ", font=('Helvetica 12'));
+    ChangeAmountLabel.pack();
+    ChangeAmountLabel.place(x=720,y=490);
+
+    #############################Amount Event over######################
+
+    # ############################Injection Time event#########################
+    TimeList = [
+        "06:00","06:30","07:00","07:30","08:00","08:30","09:00","09:30","10:00",
+    ]
+
+    status = tk.StringVar()
+    status.set("00:00")
+
+    #Catch Injection  event
+    def InjectionTimeselect(event):
+        row = NewOrderTree_P2.focus()
+        if row:
+            status.set(NewOrderTree_P2.set(row, 'Injection time'))
+
+    NewOrderTree_P2.bind('<<TreeviewSelect>>', InjectionTimeselect)
+
+    def setInjectionTime(value):
+        row = NewOrderTree_P2.focus()
+        if row:
+            NewOrderTree_P2.set(row, '2', value)
+
+
+    dropDownInjectionT_M = ttk.OptionMenu(NewOrderMainPage, status, "00:00", *TimeList, command=setInjectionTime);
+    dropDownInjectionT_M.pack();
+    dropDownInjectionT_M.place(x=900, y=460);
+    #Change injecion time manual label
+    ChangeTImeIjectionLabel=Label(NewOrderMainPage, text="Change Time-Injection : ", font=('Helvetica 12'));
+    ChangeTImeIjectionLabel.pack();
+    ChangeTImeIjectionLabel.place(x=720,y=460);
+
+
 
     #Create ADD row button+icon
 
@@ -757,17 +767,50 @@ def PopUpForNewOrder():
     #         self.gmail.pack()
     #app = MyApp()
 
+# defining a function that will
+# print them on the screen
+    #rowTree = StringVar();
+    def addRowFunc():
+        #global idCounter;
+        rowTreetoAdd=(ListofVal[0],ListofVal[1],ListofVal[2]);
+        NewOrderTree_P2.insert("", "end", values=rowTreetoAdd);
+        ListofVal[0]=ListofVal[0]+1;
+
+    def removeRawFunc():
+        #rowTree=rowTree.get();
+        #for i,j in zip(range(IntAmount),range(BeginigHour,IntAmount)):
+        rawSelectedToDelete=NewOrderTree_P2.selection();
+        for rawselected in rawSelectedToDelete:
+         NewOrderTree_P2.delete(rawselected);
+
+    #amountVar.set("");
+
+    # Remove button (Icon) - List
+    global imgDelete2;
+    deleteIcon2 = Image.open("./‏‏deleteIcon.png");
+    resizedDeleteIcon2 = deleteIcon2.resize((25,25), Image.ANTIALIAS);
+    imgDelete2 = ImageTk.PhotoImage(resizedDeleteIcon2);
+    deleteButton2=Button(NewOrderMainPage, image=imgDelete2, borderwidth=0,command=removeRawFunc);
+    deleteButton2.pack();
+    deleteButton2.place(x=1000, y=98);
+
+    #remove/delete record from db
+    # def deleteCyclotronfun():
+    #     query = "DELETE FROM resourcecyclotron WHERE idresourceCyclotron = %s"
+    #     cyclo_tabel.delete_record(query)
+
+
     global addROWImg;
     AddrowLabel=Label(NewOrderMainPage, text="Add row",bg="white", font=('Helvetica 14'));
     AddrowLabel.pack();
-    AddrowLabel.place(x=910,y=75);
+    AddrowLabel.place(x=910,y=98);
     #Add row image+button
     AddrowIcon = Image.open("./addIcon.png");
     resized_add_Row = AddrowIcon.resize((25,25), Image.ANTIALIAS);
     addROWImg = ImageTk.PhotoImage(resized_add_Row);
-    AddRowButton=Button(NewOrderMainPage,image=addROWImg, borderwidth=0,);
+    AddRowButton=Button(NewOrderMainPage,image=addROWImg, borderwidth=0,command=addRowFunc);
     AddRowButton.pack();
-    AddRowButton.place(x=880, y=75);
+    AddRowButton.place(x=880, y=100);
 
 
 
@@ -874,6 +917,15 @@ importFileButton.place(x=230, y=65)
 # edit_button = Button(hospitalFrame, text= "Edit", command= open_popup_hospital)
 # edit_button.pack(side= LEFT)
 # edit_button.place(x=450, y=50)
+#edit field from DB
+# query = "UPDATE hospital SET Name = %s ,Fixed_activity_level= %s, Transport_time=%s  WHERE idhospital = %s"
+#
+# pk = selected_rec[3]
+#
+# labels = (('Name', ''), ('Fixed activity level', '(mci/h)'),  ('Transport time', '(min)'))
+# save_title = "Save Changes"
+#
+# editHospitalPopup.edit_popup(labels, selected_rec, save_title, query, pk, hospital_tabel)
 
 
 # Remove button (Icon) - List
@@ -884,7 +936,7 @@ deleteButton=Button(ordersFrame, image=imgDelete, borderwidth=0)
 deleteButton.pack()
 deleteButton.place(x=830, y=65)
 
-#remove record
+#remove/delete record from db
 # def deleteCyclotronfun():
 #     query = "DELETE FROM resourcecyclotron WHERE idresourceCyclotron = %s"
 #     cyclo_tabel.delete_record(query)
