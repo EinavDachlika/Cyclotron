@@ -1,5 +1,6 @@
 from tkinter import *
 from tkinter import ttk
+from tkinter import messagebox
 from PIL import Image, ImageTk, ImageFont
 import mysql.connector
 from mysql.connector import Error
@@ -89,6 +90,13 @@ toolbar.pack(side=TOP, fill=X)
 
 toolbar.grid_columnconfigure(1, weight=1)
 
+def error_message(text):
+    messagebox.showerror("Error",text)
+
+def warning_message(text):
+    messagebox.showwarning("Warning",text)
+
+
 class Popup(Toplevel):
     def __init__(self):
         Toplevel.__init__(self)
@@ -174,6 +182,9 @@ class Popup(Toplevel):
         update_values_list.append(pk)
         if update_values_list is not None:
             self.update_record(query, pk,list,update_values_list)
+        else:
+            error_message("Please select record")
+            self.destroy()
 
 
 
@@ -229,8 +240,14 @@ class Popup(Toplevel):
         self.save_cancel_button(save_title, self.update_if_clicked, *args, entries)
 
     def Add_if_legal(self, Addquery, list,selectMaxIDquery, entries):
-        legal=True #check if not null
+        #validation - if al entry box is empty legal= false
         input_values_list = self.get_entry(entries)
+        for input_val in input_values_list:
+            if input_val=="":
+                legal = False
+            else:
+                legal = True
+
         if legal:
             try:
                 #insert the record to db
@@ -249,9 +266,10 @@ class Popup(Toplevel):
                 # Rollback in case there is any error
                 db.rollback()
 
-            self.destroy()
         else:
-            print("elegal input")
+            error_message("There are unallowed empty box. Please fill the empty fiels")
+        self.destroy()
+
 
     def add_popup(self, labels, save_title, *args):
         # labels and entry box
@@ -352,6 +370,14 @@ class table(ttk.Treeview):
         selected_record = self.item(selected, 'values')
         return selected_record
 
+    def selected_is_non(self, selected_record):
+        if selected_record =='':
+            text = "Please select a record from the table"
+            error_message(text)
+            return True
+        else:
+            return False
+
     def delete_record(self, query):
 
         selected_rec = self.selected()
@@ -415,12 +441,9 @@ cyclo_tabel.create_fully_tabel( columns_name_list, query)
 
 ###cycortion functions###
 def editCyclotronfun():
-
     selected_rec = cyclo_tabel.selected()
-    if  cyclo_tabel.focus() =='':
-        print('empty') #message
-    else:
-
+    selected_non=cyclo_tabel.selected_is_non(selected_rec)
+    if not selected_non:
         editCyclPopup = Popup()
         editCyclPopup.open_pop('Edit Cyclotron Details')
 
@@ -505,12 +528,9 @@ module_tabel.create_fully_tabel( columns_name_list, queryModule)
 
 ###module functions###
 def editModulefun():
-
     selected_rec = module_tabel.selected()
-    if  module_tabel.focus() =='':
-        print('empty') #message
-    else:
-
+    selected_non = module_tabel.selected_is_non(selected_rec)
+    if not selected_non:
         editModulePopup = Popup()
         editModulePopup.open_pop('Edit Module Details')
 
@@ -601,9 +621,8 @@ hospitalFrame.pack(fill='both',expand=1)
 ###hospital functions###
 def editHospitalfun():
     selected_rec = hospital_tabel.selected()
-    if  hospital_tabel.focus() =='':
-        print('empty') #message
-    else:
+    selected_non = hospital_tabel.selected_is_non(selected_rec)
+    if not selected_non:
         editHospitalPopup = Popup()
         editHospitalPopup.open_pop('Edit Hospital Details')
 
@@ -657,8 +676,6 @@ imgDeleteHospital = ImageTk.PhotoImage(resizedHospitalDeleteIcon)
 deleteHospitalButton = Button(hospitalFrame, image=imgDeleteHospital, borderwidth=0, command=lambda : deleteHospitalfun())
 deleteHospitalButton.pack(side=LEFT)
 deleteHospitalButton.place(x=lable_place_x + 500, y=lable_place_y + 15)
-
-
 
 
 # SettingsFrame.pack()
