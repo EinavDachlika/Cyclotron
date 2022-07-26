@@ -9,6 +9,7 @@ import pandas as pd
 from docx.api import Document
 import aspose.words as aw
 from tkcalendar import Calendar,DateEntry
+import csv
 from datetime import datetime
 
 ##table code
@@ -127,17 +128,95 @@ OrdersTree.column("2");
 OrdersTree.heading("#0", text="Hospital");
 OrdersTree.heading("1", text="Injection Date");
 OrdersTree.heading("2", text="Doses");
+
+#########################Orders main pages buttons###############################
+#Create Search window
+searchEntry = Entry(ordersFrame,font=("Halvetica",12));
+searchEntry.insert(0, 'Search Hospital Name');
+searchEntry.pack();
+searchEntry.place(x=640, y=65);
+
+#Create search icon
+searchIcon = Image.open("./Images/SearchButton.png");
+resizedSearchedEditIcon = searchIcon.resize((23,23), Image.ANTIALIAS);
+SearchImg = ImageTk.PhotoImage(resizedSearchedEditIcon);
+SearchLabelicon=Label(image=SearchImg);
+SearchLabelicon.pack();
+SearchLabelicon.place(x=610, y=135);
+
+def WriteToCsv(result):
+    """Function for creating/exporting Excel file"""
+    print("try exporting new excel file...");
+    headers = ['OrderId', 'Date', 'Injection Time', 'Amount','HospitalID','batchID','decayCorrected'];
+    with open('orders.csv','a',newline="") as f:
+        w = csv.writer(f,dialect='excel');
+        messagebox.showinfo("message","Excel file was created");
+        # write the headers
+        w.writerow(headers);
+        for record in result:
+            w.writerow(record);
+
+
+# Absorb Orders table data from db
+cursor = db.cursor();
+cursor.execute("SELECT * FROM orders");
+ordersTable_in_db = cursor.fetchall();
+
+#Create Export to Excel buttton
+global ExportToCSVImg;
+ExportCSVIcon = Image.open("./Images/ExportExcel.png");
+resizedExportCSVIcon = ExportCSVIcon.resize((23,23), Image.ANTIALIAS);
+ExportToCSVImg = ImageTk.PhotoImage(resizedExportCSVIcon);
+ExportToCSVImgicon=Button(ordersFrame, image=ExportToCSVImg, borderwidth=0,command=lambda : WriteToCsv(ordersTable_in_db))
+ExportToCSVImgicon.pack();
+ExportToCSVImgicon.place(x=585, y=63);
+
+#Create edit icon
+# global imgEdit;
+# editIcon = Image.open("editIcon.jpg")
+# resizedEditIcon = editIcon.resize((20,20), Image.ANTIALIAS)
+# imgEdit = ImageTk.PhotoImage(resizedEditIcon)
+# editButton=Button(ordersFrame, image=imgEdit, borderwidth=0)
+# editButton.pack()
+# editButton.place(x=800, y=65)
+# edit_button = Button(ordersFrame, text= "Edit")
+# edit_button.pack(side= LEFT)
+# edit_button.place(x=450, y=50)
+#edit field from DB
+# query = "UPDATE hospital SET Name = %s ,Fixed_activity_level= %s, Transport_time=%s  WHERE idhospital = %s"
 #
+# pk = selected_rec[3]
+#
+# labels = (('Name', ''), ('Fixed activity level', '(mci/h)'),  ('Transport time', '(min)'))
+# save_title = "Save Changes"
+#
+# editHospitalPopup.edit_popup(labels, selected_rec, save_title, query, pk, hospital_tabel)
+
+
+# Remove button (Icon) - List
+deleteIcon = Image.open("./Images/RemoveButton2.png")
+resizedDeleteIcon = deleteIcon.resize((105,20), Image.ANTIALIAS)
+imgDelete = ImageTk.PhotoImage(resizedDeleteIcon)
+deleteButton=Button(ordersFrame, image=imgDelete, borderwidth=0)
+deleteButton.pack()
+deleteButton.place(x=830, y=65)
+
+#remove/delete record from db
+# def deleteCyclotronfun():
+#     query = "DELETE FROM resourcecyclotron WHERE idresourceCyclotron = %s"
+#     cyclo_tabel.delete_record(query)
+
+
 # for i in range(3):
 #     OrdersTree.insert("", "end", values=(i,"2","30.06.2022"))
-
+################################################Import File page##################################
 
 def importFileFunc():
     #ListofVarImportFile=["","","","","",""];
     TempList=["",""];
     def ImportFilefunction():
 
-        """This is function for open Orders  files"""
+        """This is function for importing Orders files"""
         filename = fd.askopenfilename(
         initialdir="D:\PythonProjects\Cyclotron",
         title="Open a file",
@@ -216,8 +295,7 @@ def importFileFunc():
     cursor.execute("SELECT idhospital,Name FROM hospital");
     hospitals_in_db = cursor.fetchall();
 
-################################################Import File page###########################
-
+##########################################
     ImportFilePage = Toplevel(root);
     ImportFilePage.geometry("900x400");
     ImportFilePage.config(bg="#F0F3F4");#color of page-white-gray
@@ -831,97 +909,13 @@ def PopUpForNewOrder():
     AddRowButton.place(x=880, y=100);
 
 
-
-
-# #############################Batch quantity Event ######################
-#
-# BatchList = [
-#     "0","1","2","3","4","5"
-# ]
-#
-# status = tk.StringVar()
-# status.set("0")
-#
-# #Catch event
-# def treeBatchselect(event):
-#     row = OrdersTree.focus()
-#     if row:
-#         status.set(OrdersTree.set(row, 'two'))
-#
-# OrdersTree.bind('<<TreeviewSelect>>', treeBatchselect)
-#
-# def set_batch(value):
-#     row = OrdersTree.focus()
-#     if row:
-#         OrdersTree.set(row, '1', value)
-#
-#
-# drop = ttk.OptionMenu(root, status, "0", *BatchList, command=set_batch);
-# drop.pack();
-
-#############################Batch Event over######################
-
-# ############################Injection Time event#########################
-# TimeList = [
-#     "06:00","06:30","07:00","07:30","08:00","08:30"
-# ]
-#
-# status = tk.StringVar()
-# status.set("00:00")
-#
-# #Catch Injection  event
-# def InjectionTimeselect(event):
-#     row = OrdersTree.focus()
-#     if row:
-#         status.set(OrdersTree.set(row, 'five'))
-
-#OrdersTree.bind('<<TreeviewSelect>>', InjectionTimeselect)
-
-# def setInjectionTime(value):
-#     row = OrdersTree.focus()
-#     if row:
-#         OrdersTree.set(row, '4', value)
-#
-#
-# drop = ttk.OptionMenu(root, status, "00:00", *TimeList, command=setInjectionTime);
-# drop.pack();
-
-############################Injection Time event over#########################
-
-
-
-
-    #NewOrderMainPage.pack(fill='both',expand=1);
-    #NewOrderMainPage.mainloop();
-
-#####################end of page number 2 -New order #######################################################################
+# ####################end of page number 2 -New order #######################################################################
 
 
 
 
 
-###########################Oreders main page#################################################
-#Create Search window
-searchEntry = Entry(root,font=("Halvetica",12));
-searchEntry.insert(0, 'Search Hospital Name');
-searchEntry.pack();
-searchEntry.place(x=640, y=138);
-
-#Create search icon
-searchIcon = Image.open("./Images/SearchButton.png");
-resizedSearchedEditIcon = searchIcon.resize((23,23), Image.ANTIALIAS);
-SearchImg = ImageTk.PhotoImage(resizedSearchedEditIcon);
-SearchLabelicon=Label(image=SearchImg);
-SearchLabelicon.pack();
-SearchLabelicon.place(x=610, y=135);
-
-#Create edit icon
-# editIcon = Image.open("editIcon.jpg")
-# resizedEditIcon = editIcon.resize((20,20), Image.ANTIALIAS)
-# imgEdit = ImageTk.PhotoImage(resizedEditIcon)
-# editButton=Button(ordersFrame, image=imgEdit, borderwidth=0)
-# editButton.pack()
-# editButton.place(x=425, y=55)
+###########################Spacial buttons#################################################
 
 #Create a button for import orders files (Excel or Word)
 ImportFileIcon = Image.open("ImportFile2.png")
@@ -932,32 +926,6 @@ importFileButton=Button(ordersFrame, image=img_Edit, borderwidth=0,command=impor
 importFileButton.pack()
 importFileButton.place(x=230, y=65)
 
-# edit_button = Button(hospitalFrame, text= "Edit", command= open_popup_hospital)
-# edit_button.pack(side= LEFT)
-# edit_button.place(x=450, y=50)
-#edit field from DB
-# query = "UPDATE hospital SET Name = %s ,Fixed_activity_level= %s, Transport_time=%s  WHERE idhospital = %s"
-#
-# pk = selected_rec[3]
-#
-# labels = (('Name', ''), ('Fixed activity level', '(mci/h)'),  ('Transport time', '(min)'))
-# save_title = "Save Changes"
-#
-# editHospitalPopup.edit_popup(labels, selected_rec, save_title, query, pk, hospital_tabel)
-
-
-# Remove button (Icon) - List
-deleteIcon = Image.open("./Images/RemoveButton2.png")
-resizedDeleteIcon = deleteIcon.resize((105,20), Image.ANTIALIAS)
-imgDelete = ImageTk.PhotoImage(resizedDeleteIcon)
-deleteButton=Button(ordersFrame, image=imgDelete, borderwidth=0)
-deleteButton.pack()
-deleteButton.place(x=830, y=65)
-
-#remove/delete record from db
-# def deleteCyclotronfun():
-#     query = "DELETE FROM resourcecyclotron WHERE idresourceCyclotron = %s"
-#     cyclo_tabel.delete_record(query)
 
 
 #Create New order button
