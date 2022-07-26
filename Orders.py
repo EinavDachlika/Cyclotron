@@ -380,38 +380,7 @@ def clear_tree():
 
 
 
-#
-# # Cyclotron_scroll.config(command=cyclo_list.yview)
-# # Cyclotron_scroll.config(command=cyclo_list.xview)
-#
-# # column define
-#
-# hospitals_list['columns'] = ('Quantity', 'Injection time', 'Activation','Comments')
-#
-# # column format
-# width_Version=110
-# width_Capacity=110
-# width_Efficiency=185
-# width_Description=110
-#
-# hospitals_list.column("#0", width=0, stretch=NO)
-# hospitals_list.column("Quantity", anchor=CENTER, width=width_Version)
-# hospitals_list.column("Injection time", anchor=CENTER, width=width_Capacity)
-# hospitals_list.column("Activation", anchor=CENTER, width=width_Efficiency)
-# hospitals_list.column("Comments", anchor=CENTER, width=width_Efficiency)
-#
-# # Create Headings
-# hospitals_list.heading("#0", text="", anchor=CENTER)
-# hospitals_list.heading("Quantity", text="Name", anchor=CENTER)
-# hospitals_list.heading("Injection time", text="Injection time", anchor=CENTER)
-# hospitals_list.heading("Activation", text="Activation", anchor=CENTER)
-# hospitals_list.heading("Comments", text="Comments", anchor=CENTER)
-#
-# # add data from db
-# cursor = db.cursor()
-# cursor.execute("SELECT * FROM hospital")
-# hospitals_in_db = cursor.fetchall()
-#
+
 # iid=0
 # for hospital in hospitals_in_db:
 #     #print(hospital)
@@ -455,9 +424,9 @@ def PopUpForNewOrder():
     #     HospitalLabelSelected.pack();
     # Absorb hosital list data from db
     cursor = db.cursor()
-    cursor.execute("SELECT Name FROM hospital")
+    cursor.execute("SELECT idhospital,Name FROM hospital")
     hospitals_in_db = cursor.fetchall()
-    #print(hospitals_in_db);
+    #print(type(hospitals_in_db[0]));#List of hospitals
 
     """This is function for Add new order page """
     #root = tk.Tk()
@@ -468,18 +437,11 @@ def PopUpForNewOrder():
     NewOrderMainPage.geometry("1200x600");
     NewOrderMainPage.config(bg="#F0F3F4");#Color of page(White-Gray)
 
-#NewOrderMainPage.place(x=450,y=70);
+    #NewOrderMainPage.place(x=450,y=70);
 
     #NewOrdersecondaryPage = tk.Frame(root);
 
-# ##################### Module #####################
-# # Module Details label
-# moduleLabel = Label(SettingsFrame, text = 'Module Details', font=('Helvetica',15, 'bold'),fg='#034672')
-# module_Lable_place_x=700
-# module_Lable_place_y=70
-#
-# moduleLabel.pack(side=RIGHT)
-# moduleLabel.place(x=module_Lable_place_x,y=module_Lable_place_y)
+
 #########################page number 1,New order page#########################################################
     NeworderTitleLabel=Label(NewOrderMainPage, text="New Order #1",bg="#F0F3F4", font=('Helvetica 17 bold'), fg='#034672');
     NeworderTitleLabel.pack();
@@ -493,8 +455,19 @@ def PopUpForNewOrder():
     HospitalList2 = hospitals_in_db;
 
     def HospitalChoosecallback2(HosiptalSelection):
-        """This function is to catch Hopital name event and past it to page number 2 """
-        HospitalLabel2=Label(NewOrderMainPage, text=CLickOnHospitalDropMenu.get(),bg="white", font=('Helvetica 17'));
+        global hospitalId;
+        """This function is to catch Hopital name event and past/print it to page number 2 """
+        HospitalLabel2=Label(NewOrderMainPage, text=CLickOnHospitalDropMenu.get(),bg="white", font=('Helvetica 14'));
+        x=CLickOnHospitalDropMenu.get();#string type here
+        #print(x);
+        hospitalLabel = x.split(",",1);
+        hospitalNameTemp=hospitalLabel[1];
+        #print(hospitalNameTemp);
+        hospitalIDTemp=hospitalLabel[0];
+        #print(hospitalIDTemp);
+        HospitalID=hospitalIDTemp.split("(");
+        hospitalId=int(HospitalID[1]);
+
         HospitalLabel2.pack();
         HospitalLabel2.place(x=650,y=80);
 
@@ -512,31 +485,47 @@ def PopUpForNewOrder():
 
     # declaring string variable for storing amount
     amountVar=tk.StringVar();
+    endOftimeVar=tk.StringVar();
     # declaring string variable for storing time
     HoursVar = StringVar();
     MinutesVar = StringVar();
-    #global amount;
+    global OrderID;
+    OrderID=0;
     global idCounter;
-    ListofVal=["","",""];
+    ListofVal=["","","","","",""];
     def submit():
+        global hospitalId;
+        global OrderID;
+        #Initialization-clear all the records
+        for rawselected in NewOrderTree_P2.get_children():
+         NewOrderTree_P2.delete(rawselected);
+
         #Get Time varibles avent,hous and minutes
+        EndOfTime=endOftimeVar.get();
         Minutes_Var=MinutesVar.get();
         Hours_Var=HoursVar.get();
-        BeginigHour=int(Hours_Var);
+        #BeginigHour=Hours_Var+":"+Minutes_Var;
         #get amount event variable
         amount=amountVar.get();
         IntAmount=(int(amount));
         ListofVal[0]=idCounter=0;
         ListofVal[1]=amountIndividual=(IntAmount/IntAmount);
-        ListofVal[2]=BeginigHour;
+        ListofVal[2]=int(Hours_Var);
+        ListofVal[3]=int(Minutes_Var);
+        ListofVal[4]=IntAmount;
+        ListofVal[5]=hospitalId;
+
         #Enter data to the the table
         # for idCounter,j in zip(range(IntAmount),range(BeginigHour,IntAmount)):
         #     NewOrderTree_P2.insert("", "end", values=(idCounter,amount2,j));
         for record in range(int(IntAmount)):
-            NewOrderTree_P2.insert("", "end", values=( ListofVal[0],ListofVal[1],ListofVal[2]));
+            NewOrderTree_P2.insert("", "end",values=( ListofVal[0],ListofVal[1],f'{ListofVal[2]}:{ListofVal[3]}'));
+            ListofVal[2]=ListofVal[2]+1;
+            ListofVal[3]=ListofVal[3]+30;
             ListofVal[0]= ListofVal[0]+1;
 
-
+        OrderID+=1;#counterID=counterID+1
+        #print(OrderID);
         amountVar.set("");
         MinutesVar.set("");
         HoursVar.set("");
@@ -573,12 +562,14 @@ def PopUpForNewOrder():
     #Add calender widget/method
     selectDateEvent=tk.StringVar() # declaring string variable
     def print_sel(e):
+        global ChoosenDate;
         """ This function print to the tree/table """
         ChoosenDate=cal.get_date();
+        #print(ChoosenDate);
         #copy and past date event to page number 2
-        dateLabel2=Label(NewOrderMainPage, text= ChoosenDate,bg="white", font=('Helvetica 17'));
+        dateLabel2=Label(NewOrderMainPage, text= ChoosenDate,bg="white", font=('Helvetica 14'));
         dateLabel2.pack();
-        dateLabel2.place(x=750,y=80);
+        dateLabel2.place(x=760,y=80);
         # TempList[1]=ChoosenDate;
         # print( TempList[1]);
         # if ((counter==0) or (counter==null)):
@@ -604,9 +595,9 @@ def PopUpForNewOrder():
 
     #
     #Create Time range input/Entry
-    TimerangeLabel = Label(NewOrderMainPage, text="Time Range",bg="white");
+    TimerangeLabel = Label(NewOrderMainPage, text="Time Range/End time",bg="white");
     TimerangeLabel.place(x=400, y=200);
-    TimerangeLabelEntry = Entry(NewOrderMainPage,font=("Halvetica",12));
+    TimerangeLabelEntry = Entry(NewOrderMainPage,textvariable=endOftimeVar,font=("Halvetica",12));
     TimerangeLabelEntry.config(width=7);#width of window
     TimerangeLabelEntry.insert(0, '');
     TimerangeLabelEntry.pack();
@@ -651,12 +642,33 @@ def PopUpForNewOrder():
     NewOrdersecondaryLabel.place(x=900,y=27);
 
 
-     #Create ADD button
+    def enterToDB():#Function to insert data into My-SQL Db
+     # ValuseDic = {
+     #        'idorders': 4,
+     #        'Date': '2002-03-92',
+     #        'injection_time': '11:20:11',
+     #        'amount': 7,
+     #        'hospitalID': 7,
+     #        'batchID': 7,
+     #        'DecayCorrected': 7 }  ;
+     cursor = db.cursor(buffered=True);
+     for i in range(ListofVal[4]):
+      ValuseTuple=(OrderID,ChoosenDate,"11:20:11",ListofVal[1], ListofVal[5],0,0);
+      print("order trying to get in DB-Add pressed");
+      cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,hospitalID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);",ValuseTuple)
+
+    #Commit changes in DB
+     db.commit()
+     cursor.close()
+     #Close connection to DB
+     #db.close()
+
+    #Create ADD button
     global addImg;
     AddFileIcon = Image.open("./Images/AddButton.png");
     resized_add_Icon = AddFileIcon.resize((100,50), Image.ANTIALIAS);
     addImg = ImageTk.PhotoImage(resized_add_Icon);
-    AddButton=Button(NewOrderMainPage,image=addImg, borderwidth=0);
+    AddButton=Button(NewOrderMainPage,image=addImg, borderwidth=0,command=enterToDB);
     AddButton.pack();
     AddButton.place(x=850, y=520);
 
