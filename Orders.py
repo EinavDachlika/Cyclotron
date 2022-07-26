@@ -133,6 +133,7 @@ OrdersTree.heading("2", text="Doses");
 
 
 def importFileFunc():
+    #ListofVarImportFile=["","","","","",""];
     TempList=["",""];
     def ImportFilefunction():
 
@@ -148,9 +149,11 @@ def importFileFunc():
                     filename=r"{}".format(filename)
                     df=pd.read_excel(filename)
                 except ValueError:
-                    my_label.config(text="File couldn't be open,try again");
+                    messagebox.showinfo("Error message","File couldn't be open,try again");
+                    print("Error");
                 except FileNotFoundError:
-                    my_label.config(text="File couldn't be open,try again");
+                    messagebox.showinfo("Error message","File couldn't be open,try again");
+                    print("Error");
 
                 clear_tree();
 
@@ -209,9 +212,9 @@ def importFileFunc():
 
 
     # Absorb hosital list data from db
-    cursor = db.cursor()
-    cursor.execute("SELECT Name FROM hospital")
-    hospitals_in_db2 = cursor.fetchall()
+    cursor = db.cursor();
+    cursor.execute("SELECT idhospital,Name FROM hospital");
+    hospitals_in_db = cursor.fetchall();
 
 ################################################Import File page###########################
 
@@ -227,7 +230,7 @@ def importFileFunc():
     HospitalListLabel = Label(ImportFilePage, text="Hospital",bg='white');
     HospitalListLabel.pack();
     HospitalListLabel.place(x=20, y=70);
-    HospitalList2 = hospitals_in_db2;
+    HospitalList2 = hospitals_in_db;
 
 
     CLickOnHospitalDropMenu2 = StringVar();
@@ -423,12 +426,11 @@ def PopUpForNewOrder():
     #     HospitalLabelSelected=Label(NewOrdersecondaryPage,text=CLickOnHospitalDropMenu.get())
     #     HospitalLabelSelected.pack();
     # Absorb hosital list data from db
-    cursor = db.cursor()
-    cursor.execute("SELECT idhospital,Name FROM hospital")
-    hospitals_in_db = cursor.fetchall()
+    cursor = db.cursor();
+    cursor.execute("SELECT idhospital,Name FROM hospital");
+    hospitals_in_db = cursor.fetchall();
     #print(type(hospitals_in_db[0]));#List of hospitals
 
-    """This is function for Add new order page """
     #root = tk.Tk()
 
 
@@ -462,7 +464,7 @@ def PopUpForNewOrder():
         #print(x);
         hospitalLabel = x.split(",",1);
         hospitalNameTemp=hospitalLabel[1];
-        #print(hospitalNameTemp);
+        print(hospitalNameTemp);
         hospitalIDTemp=hospitalLabel[0];
         #print(hospitalIDTemp);
         HospitalID=hospitalIDTemp.split("(");
@@ -510,7 +512,7 @@ def PopUpForNewOrder():
          amount=amountVar.get();
          IntAmount=(int(amount));
         except (ValueError,UnboundLocalError):
-         messagebox.showinfo("Error message","Please enter date,begging time and amount of doses!")
+         messagebox.showinfo("Error message","Please enter date,begging time and amount of doses!");
          print("Error")
         ListofVal[0]=idCounter=0;
         ListofVal[1]=amountIndividual=(IntAmount/IntAmount);
