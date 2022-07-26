@@ -1,5 +1,5 @@
 from tkinter import *
-from tkinter import ttk
+from tkinter import ttk,messagebox
 import tkinter as tk
 from PIL import Image, ImageTk
 import mysql.connector
@@ -496,7 +496,7 @@ def PopUpForNewOrder():
     def submit():
         global hospitalId;
         global OrderID;
-        #Initialization-clear all the records
+        #Initialization-clear/Delete all the records
         for rawselected in NewOrderTree_P2.get_children():
          NewOrderTree_P2.delete(rawselected);
 
@@ -504,10 +504,14 @@ def PopUpForNewOrder():
         EndOfTime=endOftimeVar.get();
         Minutes_Var=MinutesVar.get();
         Hours_Var=HoursVar.get();
-        #BeginigHour=Hours_Var+":"+Minutes_Var;
         #get amount event variable
-        amount=amountVar.get();
-        IntAmount=(int(amount));
+        #message box if not try to click next if inputs are empty
+        try:
+         amount=amountVar.get();
+         IntAmount=(int(amount));
+        except (ValueError,UnboundLocalError):
+         messagebox.showinfo("Error message","Please enter date,begging time and amount of doses!")
+         print("Error")
         ListofVal[0]=idCounter=0;
         ListofVal[1]=amountIndividual=(IntAmount/IntAmount);
         ListofVal[2]=int(Hours_Var);
