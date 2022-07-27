@@ -1,5 +1,5 @@
 from tkinter import *
-from tkinter import ttk
+from tkinter import ttk,messagebox
 import tkinter as tk
 from PIL import Image, ImageTk
 import mysql.connector
@@ -9,6 +9,7 @@ import pandas as pd
 from docx.api import Document
 import aspose.words as aw
 from tkcalendar import Calendar,DateEntry
+import csv
 from datetime import datetime
 
 ##table code
@@ -127,74 +128,95 @@ OrdersTree.column("2");
 OrdersTree.heading("#0", text="Hospital");
 OrdersTree.heading("1", text="Injection Date");
 OrdersTree.heading("2", text="Doses");
+
+#########################Orders main pages buttons###############################
+#Create Search window
+searchEntry = Entry(ordersFrame,font=("Halvetica",12));
+searchEntry.insert(0, 'Search Hospital Name');
+searchEntry.pack();
+searchEntry.place(x=640, y=65);
+
+#Create search icon
+searchIcon = Image.open("./Images/SearchButton.png");
+resizedSearchedEditIcon = searchIcon.resize((23,23), Image.ANTIALIAS);
+SearchImg = ImageTk.PhotoImage(resizedSearchedEditIcon);
+SearchLabelicon=Label(image=SearchImg);
+SearchLabelicon.pack();
+SearchLabelicon.place(x=610, y=135);
+
+def WriteToCsv(result):
+    """Function for creating/exporting Excel file"""
+    print("try exporting new excel file...");
+    headers = ['OrderId', 'Date', 'Injection Time', 'Amount','HospitalID','batchID','decayCorrected'];
+    with open('orders.csv','a',newline="") as f:
+        w = csv.writer(f,dialect='excel');
+        messagebox.showinfo("message","Excel file was created");
+        # write the headers
+        w.writerow(headers);
+        for record in result:
+            w.writerow(record);
+
+
+# Absorb Orders table data from db
+cursor = db.cursor();
+cursor.execute("SELECT * FROM orders");
+ordersTable_in_db = cursor.fetchall();
+
+#Create Export to Excel buttton
+global ExportToCSVImg;
+ExportCSVIcon = Image.open("./Images/ExportExcel.png");
+resizedExportCSVIcon = ExportCSVIcon.resize((23,23), Image.ANTIALIAS);
+ExportToCSVImg = ImageTk.PhotoImage(resizedExportCSVIcon);
+ExportToCSVImgicon=Button(ordersFrame, image=ExportToCSVImg, borderwidth=0,command=lambda : WriteToCsv(ordersTable_in_db))
+ExportToCSVImgicon.pack();
+ExportToCSVImgicon.place(x=585, y=63);
+
+#Create edit icon
+# global imgEdit;
+# editIcon = Image.open("editIcon.jpg")
+# resizedEditIcon = editIcon.resize((20,20), Image.ANTIALIAS)
+# imgEdit = ImageTk.PhotoImage(resizedEditIcon)
+# editButton=Button(ordersFrame, image=imgEdit, borderwidth=0)
+# editButton.pack()
+# editButton.place(x=800, y=65)
+# edit_button = Button(ordersFrame, text= "Edit")
+# edit_button.pack(side= LEFT)
+# edit_button.place(x=450, y=50)
+#edit field from DB
+# query = "UPDATE hospital SET Name = %s ,Fixed_activity_level= %s, Transport_time=%s  WHERE idhospital = %s"
 #
+# pk = selected_rec[3]
+#
+# labels = (('Name', ''), ('Fixed activity level', '(mci/h)'),  ('Transport time', '(min)'))
+# save_title = "Save Changes"
+#
+# editHospitalPopup.edit_popup(labels, selected_rec, save_title, query, pk, hospital_tabel)
+
+
+# Remove button (Icon) - List
+deleteIcon = Image.open("./Images/RemoveButton2.png")
+resizedDeleteIcon = deleteIcon.resize((105,20), Image.ANTIALIAS)
+imgDelete = ImageTk.PhotoImage(resizedDeleteIcon)
+deleteButton=Button(ordersFrame, image=imgDelete, borderwidth=0)
+deleteButton.pack()
+deleteButton.place(x=830, y=65)
+
+#remove/delete record from db
+# def deleteCyclotronfun():
+#     query = "DELETE FROM resourcecyclotron WHERE idresourceCyclotron = %s"
+#     cyclo_tabel.delete_record(query)
+
+
 # for i in range(3):
-#     OrdersTree.insert("", "end", values=(i,"2","30.06.2022","15.00 mCi","00:00"))
-
-
-# #############################Batch quantity Event ######################
-#
-# BatchList = [
-#     "0","1","2","3","4","5"
-# ]
-#
-# status = tk.StringVar()
-# status.set("0")
-#
-# #Catch event
-# def treeBatchselect(event):
-#     row = OrdersTree.focus()
-#     if row:
-#         status.set(OrdersTree.set(row, 'two'))
-#
-# OrdersTree.bind('<<TreeviewSelect>>', treeBatchselect)
-#
-# def set_batch(value):
-#     row = OrdersTree.focus()
-#     if row:
-#         OrdersTree.set(row, '1', value)
-#
-#
-# drop = ttk.OptionMenu(root, status, "0", *BatchList, command=set_batch);
-# drop.pack();
-
-#############################Batch Event over######################
-
-# ############################Injection Time event#########################
-# TimeList = [
-#     "06:00","06:30","07:00","07:30","08:00","08:30"
-# ]
-#
-# status = tk.StringVar()
-# status.set("00:00")
-#
-# #Catch Injection  event
-# def InjectionTimeselect(event):
-#     row = OrdersTree.focus()
-#     if row:
-#         status.set(OrdersTree.set(row, 'five'))
-
-#OrdersTree.bind('<<TreeviewSelect>>', InjectionTimeselect)
-
-# def setInjectionTime(value):
-#     row = OrdersTree.focus()
-#     if row:
-#         OrdersTree.set(row, '4', value)
-#
-#
-# drop = ttk.OptionMenu(root, status, "00:00", *TimeList, command=setInjectionTime);
-# drop.pack();
-
-############################Injection Time event over#########################
-
-
-
+#     OrdersTree.insert("", "end", values=(i,"2","30.06.2022"))
+################################################Import File page##################################
 
 def importFileFunc():
+    #ListofVarImportFile=["","","","","",""];
     TempList=["",""];
     def ImportFilefunction():
 
-        """This is function for open Orders  files"""
+        """This is function for importing Orders files"""
         filename = fd.askopenfilename(
         initialdir="D:\PythonProjects\Cyclotron",
         title="Open a file",
@@ -206,9 +228,11 @@ def importFileFunc():
                     filename=r"{}".format(filename)
                     df=pd.read_excel(filename)
                 except ValueError:
-                    my_label.config(text="File couldn't be open,try again");
+                    messagebox.showinfo("Error message","File couldn't be open,try again");
+                    print("Error");
                 except FileNotFoundError:
-                    my_label.config(text="File couldn't be open,try again");
+                    messagebox.showinfo("Error message","File couldn't be open,try again");
+                    print("Error");
 
                 clear_tree();
 
@@ -267,12 +291,11 @@ def importFileFunc():
 
 
     # Absorb hosital list data from db
-    cursor = db.cursor()
-    cursor.execute("SELECT Name FROM hospital")
-    hospitals_in_db2 = cursor.fetchall()
+    cursor = db.cursor();
+    cursor.execute("SELECT idhospital,Name FROM hospital");
+    hospitals_in_db = cursor.fetchall();
 
-################################################Import File page###########################
-
+##########################################
     ImportFilePage = Toplevel(root);
     ImportFilePage.geometry("900x400");
     ImportFilePage.config(bg="#F0F3F4");#color of page-white-gray
@@ -285,7 +308,7 @@ def importFileFunc():
     HospitalListLabel = Label(ImportFilePage, text="Hospital",bg='white');
     HospitalListLabel.pack();
     HospitalListLabel.place(x=20, y=70);
-    HospitalList2 = hospitals_in_db2;
+    HospitalList2 = hospitals_in_db;
 
 
     CLickOnHospitalDropMenu2 = StringVar();
@@ -438,38 +461,7 @@ def clear_tree():
 
 
 
-#
-# # Cyclotron_scroll.config(command=cyclo_list.yview)
-# # Cyclotron_scroll.config(command=cyclo_list.xview)
-#
-# # column define
-#
-# hospitals_list['columns'] = ('Quantity', 'Injection time', 'Activation','Comments')
-#
-# # column format
-# width_Version=110
-# width_Capacity=110
-# width_Efficiency=185
-# width_Description=110
-#
-# hospitals_list.column("#0", width=0, stretch=NO)
-# hospitals_list.column("Quantity", anchor=CENTER, width=width_Version)
-# hospitals_list.column("Injection time", anchor=CENTER, width=width_Capacity)
-# hospitals_list.column("Activation", anchor=CENTER, width=width_Efficiency)
-# hospitals_list.column("Comments", anchor=CENTER, width=width_Efficiency)
-#
-# # Create Headings
-# hospitals_list.heading("#0", text="", anchor=CENTER)
-# hospitals_list.heading("Quantity", text="Name", anchor=CENTER)
-# hospitals_list.heading("Injection time", text="Injection time", anchor=CENTER)
-# hospitals_list.heading("Activation", text="Activation", anchor=CENTER)
-# hospitals_list.heading("Comments", text="Comments", anchor=CENTER)
-#
-# # add data from db
-# cursor = db.cursor()
-# cursor.execute("SELECT * FROM hospital")
-# hospitals_in_db = cursor.fetchall()
-#
+
 # iid=0
 # for hospital in hospitals_in_db:
 #     #print(hospital)
@@ -512,12 +504,11 @@ def PopUpForNewOrder():
     #     HospitalLabelSelected=Label(NewOrdersecondaryPage,text=CLickOnHospitalDropMenu.get())
     #     HospitalLabelSelected.pack();
     # Absorb hosital list data from db
-    cursor = db.cursor()
-    cursor.execute("SELECT Name FROM hospital")
-    hospitals_in_db = cursor.fetchall()
-    #print(hospitals_in_db);
+    cursor = db.cursor();
+    cursor.execute("SELECT idhospital,Name FROM hospital");
+    hospitals_in_db = cursor.fetchall();
+    #print(type(hospitals_in_db[0]));#List of hospitals
 
-    """This is function for Add new order page """
     #root = tk.Tk()
 
 
@@ -526,18 +517,11 @@ def PopUpForNewOrder():
     NewOrderMainPage.geometry("1200x600");
     NewOrderMainPage.config(bg="#F0F3F4");#Color of page(White-Gray)
 
-#NewOrderMainPage.place(x=450,y=70);
+    #NewOrderMainPage.place(x=450,y=70);
 
     #NewOrdersecondaryPage = tk.Frame(root);
 
-# ##################### Module #####################
-# # Module Details label
-# moduleLabel = Label(SettingsFrame, text = 'Module Details', font=('Helvetica',15, 'bold'),fg='#034672')
-# module_Lable_place_x=700
-# module_Lable_place_y=70
-#
-# moduleLabel.pack(side=RIGHT)
-# moduleLabel.place(x=module_Lable_place_x,y=module_Lable_place_y)
+
 #########################page number 1,New order page#########################################################
     NeworderTitleLabel=Label(NewOrderMainPage, text="New Order #1",bg="#F0F3F4", font=('Helvetica 17 bold'), fg='#034672');
     NeworderTitleLabel.pack();
@@ -551,8 +535,19 @@ def PopUpForNewOrder():
     HospitalList2 = hospitals_in_db;
 
     def HospitalChoosecallback2(HosiptalSelection):
-        """This function is to catch Hopital name event and past it to page number 2 """
-        HospitalLabel2=Label(NewOrderMainPage, text=CLickOnHospitalDropMenu.get(),bg="white", font=('Helvetica 17'));
+        global hospitalId;
+        """This function is to catch Hopital name event and past/print it to page number 2 """
+        HospitalLabel2=Label(NewOrderMainPage, text=CLickOnHospitalDropMenu.get(),bg="white", font=('Helvetica 14'));
+        x=CLickOnHospitalDropMenu.get();#string type here
+        #print(x);
+        hospitalLabel = x.split(",",1);
+        hospitalNameTemp=hospitalLabel[1];
+        print(hospitalNameTemp);
+        hospitalIDTemp=hospitalLabel[0];
+        #print(hospitalIDTemp);
+        HospitalID=hospitalIDTemp.split("(");
+        hospitalId=int(HospitalID[1]);
+
         HospitalLabel2.pack();
         HospitalLabel2.place(x=650,y=80);
 
@@ -568,29 +563,53 @@ def PopUpForNewOrder():
     HospitalDropDown.pack();
     HospitalDropDown.place(x=20, y=100);
 
-    # declaring string variable
-    # for storing amount and and time
+    # declaring string variable for storing amount
     amountVar=tk.StringVar();
-    #passw_var=tk.StringVar();
-    # defining a function that will
-    # get the amount and time and
-    # print them on the screen
+    endOftimeVar=tk.StringVar();
+    # declaring string variable for storing time
     HoursVar = StringVar();
     MinutesVar = StringVar();
-
+    global OrderID;
+    OrderID=0;
+    global idCounter;
+    ListofVal=["","","","","",""];
     def submit():
+        global hospitalId;
+        global OrderID;
+        #Initialization-clear/Delete all the records
+        for rawselected in NewOrderTree_P2.get_children():
+         NewOrderTree_P2.delete(rawselected);
+
         #Get Time varibles avent,hous and minutes
+        EndOfTime=endOftimeVar.get();
         Minutes_Var=MinutesVar.get();
         Hours_Var=HoursVar.get();
-        BeginigHour=int(Hours_Var);
-        #i=0;
         #get amount event variable
-        amount=amountVar.get();
-        IntAmount=(int(amount));
-        #Enter data to the the table
-        for i,j in zip(range(IntAmount),range(BeginigHour,IntAmount)):
-            NewOrderTree_P2.insert("", "end", values=(i,IntAmount/IntAmount,j))
+        #message box if not try to click next if inputs are empty
+        try:
+         amount=amountVar.get();
+         IntAmount=(int(amount));
+        except (ValueError,UnboundLocalError):
+         messagebox.showinfo("Error message","Please enter date,begging time and amount of doses!");
+         print("Error")
+        ListofVal[0]=idCounter=0;
+        ListofVal[1]=amountIndividual=(IntAmount/IntAmount);
+        ListofVal[2]=int(Hours_Var);
+        ListofVal[3]=int(Minutes_Var);
+        ListofVal[4]=IntAmount;
+        ListofVal[5]=hospitalId;
 
+        #Enter data to the the table
+        # for idCounter,j in zip(range(IntAmount),range(BeginigHour,IntAmount)):
+        #     NewOrderTree_P2.insert("", "end", values=(idCounter,amount2,j));
+        for record in range(int(IntAmount)):
+            NewOrderTree_P2.insert("", "end",values=( ListofVal[0],ListofVal[1],f'{ListofVal[2]}:{ListofVal[3]}'));
+            ListofVal[2]=ListofVal[2]+1;
+            ListofVal[3]=ListofVal[3]+30;
+            ListofVal[0]= ListofVal[0]+1;
+
+        OrderID+=1;#counterID=counterID+1
+        #print(OrderID);
         amountVar.set("");
         MinutesVar.set("");
         HoursVar.set("");
@@ -627,12 +646,14 @@ def PopUpForNewOrder():
     #Add calender widget/method
     selectDateEvent=tk.StringVar() # declaring string variable
     def print_sel(e):
+        global ChoosenDate;
         """ This function print to the tree/table """
         ChoosenDate=cal.get_date();
+        #print(ChoosenDate);
         #copy and past date event to page number 2
-        dateLabel2=Label(NewOrderMainPage, text= ChoosenDate,bg="white", font=('Helvetica 17'));
+        dateLabel2=Label(NewOrderMainPage, text= ChoosenDate,bg="white", font=('Helvetica 14'));
         dateLabel2.pack();
-        dateLabel2.place(x=750,y=80);
+        dateLabel2.place(x=760,y=80);
         # TempList[1]=ChoosenDate;
         # print( TempList[1]);
         # if ((counter==0) or (counter==null)):
@@ -658,9 +679,9 @@ def PopUpForNewOrder():
 
     #
     #Create Time range input/Entry
-    TimerangeLabel = Label(NewOrderMainPage, text="Time Range",bg="white");
+    TimerangeLabel = Label(NewOrderMainPage, text="Time Range/End time",bg="white");
     TimerangeLabel.place(x=400, y=200);
-    TimerangeLabelEntry = Entry(NewOrderMainPage,font=("Halvetica",12));
+    TimerangeLabelEntry = Entry(NewOrderMainPage,textvariable=endOftimeVar,font=("Halvetica",12));
     TimerangeLabelEntry.config(width=7);#width of window
     TimerangeLabelEntry.insert(0, '');
     TimerangeLabelEntry.pack();
@@ -705,12 +726,33 @@ def PopUpForNewOrder():
     NewOrdersecondaryLabel.place(x=900,y=27);
 
 
-     #Create ADD button
+    def enterToDB():#Function to insert data into My-SQL Db
+     # ValuseDic = {
+     #        'idorders': 4,
+     #        'Date': '2002-03-92',
+     #        'injection_time': '11:20:11',
+     #        'amount': 7,
+     #        'hospitalID': 7,
+     #        'batchID': 7,
+     #        'DecayCorrected': 7 }  ;
+     cursor = db.cursor(buffered=True);
+     for i in range(ListofVal[4]):
+      ValuseTuple=(OrderID,ChoosenDate,"11:20:11",ListofVal[1], ListofVal[5],0,0);
+      print("order trying to get in DB-Add pressed");
+      cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,hospitalID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);",ValuseTuple)
+
+    #Commit changes in DB
+     db.commit()
+     cursor.close()
+     #Close connection to DB
+     #db.close()
+
+    #Create ADD button
     global addImg;
     AddFileIcon = Image.open("./Images/AddButton.png");
     resized_add_Icon = AddFileIcon.resize((100,50), Image.ANTIALIAS);
     addImg = ImageTk.PhotoImage(resized_add_Icon);
-    AddButton=Button(NewOrderMainPage,image=addImg, borderwidth=0);
+    AddButton=Button(NewOrderMainPage,image=addImg, borderwidth=0,command=enterToDB);
     AddButton.pack();
     AddButton.place(x=850, y=520);
 
@@ -724,7 +766,7 @@ def PopUpForNewOrder():
     CancelButton2.place(x=1000, y=520);
 
 
-    #Empty page/table for new order
+    #Empty page/table for new order,create New tree for page 2
     NewOrderTree_P2 = ttk.Treeview(NewOrderMainPage,yscrollcommand=Cyclotron_scroll.set,height=15);
     NewOrderTree_P2['columns']= ("ID","Amount","Injection time")
     #NewOrderTree_P2['show'] = 'tree headings';
@@ -742,6 +784,70 @@ def PopUpForNewOrder():
     NewOrderTree_P2.heading("Amount", text="Amount",anchor=CENTER);
     NewOrderTree_P2.heading("Injection time", text="Injection time",anchor=W);
 
+    #############################Amount quantity Event ######################
+
+    AmountList = [
+        "0","1","2","3","4","5"
+    ]
+
+    status = tk.StringVar()
+    status.set("0")
+
+    #Catch event
+    def treeBatchselect(event):
+        row = NewOrderTree_P2.focus()
+        if row:
+            status.set(NewOrderTree_P2.set(row, 'two'))
+
+    NewOrderTree_P2.bind('<<TreeviewSelect>>', treeBatchselect)
+
+    def set_batch(value):
+        row = NewOrderTree_P2.focus()
+        if row:
+            NewOrderTree_P2.set(row, '1', value)
+
+
+    dropDownAmountM = ttk.OptionMenu(NewOrderMainPage, status, "0", *AmountList, command=set_batch);
+    dropDownAmountM.pack();
+    dropDownAmountM.place(x=900, y=490);
+    #Change Amount time manual label
+    ChangeAmountLabel=Label(NewOrderMainPage, text="Change Amount : ", font=('Helvetica 12'));
+    ChangeAmountLabel.pack();
+    ChangeAmountLabel.place(x=720,y=490);
+
+    #############################Amount Event over######################
+
+    # ############################Injection Time event#########################
+    TimeList = [
+        "06:00","06:30","07:00","07:30","08:00","08:30","09:00","09:30","10:00",
+    ]
+
+    status = tk.StringVar()
+    status.set("00:00")
+
+    #Catch Injection  event
+    def InjectionTimeselect(event):
+        row = NewOrderTree_P2.focus()
+        if row:
+            status.set(NewOrderTree_P2.set(row, 'Injection time'))
+
+    NewOrderTree_P2.bind('<<TreeviewSelect>>', InjectionTimeselect)
+
+    def setInjectionTime(value):
+        row = NewOrderTree_P2.focus()
+        if row:
+            NewOrderTree_P2.set(row, '2', value)
+
+
+    dropDownInjectionT_M = ttk.OptionMenu(NewOrderMainPage, status, "00:00", *TimeList, command=setInjectionTime);
+    dropDownInjectionT_M.pack();
+    dropDownInjectionT_M.place(x=900, y=460);
+    #Change injecion time manual label
+    ChangeTImeIjectionLabel=Label(NewOrderMainPage, text="Change Time-Injection : ", font=('Helvetica 12'));
+    ChangeTImeIjectionLabel.pack();
+    ChangeTImeIjectionLabel.place(x=720,y=460);
+
+
 
     #Create ADD row button+icon
 
@@ -757,110 +863,59 @@ def PopUpForNewOrder():
     #         self.gmail.pack()
     #app = MyApp()
 
+# defining a function that will
+# print them on the screen
+    #rowTree = StringVar();
+    def addRowFunc():
+        #global idCounter;
+        rowTreetoAdd=(ListofVal[0],ListofVal[1],ListofVal[2]);
+        NewOrderTree_P2.insert("", "end", values=rowTreetoAdd);
+        ListofVal[0]=ListofVal[0]+1;
+
+    def removeRawFunc():
+        #rowTree=rowTree.get();
+        #for i,j in zip(range(IntAmount),range(BeginigHour,IntAmount)):
+        rawSelectedToDelete=NewOrderTree_P2.selection();
+        for rawselected in rawSelectedToDelete:
+         NewOrderTree_P2.delete(rawselected);
+
+    #amountVar.set("");
+
+    # Remove button (Icon) - List
+    global imgDelete2;
+    deleteIcon2 = Image.open("./‏‏deleteIcon.png");
+    resizedDeleteIcon2 = deleteIcon2.resize((25,25), Image.ANTIALIAS);
+    imgDelete2 = ImageTk.PhotoImage(resizedDeleteIcon2);
+    deleteButton2=Button(NewOrderMainPage, image=imgDelete2, borderwidth=0,command=removeRawFunc);
+    deleteButton2.pack();
+    deleteButton2.place(x=1000, y=98);
+
+    #remove/delete record from db
+    # def deleteCyclotronfun():
+    #     query = "DELETE FROM resourcecyclotron WHERE idresourceCyclotron = %s"
+    #     cyclo_tabel.delete_record(query)
+
+
     global addROWImg;
     AddrowLabel=Label(NewOrderMainPage, text="Add row",bg="white", font=('Helvetica 14'));
     AddrowLabel.pack();
-    AddrowLabel.place(x=910,y=75);
+    AddrowLabel.place(x=910,y=98);
     #Add row image+button
     AddrowIcon = Image.open("./addIcon.png");
     resized_add_Row = AddrowIcon.resize((25,25), Image.ANTIALIAS);
     addROWImg = ImageTk.PhotoImage(resized_add_Row);
-    AddRowButton=Button(NewOrderMainPage,image=addROWImg, borderwidth=0,);
+    AddRowButton=Button(NewOrderMainPage,image=addROWImg, borderwidth=0,command=addRowFunc);
     AddRowButton.pack();
-    AddRowButton.place(x=880, y=75);
+    AddRowButton.place(x=880, y=100);
 
 
-
-
-# #############################Batch quantity Event ######################
-#
-# BatchList = [
-#     "0","1","2","3","4","5"
-# ]
-#
-# status = tk.StringVar()
-# status.set("0")
-#
-# #Catch event
-# def treeBatchselect(event):
-#     row = OrdersTree.focus()
-#     if row:
-#         status.set(OrdersTree.set(row, 'two'))
-#
-# OrdersTree.bind('<<TreeviewSelect>>', treeBatchselect)
-#
-# def set_batch(value):
-#     row = OrdersTree.focus()
-#     if row:
-#         OrdersTree.set(row, '1', value)
-#
-#
-# drop = ttk.OptionMenu(root, status, "0", *BatchList, command=set_batch);
-# drop.pack();
-
-#############################Batch Event over######################
-
-# ############################Injection Time event#########################
-# TimeList = [
-#     "06:00","06:30","07:00","07:30","08:00","08:30"
-# ]
-#
-# status = tk.StringVar()
-# status.set("00:00")
-#
-# #Catch Injection  event
-# def InjectionTimeselect(event):
-#     row = OrdersTree.focus()
-#     if row:
-#         status.set(OrdersTree.set(row, 'five'))
-
-#OrdersTree.bind('<<TreeviewSelect>>', InjectionTimeselect)
-
-# def setInjectionTime(value):
-#     row = OrdersTree.focus()
-#     if row:
-#         OrdersTree.set(row, '4', value)
-#
-#
-# drop = ttk.OptionMenu(root, status, "00:00", *TimeList, command=setInjectionTime);
-# drop.pack();
-
-############################Injection Time event over#########################
-
-
-
-
-    #NewOrderMainPage.pack(fill='both',expand=1);
-    #NewOrderMainPage.mainloop();
-
-#####################end of page number 2 -New order #######################################################################
+# ####################end of page number 2 -New order #######################################################################
 
 
 
 
 
-###########################Oreders main page#################################################
-#Create Search window
-searchEntry = Entry(root,font=("Halvetica",12));
-searchEntry.insert(0, 'Search Hospital Name');
-searchEntry.pack();
-searchEntry.place(x=640, y=138);
-
-#Create search icon
-searchIcon = Image.open("./Images/SearchButton.png");
-resizedSearchedEditIcon = searchIcon.resize((23,23), Image.ANTIALIAS);
-SearchImg = ImageTk.PhotoImage(resizedSearchedEditIcon);
-SearchLabelicon=Label(image=SearchImg);
-SearchLabelicon.pack();
-SearchLabelicon.place(x=610, y=135);
-
-#Create edit icon
-# editIcon = Image.open("editIcon.jpg")
-# resizedEditIcon = editIcon.resize((20,20), Image.ANTIALIAS)
-# imgEdit = ImageTk.PhotoImage(resizedEditIcon)
-# editButton=Button(ordersFrame, image=imgEdit, borderwidth=0)
-# editButton.pack()
-# editButton.place(x=425, y=55)
+###########################Spacial buttons#################################################
 
 #Create a button for import orders files (Excel or Word)
 ImportFileIcon = Image.open("ImportFile2.png")
@@ -871,23 +926,6 @@ importFileButton=Button(ordersFrame, image=img_Edit, borderwidth=0,command=impor
 importFileButton.pack()
 importFileButton.place(x=230, y=65)
 
-# edit_button = Button(hospitalFrame, text= "Edit", command= open_popup_hospital)
-# edit_button.pack(side= LEFT)
-# edit_button.place(x=450, y=50)
-
-
-# Remove button (Icon) - List
-deleteIcon = Image.open("./Images/RemoveButton2.png")
-resizedDeleteIcon = deleteIcon.resize((105,20), Image.ANTIALIAS)
-imgDelete = ImageTk.PhotoImage(resizedDeleteIcon)
-deleteButton=Button(ordersFrame, image=imgDelete, borderwidth=0)
-deleteButton.pack()
-deleteButton.place(x=830, y=65)
-
-#remove record
-# def deleteCyclotronfun():
-#     query = "DELETE FROM resourcecyclotron WHERE idresourceCyclotron = %s"
-#     cyclo_tabel.delete_record(query)
 
 
 #Create New order button
