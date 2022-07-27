@@ -48,6 +48,7 @@ except Error as e:
     print("Error while connecting to MySQL", e)
 
 cursor = db.cursor()
+
 ##################### toolbar #####################
 
 toolbarbgcolor = "white"
@@ -85,10 +86,20 @@ resizedSettingsIcon = settingsIcon.resize((35,35), Image.ANTIALIAS)
 imgSettings = ImageTk.PhotoImage(resizedSettingsIcon)
 Button(toolbar, image=imgSettings, borderwidth=0).pack(side=RIGHT,padx=10,pady=3)
 
-
 toolbar.pack(side=TOP, fill=X)
 
 toolbar.grid_columnconfigure(1, weight=1)
+
+dict_input_column = { 'hospital':('Name', 'Fixed_activity_level', 'Transport_time') ,
+                       'resourcecyclotron':('version', 'capacity', 'constant_efficiency', 'description') ,
+                      'resourcemodule': ('version', 'capacity', 'description' ) }
+
+def if_NOT_NULL():
+    # column that define as NOT NULL in db
+    query = "select TABLE_NAME, COLUMN_NAME, IS_NULLABLE from information_schema.COLUMNS where TABLE_SCHEMA='cyclotron'and IS_NULLABLE='NO'"
+    cursor.execute(query)
+    data = cursor.fetchall()
+    return data
 
 def error_message(text):
     messagebox.showerror("Error",text)
@@ -141,6 +152,25 @@ class Popup(Toplevel):
         #         p_last_label_x += entry_box.winfo_reqwidth() + 30
 
 
+    def is_legal(self, table_name, entries): #validation- if not null filed is not empty
+        column_input = dict_input_column[table_name]
+        notnull_column = if_NOT_NULL()
+
+        input_values_list = self.get_entry(entries)
+        # i=0 #index of column in input_values_list
+        index_of_not_null = []
+        legal = True
+        for col in notnull_column:
+            if col[0] == table_name and col[1] in column_input:
+                i = column_input.index(col[1])
+                if input_values_list[i] == "":
+                    index_of_not_null.append(i)
+                    legal = False
+                    # text = "There are unallowed empty box. Please fill the empty fiels"
+                    # return error_message(text)
+        return legal
+
+
     def update_record(self,query, pk,list, update_values_list):
         selected = list.focus()
         #show the changes
@@ -163,7 +193,6 @@ class Popup(Toplevel):
 
 
     def save_cancel_button(self, save_title,on_click_save_fun, *args):
-
         save_button = Button(self, text=save_title,
                                command=lambda: on_click_save_fun(*args))
 
@@ -177,15 +206,21 @@ class Popup(Toplevel):
         cancel_button.pack(side=LEFT)
         cancel_button.place(x=save_button.winfo_reqwidth() + save_button_position_x + 10, y=save_button_position_y)
 
-    def update_if_clicked(self,query,pk,list,entries):
+
+    def update_if_selected(self,query,pk,list,table_name,entries):
         update_values_list=self.get_entry(entries)
         update_values_list.append(pk)
-        if update_values_list is not None:
-            self.update_record(query, pk,list,update_values_list)
-        else:
+        if update_values_list is None: #if the user dont select record
             error_message("Please select record")
-            self.destroy()
+        else:
+            legal = self.is_legal(table_name, entries)
+            if legal:
+                self.update_record(query, pk,list,update_values_list)
+            else:
+                text = "There are unallowed empty box. Please fill the empty fiels"
+                error_message(text)
 
+            self.destroy()
 
 
     def get_entry(self, entries): # to edit_popup - get user changes in entry box
@@ -194,10 +229,6 @@ class Popup(Toplevel):
         for entry in entries:
             update_values_list.append(entry.get())
         return update_values_list
-
-    # def edit_popup(self, labels,valueList, save_title, query,pk,list)
-
-
 
     def edit_popup(self, labels, valueList, save_title, *args):
         # labels and entry box
@@ -237,18 +268,12 @@ class Popup(Toplevel):
             p_last_label_y += entry_box.winfo_reqheight() + 35 + p_label.winfo_reqheight()
             row_num += 1
 
-        self.save_cancel_button(save_title, self.update_if_clicked, *args, entries)
+        self.save_cancel_button(save_title, self.update_if_selected, *args, entries)
 
-    def Add_if_legal(self, Addquery, list,selectMaxIDquery, entries):
-        #validation - if al entry box is empty legal= false
-        input_values_list = self.get_entry(entries)
-        for input_val in input_values_list:
-            if input_val=="":
-                legal = False
-            else:
-                legal = True
-
+    def Add_if_legal(self, Addquery, list,selectMaxIDquery,table_name, entries):
+        legal = self.is_legal(table_name, entries)
         if legal:
+            input_values_list = self.get_entry(entries)
             try:
                 #insert the record to db
                 cursor.execute(Addquery, input_values_list)
@@ -257,7 +282,6 @@ class Popup(Toplevel):
                 #insert the id from db to values list (not in table) to allow deleting the record without refreshing the page
                 cursor.execute(selectMaxIDquery)
                 data = cursor.fetchall()
-                print(data[0])
                 input_values_list.append(data[0][0])
                 list.insert(parent='', index='end', iid=None, text='',
                             values=input_values_list)
@@ -267,6 +291,7 @@ class Popup(Toplevel):
                 db.rollback()
 
         else:
+
             error_message("There are unallowed empty box. Please fill the empty fiels")
         self.destroy()
 
@@ -347,7 +372,6 @@ class table(ttk.Treeview):
             self.column(column_name, anchor=CENTER, width=width)
             # # Create Headings
             self.heading(column_name, text=column_name, anchor=CENTER)
-
 
         cursor.execute(query)
         data = cursor.fetchall()
@@ -448,14 +472,12 @@ def editCyclotronfun():
         editCyclPopup.open_pop('Edit Cyclotron Details')
 
         query = "UPDATE resourcecyclotron SET version = %s ,capacity= %s, constant_efficiency= %s,description=%s  WHERE idresourceCyclotron = %s"
-        # print(cyclo_tabel.focus())
-        print(selected_rec)
         pk = selected_rec[4]
-
+        table_name = 'resourcecyclotron'
         labels = (('Version', ''), ('Capacity', '(mci/h)'), ('Constant Efficiency', '(mCi/mA)'), ('Description', ''))
         save_title = "Save Changes"
 
-        editCyclPopup.edit_popup(labels, selected_rec, save_title, query, pk, cyclo_tabel)
+        editCyclPopup.edit_popup(labels, selected_rec, save_title, query, pk, cyclo_tabel,table_name)
 
 
 def deleteCyclotronfun():
@@ -469,7 +491,8 @@ def addCyclotronfun():
     save_title = "Add Cyclotron"
     insertquery = "INSERT INTO resourcecyclotron SET version = %s ,capacity= %s, constant_efficiency= %s,description=%s"
     selectIDquery = "SELECT MAX(idresourceCyclotron) FROM resourcecyclotron"
-    addCyclPopup.add_popup(labels, save_title, insertquery, cyclo_tabel,selectIDquery)
+    table_name='resourcecyclotron'
+    addCyclPopup.add_popup(labels, save_title, insertquery, cyclo_tabel,selectIDquery,table_name)
 
 #cyclotron buttons
 #Create a button in the main Window to edit  record (open the popup) - cyclotron
@@ -535,26 +558,27 @@ def editModulefun():
         editModulePopup.open_pop('Edit Module Details')
 
         query = "UPDATE resourcemodule SET version = %s ,capacity= %s, description=%s  WHERE idresourcemodule = %s"
-
+        table_name = 'resourcemodule'
         pk = selected_rec[3]
 
         labels = (('Version', ''), ('Capacity', '(mci/h)'),  ('Description', ''))
         save_title = "Save Changes"
 
-        editModulePopup.edit_popup(labels, selected_rec, save_title, query, pk, module_tabel)
+        editModulePopup.edit_popup(labels, selected_rec, save_title, query, pk, module_tabel,  table_name)
 
 
 def addModulefun():
-    addCyclPopup = Popup()
-    addCyclPopup.open_pop('Add Module Details')
+    addModulePopup = Popup()
+    addModulePopup.open_pop('Add Module Details')
     labels = (('Version', ''), ('Capacity', '(mci/h)'), ('Description', ''))
     save_title = "Add Module"
     insetQuery = "INSERT INTO resourcemodule SET version = %s ,capacity= %s,description=%s"
     selectIDquery = "SELECT MAX(idresourcemodule) FROM resourcemodule"
-    addCyclPopup.add_popup(labels, save_title, insetQuery, module_tabel,selectIDquery)
+    table_name='resourcemodule'
+    addModulePopup.add_popup(labels, save_title, insetQuery, module_tabel,selectIDquery, table_name)
 
 def deleteModulefun():
-    query = "DELETE FROM resourcecyclotron WHERE idresourcemodule = %s"
+    query = "DELETE FROM resourcemodule WHERE idresourcemodule = %s"
     module_tabel.delete_record(query)
 
 
@@ -602,7 +626,7 @@ tab_side=LEFT
 x=650
 y= 160
 frame=hospitalFrame
-list_height=20
+list_height=30
 c = 80
 
 lable_place_x = 80
@@ -625,7 +649,7 @@ def editHospitalfun():
     if not selected_non:
         editHospitalPopup = Popup()
         editHospitalPopup.open_pop('Edit Hospital Details')
-
+        table_name= 'hospital'
         query = "UPDATE hospital SET Name = %s ,Fixed_activity_level= %s, Transport_time=%s  WHERE idhospital = %s"
 
         pk = selected_rec[3]
@@ -633,17 +657,18 @@ def editHospitalfun():
         labels = (('Name', ''), ('Fixed activity level', '(mci/h)'),  ('Transport time', '(min)'))
         save_title = "Save Changes"
 
-        editHospitalPopup.edit_popup(labels, selected_rec, save_title, query, pk, hospital_tabel)
+        editHospitalPopup.edit_popup(labels, selected_rec, save_title, query, pk, hospital_tabel,table_name)
 
 
 def addHospitalfun():
     addHospitalPopup = Popup()
     addHospitalPopup.open_pop('Add Hospital Details')
-    labels = (('Name', ''), ('Fixed activity level', '(mci/h)'), ('Description', ''))
+    labels = (('Name', ''), ('Fixed activity level', '(mci/h)'), ('Transport time', '(min)'))
     save_title = "Add Hospital"
-    insetQuery = "INSERT INTO hospital SET Name = %s ,Fixed_activity_level= %s,Transport_time=%s"
+    insertQuery = "INSERT INTO hospital SET Name = %s ,Fixed_activity_level= %s,Transport_time=%s"
     selectIDquery = "SELECT MAX(idhospital) FROM hospital"
-    addHospitalPopup.add_popup(labels, save_title, insetQuery, hospital_tabel,selectIDquery)
+    table_name = 'hospital'
+    addHospitalPopup.add_popup(labels, save_title, insertQuery, hospital_tabel,selectIDquery, table_name)
 
 def deleteHospitalfun():
     query = "DELETE FROM hospital WHERE idhospital = %s"
@@ -678,7 +703,6 @@ deleteHospitalButton.pack(side=LEFT)
 deleteHospitalButton.place(x=lable_place_x + 500, y=lable_place_y + 15)
 
 
-# SettingsFrame.pack()
 SettingsFrame.forget()
 # hospitalFrame.forget()
 root.mainloop()
