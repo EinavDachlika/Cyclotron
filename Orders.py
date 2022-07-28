@@ -116,19 +116,76 @@ Cyclotron_scroll = Scrollbar(ordersFrame, orient="vertical", width=25)
 #my_label=Label(root,text='');
 
 #Empty page/table for new order
-OrdersTree = ttk.Treeview(ordersFrame,yscrollcommand=Cyclotron_scroll.set,columns=('1', '2'),height=20)
-OrdersTree['show'] = 'tree headings';
+OrdersTree = ttk.Treeview(ordersFrame,yscrollcommand=Cyclotron_scroll.set,columns=('1', '2','3'),height=20)
+#OrdersTree['show'] = 'tree headings';
 OrdersTree.pack(side=LEFT, padx=100, pady=110)
 
 #Foramte Columns
-OrdersTree.column("#0");
+OrdersTree.column("#0",width=0,minwidth=0);
 OrdersTree.column("1");
 OrdersTree.column("2");
+OrdersTree.column("3");
 
 #Define headers/titles in table
-OrdersTree.heading("#0", text="Hospital");
-OrdersTree.heading("1", text="Injection Date");
-OrdersTree.heading("2", text="Doses");
+OrdersTree.heading("#0", text="Label");
+OrdersTree.heading("1", text="Hospital");
+OrdersTree.heading("2", text="Injection Date");
+OrdersTree.heading("3", text="Doses");
+
+# # Absorb Orders list data from db
+# cursor = db.cursor();
+# cursor.execute("SELECT Date,amount,hospitalID FROM orders");
+# OrdersForMainOrderPage = cursor.fetchall();
+# #print(OrdersForMainOrderPage[0][2]);
+# # Absorb Orders list data from db
+# cursor = db.cursor();
+# ListofSumOfAmountPerHospital=[];
+#
+# cursor.execute("SELECT hospitalID FROM orders");
+# OrdersForMainOrderPage1 = cursor.fetchall();
+# #convert list of tuples into list
+# outOrdersForMainOrderPage1 = [item for t in OrdersForMainOrderPage1 for item in t];
+#
+# print(outOrdersForMainOrderPage1);
+#print(len(outOrdersForMainOrderPage1));
+cursor = db.cursor();
+# i=0;
+# for i in outOrdersForMainOrderPage1:
+#     cursor.execute(f"SELECT SUM(amount) FROM orders WHERE hospitalID={i}");
+#     SumOFAmount = cursor.fetchall();
+#     ListofSumOfAmountPerHospital.append(SumOFAmount);
+# i=0;
+# for i in outOrdersForMainOrderPage1:
+cursor.execute("SELECT hospitalID,Date,SUM(amount) FROM orders GROUP BY hospitalID;");
+SumOFAmount1 = cursor.fetchall();
+#print(SumOFAmount1);
+#print(ListofSumOf_AmountPer_Hospital)
+#convert list of tuples into list
+# ListofSumOfAmountPerHospital1 = [item1 for t1 in ListofSumOfAmountPerHospital for item1 in t1];
+# #Remove any duplicates from a List:
+# mylist = list(dict.fromkeys(ListofSumOfAmountPerHospital1))
+# ListOfSumOfAmount = [item1 for t1 in mylist for item1 in t1];
+#print(ListOfSumOfAmount);
+#print(OrdersForMainOrderPage[0][0])
+# for i in range(3):
+#     OrdersTree.insert("", "end", values=(i,"2","30.06.2022"))
+# for i in range(1,len(AmountListFromDoc)):
+#     ValuseTuple=(i,TempList[1],"11:20:11",AmountListFromDoc[i], TempList[0],0,0);
+#     print("order trying to get in DB-Add pressed");
+#     try:
+#         cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,hospitalID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);
+#Commit changes in DB
+db.commit()
+#output orders main data from DB
+for record in SumOFAmount1:
+    OrdersTree.insert(parent='', index='end', text='',
+                      values=(record[0],record[1],record[2]))#record[0]=Idhospital,record[1]=Injection time,record[2]=Amount of doses
+
+OrdersTree.pack()
+
+# cursor.close()
+
+
 
 #########################Orders main pages buttons###############################
 #Create Search window
@@ -145,6 +202,11 @@ SearchLabelicon=Label(image=SearchImg);
 SearchLabelicon.pack();
 SearchLabelicon.place(x=610, y=135);
 
+
+
+###############################################Import File page##################################
+
+
 def WriteToCsv(result):
     """Function for creating/exporting Excel file"""
     print("try exporting new excel file...");
@@ -158,7 +220,7 @@ def WriteToCsv(result):
             w.writerow(record);
 
 
-# Absorb Orders table data from db
+# Absorb Orders table data from db-for excel export
 cursor = db.cursor();
 cursor.execute("SELECT * FROM orders");
 ordersTable_in_db = cursor.fetchall();
@@ -208,9 +270,6 @@ deleteButton.place(x=830, y=65)
 #     cyclo_tabel.delete_record(query)
 
 
-# for i in range(3):
-#     OrdersTree.insert("", "end", values=(i,"2","30.06.2022"))
-################################################Import File page##################################
 
 def importFileFunc():
     AmountListFromDoc=[];
@@ -237,8 +296,10 @@ def importFileFunc():
                     messagebox.showinfo("Error message","File couldn't be open,try again");
                     print("Error");
 
-                clear_tree();
-#####################################################################
+                #clear_tree();
+
+
+                #####################################################################
                 #Get data from excel
                 loc = (str(filename));
                 wb = xlrd.open_workbook(loc);
@@ -287,7 +348,7 @@ def importFileFunc():
                 #print(df);
 
 
-                clear_tree();
+                #clear_tree();
                 #Get data from excel
                 loc = ("D:/PythonProjects/Cyclotron/OrderOutputTest.xlsx");
                 wb = xlrd.open_workbook(loc);
@@ -463,33 +524,6 @@ def importFileFunc():
 
 
 
-# wordFile=open(filename,  errors="ignore");
-      # #stuff = wordFile.read();#convert to string
-      # new_filename1 = filename.split("/", 3);
-      # new_filename2 = new_filename1[3].split(".", 1);
-      # tempString=str(new_filename2[0])+".pdf";
-      # # # wordFile=open(filename, encoding="Latin-1");
-      # # convert(str(new_filename1[3]))
-      # # convert(str(new_filename1[3]), str(tempString))
-      # # convert("D:\PythonProjects\Cyclotron")
-      # pdfFile=PyPDF2.PdfFileReader(str(tempString));
-      # # Extract all text fron PDF-if pdf include a couple of pages
-      # # count = pdfFile.numPages
-      # # for i in range(count):
-      # #   page = pdfFile.getPage(i)
-      # #   output = []
-      # #   output.append(page.extractText())
-      # page=pdfFile.getPage(0);#Extract only from first page
-      # page_stuff=page.extractText();
-      # print(page_stuff);
-      # #not working need to be with text box and not tree
-      # for i in range(len(page_stuff)):
-      #  OrdersTree.insert('', 'end',values=i)
-      # #OrdersTree.insert(1.0,page_stuff);#not working well-need to be fixed-need to be with text box and not trre
-      # OrdersTree.pack();
-      # wordFile.close();
-
-
 
 
 
@@ -630,7 +664,7 @@ def PopUpForNewOrder():
         except (ValueError,UnboundLocalError,NameError):
          messagebox.showerror("Error message","Please choose hospital, date,begging time and amount of doses!");
          print("Error")
-        ListofVal[0]=idCounter=0;
+        ListofVal[0]=idCounter=1;
         ListofVal[1]=amountIndividual=(IntAmount/IntAmount);
         ListofVal[2]=int(Hours_Var);
         ListofVal[3]=int(Minutes_Var);
@@ -775,7 +809,7 @@ def PopUpForNewOrder():
      #        'batchID': 7,
      #        'DecayCorrected': 7 }  ;
      cursor = db.cursor(buffered=True);
-     for i in range(1,3):
+     for i in range(1,ListofVal[4]+1):
       ValuseTuple=(i, ChoosenDateForManaulOrder, "11:20:11", ListofVal[1], ListofVal[5], 0, 0);
       print("order trying to get in DB-Add pressed");
       cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,hospitalID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);",ValuseTuple)
@@ -910,6 +944,7 @@ def PopUpForNewOrder():
         rowTreetoAdd=(ListofVal[0],ListofVal[1],ListofVal[2]);
         NewOrderTree_P2.insert("", "end", values=rowTreetoAdd);
         ListofVal[0]=ListofVal[0]+1;
+        ListofVal[4]+=1;#current amount= courrent amount+1
 
     def removeRawFunc():
         #rowTree=rowTree.get();
@@ -917,7 +952,7 @@ def PopUpForNewOrder():
         rawSelectedToDelete=NewOrderTree_P2.selection();
         for rawselected in rawSelectedToDelete:
          NewOrderTree_P2.delete(rawselected);
-
+        ListofVal[4]=ListofVal[4]-1;#current amount= current amount-1
     #amountVar.set("");
 
     # Remove button (Icon) - List
