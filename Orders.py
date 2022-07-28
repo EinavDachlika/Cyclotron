@@ -203,6 +203,22 @@ SearchLabelicon.pack();
 SearchLabelicon.place(x=610, y=135);
 
 
+def deleteOrderfunc():
+    """Function for removing order from DB"""
+    rawSelectedToDelete=OrdersTree.selection();
+    for rawselected in rawSelectedToDelete:
+        OrdersTree.delete(rawselected);
+    # query = "DELETE FROM orders WHERE idhospital = %s"
+
+# Remove button (Icon) - List
+global imgDelete;
+deleteIcon = Image.open("./‏‏deleteIcon.png")
+resizedDeleteIcon = deleteIcon.resize((20,20), Image.ANTIALIAS)
+imgDelete = ImageTk.PhotoImage(resizedDeleteIcon)
+deleteButton=Button(ordersFrame, image=imgDelete, borderwidth=0,command=deleteOrderfunc)
+deleteButton.pack()
+deleteButton.place(x=560, y=65)
+
 
 ###############################################Import File page##################################
 
@@ -254,22 +270,6 @@ ExportToCSVImgicon.place(x=585, y=63);
 # save_title = "Save Changes"
 #
 # editHospitalPopup.edit_popup(labels, selected_rec, save_title, query, pk, hospital_tabel)
-
-
-# Remove button (Icon) - List
-deleteIcon = Image.open("./‏‏deleteIcon.png")
-resizedDeleteIcon = deleteIcon.resize((20,20), Image.ANTIALIAS)
-imgDelete = ImageTk.PhotoImage(resizedDeleteIcon)
-deleteButton=Button(ordersFrame, image=imgDelete, borderwidth=0)
-deleteButton.pack()
-deleteButton.place(x=830, y=65)
-
-#remove/delete record from db
-# def deleteCyclotronfun():
-#     query = "DELETE FROM resourcecyclotron WHERE idresourceCyclotron = %s"
-#     cyclo_tabel.delete_record(query)
-
-
 
 def importFileFunc():
     AmountListFromDoc=[];
