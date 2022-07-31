@@ -132,60 +132,42 @@ OrdersTree.heading("1", text="Hospital");
 OrdersTree.heading("2", text="Injection Date");
 OrdersTree.heading("3", text="Doses");
 
-# # Absorb Orders list data from db
-# cursor = db.cursor();
-# cursor.execute("SELECT Date,amount,hospitalID FROM orders");
-# OrdersForMainOrderPage = cursor.fetchall();
-# #print(OrdersForMainOrderPage[0][2]);
-# # Absorb Orders list data from db
-# cursor = db.cursor();
-# ListofSumOfAmountPerHospital=[];
-#
-# cursor.execute("SELECT hospitalID FROM orders");
-# OrdersForMainOrderPage1 = cursor.fetchall();
-# #convert list of tuples into list
-# outOrdersForMainOrderPage1 = [item for t in OrdersForMainOrderPage1 for item in t];
-#
-# print(outOrdersForMainOrderPage1);
-#print(len(outOrdersForMainOrderPage1));
-cursor = db.cursor();
-# i=0;
-# for i in outOrdersForMainOrderPage1:
-#     cursor.execute(f"SELECT SUM(amount) FROM orders WHERE hospitalID={i}");
-#     SumOFAmount = cursor.fetchall();
-#     ListofSumOfAmountPerHospital.append(SumOFAmount);
-# i=0;
-# for i in outOrdersForMainOrderPage1:
-cursor.execute("SELECT hospitalID,Date,SUM(amount) FROM orders GROUP BY hospitalID;");
-SumOFAmount1 = cursor.fetchall();
-#print(SumOFAmount1);
-#print(ListofSumOf_AmountPer_Hospital)
-#convert list of tuples into list
-# ListofSumOfAmountPerHospital1 = [item1 for t1 in ListofSumOfAmountPerHospital for item1 in t1];
-# #Remove any duplicates from a List:
-# mylist = list(dict.fromkeys(ListofSumOfAmountPerHospital1))
-# ListOfSumOfAmount = [item1 for t1 in mylist for item1 in t1];
-#print(ListOfSumOfAmount);
-#print(OrdersForMainOrderPage[0][0])
-# for i in range(3):
-#     OrdersTree.insert("", "end", values=(i,"2","30.06.2022"))
-# for i in range(1,len(AmountListFromDoc)):
-#     ValuseTuple=(i,TempList[1],"11:20:11",AmountListFromDoc[i], TempList[0],0,0);
-#     print("order trying to get in DB-Add pressed");
-#     try:
-#         cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,hospitalID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);
-#Commit changes in DB
-db.commit()
-#output orders main data from DB
-for record in SumOFAmount1:
-    OrdersTree.insert(parent='', index='end', text='',
-                      values=(record[0],record[1],record[2]))#record[0]=Idhospital,record[1]=Injection time,record[2]=Amount of doses
+def updateOrdersTreeMainPageOutputOnly():
+    # # Absorb Orders list data from db
+    cursor = db.cursor();
 
-OrdersTree.pack()
+    #cursor.execute("SELECT * FROM orders;");
+    cursor.execute("SELECT hospitalID,Date,SUM(amount) FROM orders GROUP BY Date;");
+    SumOFAmount1 = cursor.fetchall();
+    print(SumOFAmount1);
+    #convert list of tuples into list
+    # ListofSumOfAmountPerHospital1 = [item1 for t1 in ListofSumOfAmountPerHospital for item1 in t1];
 
-# cursor.close()
+    # #Remove any duplicates from a List:
+    # mylist = list(dict.fromkeys(ListofSumOfAmountPerHospital1))
+    # ListOfSumOfAmount = [item1 for t1 in mylist for item1 in t1];
+
+    # for i in range(3):
+    #     OrdersTree.insert("", "end", values=(i,"2","30.06.2022"))
+    # for i in range(1,len(AmountListFromDoc)):
+    #     ValuseTuple=(i,TempList[1],"11:20:11",AmountListFromDoc[i], TempList[0],0,0);
+    #     print("order trying to get in DB-Add pressed");
+    #     try:
+    #         cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,hospitalID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);
+
+    #output orders main data from DB
+    for record in SumOFAmount1:
+        OrdersTree.insert(parent='', index='end', text='',
+                          values=(record[0],record[1],record[2]))#record[0]=Idhospital,record[1]=Injection time,record[2]=Amount of doses
 
 
+    root.wm_state('normal');#Open orders main page
+    OrdersTree.pack();
+
+    db.commit();
+    cursor.close()
+
+updateOrdersTreeMainPageOutputOnly();
 
 #########################Orders main pages buttons###############################
 #Create Search window
@@ -370,8 +352,10 @@ def importFileFunc():
 #                 for row in df_rows:
 #                     OrdersTree.insert("","end",values=row)
 #
-#                     OrdersTree.pack();
+        #ImportFilePage.pack();
+        #OrdersTree.destroy();
 
+        root.wm_state('iconic');#minimize orders main page
 
     # Absorb hosital list data from db
     cursor = db.cursor();
@@ -432,9 +416,13 @@ def importFileFunc():
             cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,hospitalID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);
         except (mysql.connector.errors.DataError):
             messagebox.showerror("Error message","Please choose hospital and date !");
-            print("Error")
+            print("Error");
 
-     #Commit changes in DB
+
+     ImportFilePage.destroy();##Close import file window
+     updateOrdersTreeMainPageOutputOnly();##update orders tree main page
+     #OrdersTree.pack();
+     #Commit changes in DB and close connection
      db.commit()
      cursor.close()
 
@@ -493,12 +481,12 @@ def importFileFunc():
         TempList[1]=ChoosenDateForImport;
         print( TempList[1]);
         # if ((counter==0) or (counter==null)):
-        counter=0;
-        #Loop throw the tree/table
-        for recordInrow in range(len(TempList)-1):
-         OrdersTree.insert(parent="",index= "end",iid=counter, values=(TempList[0],TempList[1]));
-         OrdersTree.insert(parent=counter,index= "end",iid=counter+2,text=TempList[0]);
-         counter=counter+1;
+        # counter=0;
+        # #Loop throw the tree/table
+        # for recordInrow in range(len(TempList)-1):
+        #  OrdersTree.insert(parent="",index= "end",iid=counter, values=(TempList[0],TempList[1]));
+        #  #OrdersTree.insert(parent=counter,index= "end",iid=counter+2,text=TempList[0]);
+        #  counter=counter+1;
 
     cal1=DateEntry(ImportFilePage,selectmode='day',textvariable=selectedDate);
     cal1.pack(pady = 20);
@@ -814,6 +802,10 @@ def PopUpForNewOrder():
       print("order trying to get in DB-Add pressed");
       cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,hospitalID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);",ValuseTuple)
 
+
+     NewOrderMainPage.destroy();#Close import file-manual window
+     updateOrdersTreeMainPageOutputOnly();#Refresh/Update Main page
+     OrdersTree.pack();         #open order main page immedaitly
     #Commit changes in DB
      db.commit()
      cursor.close()
@@ -955,6 +947,10 @@ def PopUpForNewOrder():
         ListofVal[4]=ListofVal[4]-1;#current amount= current amount-1
     #amountVar.set("");
 
+
+
+
+    ####################Buttons for new order-manual page##########################
     # Remove button (Icon) - List
     global imgDelete2;
     deleteIcon2 = Image.open("./‏‏deleteIcon.png");
