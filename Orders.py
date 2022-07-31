@@ -136,7 +136,7 @@ def updateOrdersTreeMainPageOutputOnly():
     # # Absorb Orders list data from db
     cursor = db.cursor();
 
-    #cursor.execute("SELECT * FROM orders;");
+    #cursor.execute("DESC orders;");
     cursor.execute("SELECT idhospital,Date,SUM(amount) FROM orders GROUP BY Date;");
     SumOFAmount1 = cursor.fetchall();
     print(SumOFAmount1);
@@ -565,7 +565,7 @@ def PopUpForNewOrder():
     # Absorb hosital list data from db
     cursor = db.cursor();
     cursor.execute("SELECT idhospital,Name FROM hospital");
-    hospitals_in_db = cursor.fetchall();
+    hospitalsListForNewOrderManual = cursor.fetchall();
     #print(type(hospitals_in_db[0]));#List of hospitals
 
     #root = tk.Tk()
@@ -591,7 +591,7 @@ def PopUpForNewOrder():
     HospitalListLabel = Label(NewOrderMainPage, text="Hospital",bg='white');
     HospitalListLabel.pack();
     HospitalListLabel.place(x=20, y=70);
-    HospitalList2 = hospitals_in_db;
+    HospitalListNewOrderPage = hospitalsListForNewOrderManual;
 
     def HospitalChoosecallback2(HosiptalSelection):
         global hospitalId;
@@ -617,7 +617,7 @@ def PopUpForNewOrder():
     CLickOnHospitalDropMenu = StringVar();
     CLickOnHospitalDropMenu.set("Select Hospital"); #default value
 
-    HospitalDropDown = OptionMenu(NewOrderMainPage, CLickOnHospitalDropMenu, *HospitalList2,command=HospitalChoosecallback2);
+    HospitalDropDown = OptionMenu(NewOrderMainPage, CLickOnHospitalDropMenu, *HospitalListNewOrderPage,command=HospitalChoosecallback2);
     HospitalDropDown.config(width=12,bg='white');#color of dropdown menu
     HospitalDropDown.pack();
     HospitalDropDown.place(x=20, y=100);
