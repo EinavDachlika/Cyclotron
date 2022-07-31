@@ -22,20 +22,20 @@ root.option_add("*Font", "Helvetica")
 
 # connect to MySqL
 try:
-    # Maor local DB Mysql
-    db = mysql.connector.connect(
-        host="localhost",
-        port=3308,
-        user="root",
-        password="root",
-        database="cyclotron")
-
-    # # Einav local DB-Mysql
+    # # Maor local DB Mysql
     # db = mysql.connector.connect(
-    #   host="localhost",
-    #   user="root",
-    #   password="Cyclotron2022@?%",
-    #   database= "cyclotron")
+    #     host="localhost",
+    #     port=3308,
+    #     user="root",
+    #     password="root",
+    #     database="cyclotron")
+
+    # Einav local DB-Mysql
+    db = mysql.connector.connect(
+      host="localhost",
+      user="root",
+      password="Cyclotron2022@?%",
+      database= "cyclotron")
 
     if db.is_connected():
         # db_Info = db.get_server_info()
