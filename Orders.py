@@ -137,7 +137,7 @@ def updateOrdersTreeMainPageOutputOnly():
     cursor = db.cursor();
 
     #cursor.execute("SELECT * FROM orders;");
-    cursor.execute("SELECT hospitalID,Date,SUM(amount) FROM orders GROUP BY Date;");
+    cursor.execute("SELECT idhospital,Date,SUM(amount) FROM orders GROUP BY Date;");
     SumOFAmount1 = cursor.fetchall();
     print(SumOFAmount1);
     #convert list of tuples into list
@@ -153,7 +153,7 @@ def updateOrdersTreeMainPageOutputOnly():
     #     ValuseTuple=(i,TempList[1],"11:20:11",AmountListFromDoc[i], TempList[0],0,0);
     #     print("order trying to get in DB-Add pressed");
     #     try:
-    #         cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,hospitalID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);
+    #         cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,idhospital,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);
 
     #output orders main data from DB
     for record in SumOFAmount1:
@@ -413,7 +413,7 @@ def importFileFunc():
         ValuseTuple=(i,TempList[1],"11:20:11",AmountListFromDoc[i], TempList[0],0,0);
         print("order trying to get in DB-Add pressed");
         try:
-            cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,hospitalID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);
+            cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,idhospital,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);
         except (mysql.connector.errors.DataError):
             messagebox.showerror("Error message","Please choose hospital and date !");
             print("Error");
@@ -800,7 +800,7 @@ def PopUpForNewOrder():
      for i in range(1,ListofVal[4]+1):
       ValuseTuple=(i, ChoosenDateForManaulOrder, "11:20:11", ListofVal[1], ListofVal[5], 0, 0);
       print("order trying to get in DB-Add pressed");
-      cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,hospitalID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);",ValuseTuple)
+      cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,idhospital,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);",ValuseTuple)
 
 
      NewOrderMainPage.destroy();#Close import file-manual window

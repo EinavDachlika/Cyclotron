@@ -22,20 +22,20 @@ root.option_add("*Font", "Helvetica")
 
 # connect to MySqL
 try:
-    # # Maor local DB Mysql
-    # db = mysql.connector.connect(
-    #     host="localhost",
-    #     port=3308,
-    #     user="root",
-    #     password="root",
-    #     database="cyclotron")
-
-    # Einav local DB-Mysql
+    # Maor local DB Mysql
     db = mysql.connector.connect(
-      host="localhost",
-      user="root",
-      password="Cyclotron2022@?%",
-      database= "cyclotron")
+        host="localhost",
+        port=3308,
+        user="root",
+        password="root",
+        database="cyclotron")
+
+    # # Einav local DB-Mysql
+    # db = mysql.connector.connect(
+    #   host="localhost",
+    #   user="root",
+    #   password="Cyclotron2022@?%",
+    #   database= "cyclotron")
 
     if db.is_connected():
         # db_Info = db.get_server_info()
@@ -50,39 +50,41 @@ try:
 except Error as e:
     print("Error while connecting to MySQL", e)
 
-#create database
-dbCursor.execute("CREATE DATABASE IF NOT EXISTS cyclotron");
-
-#Test to see if database was created
-dbCursor.execute("SHOW DATABASES")
-for cyclotron in dbCursor:
-    print(cyclotron)
-
 #create tables
 dbCursor.execute("CREATE TABLE IF NOT EXISTS hospital ("
                  "idhospital int(255)"
                  ",Name varchar(45)"
                  ",Fixed_activity_level float"
-                 ",Transport_time float)");
+                 ",Transport_time float,"
+                 "deleted binary(5))");
 
 dbCursor.execute("CREATE TABLE IF NOT EXISTS resourcecyclotron ("
                  "idresourceCyclotron int(255)"
                  ",version varchar(45)"
                  ",capacity int(255)"
                  ",constant_efficiency int(255),"
-                 "description varchar(45))");
+                 "description varchar(45),"
+                 "deleted binary(5))");
+dbCursor.execute("CREATE TABLE IF NOT EXISTS resourcemodule ("
+                 "idresourcemodule int(255)"
+                 ",version varchar(45)"
+                 ",capacity int(255),"
+                 "description varchar(45),"
+                 "deleted binary(5))");
 
 dbCursor.execute("CREATE TABLE IF NOT EXISTS workplan ("
                  "idworkplan int(255)"
                  ",Date date"
-                 ",Cyclotron_activation_time time)");
+                 ",Cyclotron_activation_time time,"
+                 "materialID int(255))");
 
 dbCursor.execute("CREATE TABLE IF NOT EXISTS orders ("
                  "idorders int(255)"
                  ",Date date"
                  ",Injection_time time"
                  ",amount int(255)"
-                 ",hospitalID int(255)"
+                 ",idhospital int(255),"
+                 "materialID int(255)"
                  ",batchID int(255)"
                  ",DecayCorrected float)");
 
@@ -101,6 +103,10 @@ dbCursor.execute("CREATE TABLE IF NOT EXISTS batch("
                  "EOS_activity int(255),"
                  "SynthesisTime int(255),"
                  "Radioactivity_to_cyclotron int(255))");
+
+dbCursor.execute("CREATE TABLE IF NOT EXISTS material("
+                 "materialID int(255),"
+                 "materialName varchar(45))");
 
 
 ######################Hospital page##########################################
