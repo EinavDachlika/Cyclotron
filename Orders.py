@@ -208,7 +208,7 @@ deleteButton.place(x=560, y=65)
 def WriteToCsv(result):
     """Function for creating/exporting Excel file"""
     print("try exporting new excel file...");
-    headers = ['OrderId', 'Date', 'Injection Time', 'Amount','HospitalID','batchID','decayCorrected'];
+    headers = ['OrderId', 'Date', 'Injection Time', 'Amount','idhospital','batchID','decayCorrected'];
     with open('orders.csv','a',newline="") as f:
         w = csv.writer(f,dialect='excel');
         messagebox.showinfo("message","Excel file was created");
