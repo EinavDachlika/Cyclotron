@@ -34,7 +34,7 @@ try:
         password="Cyclotron2022@?%",
         database= "cyclotron")
 
-    if db.is_connected():
+      if db.is_connected():
         # db_Info = db.get_server_info()
         # print("Connected to MySQL Server version ", db_Info)
         dbCursor = db.cursor(buffered=True)
