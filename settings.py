@@ -22,7 +22,7 @@ root.option_add("*Font", "Helvetica")
 
 # connect to MySqL
 try:
-    # Maor local DB Mysql
+    #Maor local DB Mysql
     # db = mysql.connector.connect(
     #     host="localhost",
     #     port=3308,
@@ -30,7 +30,7 @@ try:
     #     password="root",
     #     database="cyclotron")
 
-    # Einav local DB-Mysql
+    # # Einav local DB-Mysql
     db = mysql.connector.connect(
       host="localhost",
       user="root",
@@ -56,7 +56,7 @@ dbCursor.execute("CREATE TABLE IF NOT EXISTS hospital ("
                  ",Name varchar(45)"
                  ",Fixed_activity_level float"
                  ",Transport_time float,"
-                 "deleted binary(5))");
+                 "deleted BOOLEAN)");
 
 dbCursor.execute("CREATE TABLE IF NOT EXISTS resourcecyclotron ("
                  "idresourceCyclotron int(255)"
@@ -64,13 +64,14 @@ dbCursor.execute("CREATE TABLE IF NOT EXISTS resourcecyclotron ("
                  ",capacity int(255)"
                  ",constant_efficiency int(255),"
                  "description varchar(45),"
-                 "deleted binary(5))");
+                 "deleted BOOLEAN)");
+
 dbCursor.execute("CREATE TABLE IF NOT EXISTS resourcemodule ("
                  "idresourcemodule int(255)"
                  ",version varchar(45)"
                  ",capacity int(255),"
                  "description varchar(45),"
-                 "deleted binary(5))");
+                 "deleted BOOLEAN)");
 
 dbCursor.execute("CREATE TABLE IF NOT EXISTS workplan ("
                  "idworkplan int(255)"

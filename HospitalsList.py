@@ -141,7 +141,7 @@ hospitals_in_db = cursor.fetchall()
 
 #Insert data of Hospitals into My-SQl
 #The INSERT IGNORE statement will cause MySQL to do nothing when the insertion throws an error. If there’s no error, then a new row will be added to the table.
-cursor.execute("INSERT IGNORE INTO hospital (idhospital,Name,Fixed_activity_level,Transport_time,deleted) VALUES (1,'Belinson',9.2,15.0,'00000'),(2,'Ichilov',10.0,20.0,'00000'),(3,'Assuta TA',10.9,30.0,'00000'),(4,'Sheb',10.5,35.0,'00000'),(5,'Ziv',11.0,25.0,'00000'),(6,'Assuta Ashdod',13.1,60.0,'00000'),(7,'Assaf Harofeh',10.6,65.0,'00000'),(8,'Augusta Victoria',9.6,50.0,'00000'),(9,'Hila Pharma',9.6,50.0,'00000'),(10,'Hadassah',9.5,0.0,'00000');")
+cursor.execute("INSERT IGNORE INTO hospital (idhospital,Name,Fixed_activity_level,Transport_time,deleted) VALUES (1,'Belinson',9.2,15.0,true),(2,'Ichilov',10.0,20.0,false),(3,'Assuta TA',10.9,30.0,true),(4,'Sheb',10.5,35.0,true),(5,'Ziv',11.0,25.0,true),(6,'Assuta Ashdod',13.1,60.0,false),(7,'Assaf Harofeh',10.6,65.0,false),(8,'Augusta Victoria',9.6,50.0,false),(9,'Hila Pharma',9.6,50.0,false),(10,'Hadassah',9.5,0.0,false);")
 #cleanup
 
 #Commit changes in DB

@@ -137,7 +137,7 @@ def updateOrdersTreeMainPageOutputOnly():
     cursor = db.cursor();
 
     #cursor.execute("DESC orders;");
-    cursor.execute("SELECT idhospital,Date,SUM(amount) FROM orders GROUP BY Date;");
+    cursor.execute("SELECT idhospital,Date,SUM(amount) FROM orders GROUP BY Date,idhospital;");
     SumOFAmount1 = cursor.fetchall();
     print(SumOFAmount1);
     #convert list of tuples into list
