@@ -84,28 +84,139 @@ reportsButton.pack(side=LEFT,padx=10,pady=3)
 settingsIcon = Image.open("gearIcon.png")
 resizedSettingsIcon = settingsIcon.resize((35,35), Image.ANTIALIAS)
 imgSettings = ImageTk.PhotoImage(resizedSettingsIcon)
-Button(toolbar, image=imgSettings, borderwidth=0).pack(side=RIGHT,padx=10,pady=3)
+# Button(toolbar, image=imgSettings, borderwidth=0).pack(side=RIGHT,padx=10,pady=3)
+mbtn = Menubutton(toolbar, image=imgSettings, borderwidth=0)
+mbtn.pack(side=RIGHT,padx=10,pady=3)
+mbtn.menu = Menu(mbtn, tearoff = 0)
+mbtn["menu"] = mbtn.menu
+selected_settings_option = StringVar()
 
+def menu_item_selected(label):
+    if label == 'Cyclotron':
+        cycloSettingsFrame.pack(fill=X)
+        moduleSettingsFrame.forget()
+        materialSettingsFrame.forget()
+        hospitalFrame.forget()
+
+    elif label == 'Module':
+        moduleSettingsFrame.pack(fill=X)
+        cycloSettingsFrame.forget()
+        materialSettingsFrame.forget()
+        hospitalFrame.forget()
+
+    else:
+        materialSettingsFrame.pack(fill=X)
+        cycloSettingsFrame.forget()
+        moduleSettingsFrame.forget()
+        hospitalFrame.forget()
+
+
+selected_settings_option.trace("w", menu_item_selected)
+
+mbtn.menu.add_radiobutton(label="Cyclotron", command= lambda: menu_item_selected("Cyclotron"))
+mbtn.menu.add_radiobutton(label="Module", command= lambda: menu_item_selected("Module"))
+mbtn.menu.add_radiobutton(label="Material", command= lambda: menu_item_selected("Material"))
+
+
+# print(mbtn.selection_get())
 toolbar.pack(side=TOP, fill=X)
 
 toolbar.grid_columnconfigure(1, weight=1)
 
+
 dict_input_column = { 'hospital':('Name', 'Fixed_activity_level', 'Transport_time') ,
                        'resourcecyclotron':('version', 'capacity', 'constant_efficiency', 'description') ,
-                      'resourcemodule': ('version', 'capacity', 'description' ) }
+                      'resourcemodule': ('version', 'capacity', 'description' ) ,
+                      'material':('materialName', 'halflife_T')}
+#Einav
+query_index_col = """select 
+        col.table_name as 'table',
+        col.ordinal_position as col_id,
+        col.column_name as column_name
+        from information_schema.columns col
+        where  TABLE_SCHEMA='cyclotron'
+         order by col.table_name, col.ordinal_position """
+cursor.execute(query_index_col)
+dic_metadata = cursor.fetchall()
+#end Einav
 
-def if_NOT_NULL():
+dataType_col = """SELECT table_name,column_name, DATA_TYPE
+                FROM INFORMATION_SCHEMA.COLUMNS where TABLE_SCHEMA='cyclotron' """
+
+cursor.execute(dataType_col)
+dataType_col_list = cursor.fetchall()
+# print(dataType_col_list[1][0])
+# print(type(1))
+# print(dataType_col_list[1][0]==type(1))
+
+
+table_pk_list = """select 
+        # sta.index_name as pk_name,
+        tab.table_name,
+        sta.column_name,
+        sta.seq_in_index as column_id
+    from information_schema.tables as tab
+    inner join information_schema.statistics as sta
+            on sta.table_schema = tab.table_schema
+            and sta.table_name = tab.table_name
+            and sta.index_name = 'primary'
+    where tab.table_schema = 'cyclotron'
+        and tab.table_type = 'BASE TABLE'
+    order by tab.table_name,
+        column_id;"""
+cursor.execute(table_pk_list)
+table_pk_list = cursor.fetchall()
+
+
+fk_query = """select 
+       col.table_name as 'table',
+       kcu.constraint_name as fk_constraint_name,
+       # col.ordinal_position as col_id,
+       # col.column_name as column_name,
+       # case when kcu.referenced_table_schema is null
+       #      then null
+       #      else '>-' end as rel,
+       kcu.referenced_table_name as primary_table,
+       kcu.referenced_column_name as pk_column_name
+from information_schema.columns col
+join information_schema.tables tab
+     on col.table_schema = tab.table_schema
+     and col.table_name = tab.table_name
+left join information_schema.key_column_usage kcu
+     on col.table_schema = kcu.table_schema
+     and col.table_name = kcu.table_name
+     and col.column_name = kcu.column_name
+     and kcu.referenced_table_schema is not null
+where col.table_schema not in('information_schema','sys',
+                              'mysql', 'performance_schema')
+      and tab.table_type = 'BASE TABLE'
+--    and fks.constraint_schema = 'cyclotron'
+      and col.table_schema = 'cyclotron'
+      and kcu.constraint_name is not null
+order by col.table_schema,
+         col.table_name,
+         col.ordinal_position;"""
+cursor.execute(fk_query)
+fk = cursor.fetchall()
+
+
+
+def if_NOT_NULL(table_name):
     # column that define as NOT NULL in db
-    query = "select TABLE_NAME, COLUMN_NAME, IS_NULLABLE from information_schema.COLUMNS where TABLE_SCHEMA='cyclotron'and IS_NULLABLE='NO'"
+    query = "select TABLE_NAME, COLUMN_NAME, IS_NULLABLE from information_schema.COLUMNS where TABLE_SCHEMA='cyclotron'and IS_NULLABLE='NO'order by ordinal_position "
     cursor.execute(query)
     data = cursor.fetchall()
-    return data
+    not_null_list = [rec[1] for rec in data if rec[0] == table_name]
+    return not_null_list
 
 def error_message(text):
     messagebox.showerror("Error",text)
 
 def warning_message(text):
     messagebox.showwarning("Warning",text)
+
+def YES_NO_message(title_tab, text):
+    return messagebox.askyesno(title_tab,text)
 
 
 class Popup(Toplevel):
@@ -152,24 +263,34 @@ class Popup(Toplevel):
         #         p_last_label_x += entry_box.winfo_reqwidth() + 30
 
 
-    def is_legal(self, table_name, entries): #validation- if not null filed is not empty
+
+    def is_legal(self, table_name, entries):
+        #validation-  not null filed is not empty
         column_input = dict_input_column[table_name]
-        notnull_column = if_NOT_NULL()
+        # print(column_input)
+        notnull_column = if_NOT_NULL(table_name)
 
         input_values_list = self.get_entry(entries)
-        # i=0 #index of column in input_values_list
         index_of_not_null = []
         legal = True
         for col in notnull_column:
-            if col[0] == table_name and col[1] in column_input:
-                i = column_input.index(col[1])
+            if  col in column_input:
+                i = column_input.index(col)
                 if input_values_list[i] == "":
                     index_of_not_null.append(i)
+                    text = "There are unallowed empty box. Please fill the empty fiels"
+                    error_message(text)
                     legal = False
-                    # text = "There are unallowed empty box. Please fill the empty fiels"
-                    # return error_message(text)
-        return legal
+                    exit()
+        # data type validation
+        b=[data[1:] for data in dataType_col_list if data[0]==table_name and data[1] in column_input ]
+        print(type(input_values_list[0]))
+        print(b[0])
+        # print(isinstance(0.2, b[0][1]))
 
+        # for col in b:
+        #     if b[1]== type()
+        return legal
 
     def update_record(self,query, pk,list, update_values_list):
         selected = list.focus()
@@ -216,9 +337,9 @@ class Popup(Toplevel):
             legal = self.is_legal(table_name, entries)
             if legal:
                 self.update_record(query, pk,list,update_values_list)
-            else:
-                text = "There are unallowed empty box. Please fill the empty fiels"
-                error_message(text)
+            # else:
+            #     text = "There are unallowed empty box. Please fill the empty fiels"
+            #     error_message(text)
 
             self.destroy()
 
@@ -270,7 +391,7 @@ class Popup(Toplevel):
 
         self.save_cancel_button(save_title, self.update_if_selected, *args, entries)
 
-    def Add_if_legal(self, Addquery, list,selectMaxIDquery,table_name, entries):
+    def Add_if_legal(self, Addquery, list,table_name, entries):
         legal = self.is_legal(table_name, entries)
         if legal:
             input_values_list = self.get_entry(entries)
@@ -280,7 +401,9 @@ class Popup(Toplevel):
                 db.commit()
 
                 #insert the id from db to values list (not in table) to allow deleting the record without refreshing the page
-                cursor.execute(selectMaxIDquery)
+                pk_name = [pk[1] for pk in table_pk_list if pk[0] == table_name][0]
+                selectMaxIDquery2 = "SELECT MAX(" + pk_name + ") FROM " + table_name
+                cursor.execute(selectMaxIDquery2)
                 data = cursor.fetchall()
                 input_values_list.append(data[0][0])
                 list.insert(parent='', index='end', iid=None, text='',
@@ -372,7 +495,7 @@ class table(ttk.Treeview):
             self.column(column_name, anchor=CENTER, width=width)
             # # Create Headings
             self.heading(column_name, text=column_name, anchor=CENTER)
-
+        query = query + " WHERE ISNULL(deleted)"
         cursor.execute(query)
         data = cursor.fetchall()
 
@@ -402,64 +525,103 @@ class table(ttk.Treeview):
         else:
             return False
 
-    def delete_record(self, query):
+    def fk_rec_is_exist(self,query,table_name, pk_delected_record ):
+        fk_list = [rec for rec in fk if rec[2]== table_name]
+        if len(fk_list) != 0:
+            for fk_rec in fk_list:
+                query = "select * from "+ fk_rec[0] + " where " + fk_rec[1] + "=" + pk_delected_record
+                try:
+                    cursor.execute(query)
+                    data = cursor.fetchall()
+                    if data != []:
+                        return True
+                except:
+                    #Rollback in case there is any error
+                    db.rollback()
+        return False
 
+    def delete_record(self, query,table_name):
         selected_rec = self.selected()
-        len = selected_rec.__len__()
-        pk_delected_record = selected_rec[len-1]
-        pk_delected_record_list = (pk_delected_record, )
+        item_in_string= ', '.join([ item for item in selected_rec[:selected_rec.__len__()-1]])
+        is_non=self.selected_is_non(selected_rec)
+        if not is_non:
+            len = selected_rec.__len__()
+            pk_delected_record = selected_rec[len-1]
+            title_tab = "Delete Record"
+            text_mess= "Are you sure you want to delete " + item_in_string + " ?"
+            if YES_NO_message(title_tab, text_mess):
+                pk_delected_record_list = (pk_delected_record, )
+                to_delete= not self.fk_rec_is_exist(query,table_name,pk_delected_record)
+                pk_name = [pk[1] for pk in table_pk_list if pk[0] == table_name][0]
+                if to_delete:
+                    try:
+                        query = "delete from "+table_name + " where " + pk_name + "=" + pk_delected_record
+                        cursor.execute(query )
+                        db.commit()
+                    except:
+                        # Rollback in case there is any error
+                        db.rollback()
 
-        try:
-            cursor.execute(query,pk_delected_record_list )
-            db.commit()
-        except:
-            # Rollback in case there is any error
-            db.rollback()
+                else: #to hide
+                    query2 = "UPDATE " + table_name +" SET deleted = True " +"WHERE " + pk_name + "=" + pk_delected_record
+                    cursor.execute(query2)
+                    db.commit()
+                self.delete(self.selection()[0])
 
-        self.delete(self.selection()[0])
+
+
 #general
 label_font = ('Helvetica',26, 'bold')
-sub_label_font = ('Helvetica',15, 'bold')
+label_font_flag_on_page = ('Helvetica 12 bold underline')
+label_font_flag = ('Helvetica 12')
+sub_label_font = ('Helvetica',18, 'bold')
 label_color = '#034672'
 
-##################### settings #####################
-SettingsFrame = Frame(root)
-h = Scrollbar(SettingsFrame, orient='horizontal')
-SettingsFrame.pack(fill=X)
 
-# feed label
-feedLabel = Label(SettingsFrame, text = 'Settings', font=label_font,fg=label_color)
+##################### settings - cyclotron #####################
+#cyclotron frame
+cycloSettingsFrame = Frame(root)
+h = Scrollbar(cycloSettingsFrame, orient='horizontal')
+# cycloSettingsFrame.pack(fill=X)
+
+# feed label - cyclotron
+feedLabel = Label(cycloSettingsFrame, text = 'Settings ➝ ', font=label_font_flag,fg=label_color)
 PlaceLable_X=50
 PlaceLable_Y=10
-
 feedLabel.pack(side=LEFT)
 feedLabel.place(x=PlaceLable_X,y=PlaceLable_Y)
 
+feedLabeflag = Label(cycloSettingsFrame, text = 'Cyclotron', font=label_font_flag_on_page,fg=label_color)
+
+PlaceLable2_X=135
+feedLabeflag.pack(side=LEFT)
+feedLabeflag.place(x=PlaceLable2_X,y=PlaceLable_Y)
+
 ##################### Cyclotron #####################
 # Cyclotron Details label
-CyclotronLabel = Label(SettingsFrame, text = 'Cyclotron Details', font=sub_label_font,fg=label_color)
-cyclo_Lable_place_x=80
-cyclo_Lable_place_y=70
+CyclotronLabel = Label(cycloSettingsFrame, text = 'Cyclotron Details', font=sub_label_font,fg=label_color)
+Lable_place_x=80
+Lable_place_y=60
 
 CyclotronLabel.pack(side=LEFT)
-CyclotronLabel.place(x=cyclo_Lable_place_x,y=cyclo_Lable_place_y)
+CyclotronLabel.place(x=Lable_place_x,y=Lable_place_y)
 
 ###cycortion tabel###
 scroll_width=20
 tab_side=LEFT
 x=613
-y= 160
-frame=SettingsFrame
+y= 140
+frame=cycloSettingsFrame
 list_height=5
-lable_place_x = 80
-lable_place_y=70
+table_place_x = 80
+table_place_y = 80
 columns_name_list=('Version', 'Capacity (mci/h)', 'Constant Efficiency (mCi/mA)', 'Description')
 
 query = "SELECT * FROM resourcecyclotron"
 
 # cyclo_tabel=table(scroll_width,tab_side, x,y,frame,list_height,lable_place_x,lable_place_y, columns_name_list, query )
-cyclo_tabel=table(frame,scroll_width,list_height,tab_side,x,y,lable_place_x,
-                               lable_place_y,)
+cyclo_tabel=table(frame,scroll_width,list_height,tab_side,x,y,table_place_x,
+                  table_place_y,)
 cyclo_tabel.create_fully_tabel( columns_name_list, query)
 
 
@@ -482,7 +644,8 @@ def editCyclotronfun():
 
 def deleteCyclotronfun():
     query = "DELETE FROM resourcecyclotron WHERE idresourceCyclotron = %s"
-    cyclo_tabel.delete_record(query)
+    table_name='resourcecyclotron'
+    cyclo_tabel.delete_record(query,table_name)
 
 def addCyclotronfun():
     addCyclPopup = Popup()
@@ -490,63 +653,85 @@ def addCyclotronfun():
     labels = (('Version', ''), ('Capacity', '(mci/h)'), ('Constant Efficiency', '(mCi/mA)'), ('Description', ''))
     save_title = "Add Cyclotron"
     insertquery = "INSERT INTO resourcecyclotron SET version = %s ,capacity= %s, constant_efficiency= %s,description=%s"
-    selectIDquery = "SELECT MAX(idresourceCyclotron) FROM resourcecyclotron"
+    # selectIDquery = "SELECT MAX(idresourceCyclotron) FROM resourcecyclotron"
     table_name='resourcecyclotron'
-    addCyclPopup.add_popup(labels, save_title, insertquery, cyclo_tabel,selectIDquery,table_name)
+    addCyclPopup.add_popup(labels, save_title, insertquery, cyclo_tabel,table_name)
 
 #cyclotron buttons
 #Create a button in the main Window to edit  record (open the popup) - cyclotron
 cyclotronEditIcon = Image.open("editIcon.jpg")
 resizedCycloEditIcon = cyclotronEditIcon.resize((20, 20), Image.ANTIALIAS)
 imgEditCyclotron = ImageTk.PhotoImage(resizedCycloEditIcon)
-# editCyclotronButton = Button(SettingsFrame, image=imgEditCyclotron, borderwidth=0, command= lambda :editCyclotronfun())
-editCyclotronButton = Button(SettingsFrame, image=imgEditCyclotron, borderwidth=0, command= lambda :editCyclotronfun())
+# editCyclotronButton = Button(ctcloSettingsFrame, image=imgEditCyclotron, borderwidth=0, command= lambda :editCyclotronfun())
+editCyclotronButton = Button(cycloSettingsFrame, image=imgEditCyclotron, borderwidth=0, command= lambda :editCyclotronfun())
 
 editCyclotronButton.pack(side= LEFT)
-editCyclotronButton.place(x=cyclo_Lable_place_x+450, y=cyclo_Lable_place_y+15)
+editCyclotronButton.place(x=table_place_x+450, y=table_place_y+15)
 
 #Create a button in the main Window to add record - cyclotron
 cyclotronAddIcon = Image.open("addIcon.png")
 resizedCycloAddIcon = cyclotronAddIcon.resize((25, 25), Image.ANTIALIAS)
 imgAddCyclotron = ImageTk.PhotoImage(resizedCycloAddIcon)
-addCyclotronButton = Button(SettingsFrame, image=imgAddCyclotron, borderwidth=0, command=lambda : addCyclotronfun())
+addCyclotronButton = Button(cycloSettingsFrame, image=imgAddCyclotron, borderwidth=0, command=lambda : addCyclotronfun())
 addCyclotronButton.pack(side= LEFT)
-addCyclotronButton.place(x=cyclo_Lable_place_x+400, y=cyclo_Lable_place_y+14)
+addCyclotronButton.place(x=table_place_x+400, y=table_place_y+14)
 
 
 # Create a button in the main Window to Delete record - cyclotron
 cyclotronDeleteIcon = Image.open("‏‏deleteIcon.png")
 resizedCycloDeleteIcon = cyclotronDeleteIcon.resize((20, 20), Image.ANTIALIAS)
 imgDeleteCyclotron = ImageTk.PhotoImage(resizedCycloDeleteIcon)
-deleteCyclotronButton = Button(SettingsFrame, image=imgDeleteCyclotron, borderwidth=0, command=lambda : deleteCyclotronfun())
+deleteCyclotronButton = Button(cycloSettingsFrame, image=imgDeleteCyclotron, borderwidth=0, command=lambda : deleteCyclotronfun())
 deleteCyclotronButton.pack(side=LEFT)
-deleteCyclotronButton.place(x=cyclo_Lable_place_x + 500, y=cyclo_Lable_place_y + 15)
+deleteCyclotronButton.place(x=table_place_x + 500, y=table_place_y + 15)
 
+##################### settings - module #####################
+#module frame
+moduleSettingsFrame = Frame(root)
+# h = Scrollbar(moduleSettingsFrame, orient='horizontal')
+# moduleSettingsFrame.pack(fill=X)
+
+# feed label - module
+feedLabel = Label(moduleSettingsFrame, text = 'Settings ➝ ', font=label_font_flag,fg=label_color)
+PlaceLable_X=50
+PlaceLable_Y=10
+feedLabel.pack(side=LEFT)
+feedLabel.place(x=PlaceLable_X,y=PlaceLable_Y)
+
+feedLabeflag = Label(moduleSettingsFrame, text = 'Module', font=label_font_flag_on_page,fg=label_color)
+
+PlaceLable2_X=135
+feedLabeflag.pack(side=LEFT)
+feedLabeflag.place(x=PlaceLable2_X,y=PlaceLable_Y)
 
 ##################### Module #####################
-# Module Details label
-moduleLabel = Label(SettingsFrame, text = 'Module Details', font=sub_label_font,fg=label_color)
-module_Lable_place_x=700
-module_Lable_place_y=70
 
+# Module Details label
+moduleLabel = Label(moduleSettingsFrame, text = 'Module Details', font=sub_label_font,fg=label_color)
+# module_Lable_place_x=80
+# module_Lable_place_y=60
+
+moduleLabel.pack(side=LEFT)
+moduleLabel.place(x=Lable_place_x,y=Lable_place_y)
 moduleLabel.pack(side=RIGHT)
-moduleLabel.place(x=module_Lable_place_x,y=module_Lable_place_y)
+moduleLabel.place(x=Lable_place_x,y=Lable_place_y)
 
 ###module tabel###
 scroll_width=20
-tab_side=RIGHT
-x=1035
-y= 160
-frame=SettingsFrame
+tab_side=LEFT
+x=420
+y= 150
+frame=moduleSettingsFrame
 list_height=5
-module_tabel_place_x=-30
+# table_place_x = 80
+# table_place_y=80
 
 columns_name_list=('Version', 'Capacity (mci/h)', 'Description')
 
 queryModule = "SELECT * FROM resourcemodule"
 
-module_tabel=table(frame,scroll_width,list_height,tab_side,x,y,module_tabel_place_x,
-                   module_Lable_place_y)
+module_tabel=table(frame,scroll_width,list_height,tab_side,x,y,table_place_x,
+                   table_place_y)
 module_tabel.create_fully_tabel( columns_name_list, queryModule)
 
 ###module functions###
@@ -573,13 +758,13 @@ def addModulefun():
     labels = (('Version', ''), ('Capacity', '(mci/h)'), ('Description', ''))
     save_title = "Add Module"
     insetQuery = "INSERT INTO resourcemodule SET version = %s ,capacity= %s,description=%s"
-    selectIDquery = "SELECT MAX(idresourcemodule) FROM resourcemodule"
     table_name='resourcemodule'
-    addModulePopup.add_popup(labels, save_title, insetQuery, module_tabel,selectIDquery, table_name)
+    addModulePopup.add_popup(labels, save_title, insetQuery, module_tabel, table_name)
 
 def deleteModulefun():
     query = "DELETE FROM resourcemodule WHERE idresourcemodule = %s"
-    module_tabel.delete_record(query)
+    table_name='resourcemodule'
+    module_tabel.delete_record(query,table_name)
 
 
 #module buttons
@@ -587,31 +772,139 @@ def deleteModulefun():
 moduleEditIcon = Image.open("editIcon.jpg")
 resizedModuleEditIcon = moduleEditIcon.resize((20, 20), Image.ANTIALIAS)
 imgEditModule = ImageTk.PhotoImage(resizedModuleEditIcon)
-editModuleButton = Button(SettingsFrame, image=imgEditModule, borderwidth=0, command=editModulefun)
+editModuleButton = Button(moduleSettingsFrame, image=imgEditModule, borderwidth=0, command=editModulefun)
 editModuleButton.pack(side= LEFT)
-editModuleButton.place(x=module_Lable_place_x+250, y=module_Lable_place_y+15)
+editModuleButton.place(x=table_place_x+250, y=table_place_y+15)
 
 
 #Create a button in the main Window to Delete record - module
 moduleDeleteIcon = Image.open("‏‏deleteIcon.png")
 resizedModuleDeleteIcon = moduleDeleteIcon.resize((20, 20), Image.ANTIALIAS)
 imgDeleteModule = ImageTk.PhotoImage(resizedModuleDeleteIcon)
-deleteModuleButton = Button(SettingsFrame, image=imgDeleteModule, borderwidth=0, command=deleteModulefun)
+deleteModuleButton = Button(moduleSettingsFrame, image=imgDeleteModule, borderwidth=0, command=deleteModulefun)
 deleteModuleButton.pack(side= LEFT)
-deleteModuleButton.place(x=module_Lable_place_x+300, y=module_Lable_place_y+15)
+deleteModuleButton.place(x=table_place_x+300, y=table_place_y+15)
 
 #Create a button in the main Window to add record - module
 moduleAddIcon = Image.open("addIcon.png")
 resizedModuleAddIcon = moduleAddIcon.resize((25, 25), Image.ANTIALIAS)
 imgAddModule = ImageTk.PhotoImage(resizedModuleAddIcon)
-addModuleButton = Button(SettingsFrame, image=imgAddModule, borderwidth=0, command=addModulefun)
+addModuleButton = Button(moduleSettingsFrame, image=imgAddModule, borderwidth=0, command=addModulefun)
 addModuleButton.pack(side= LEFT)
-addModuleButton.place(x=module_Lable_place_x+200, y=module_Lable_place_y+14)
+addModuleButton.place(x=table_place_x+200, y=table_place_y+14)
+
+
+
+# ##################### Material #####################
+##################### settings - Material #####################
+#material frame
+materialSettingsFrame = Frame(root)
+# h = Scrollbar(materialSettingsFrame, orient='horizontal')
+# materialSettingsFrame.pack(fill=X)
+
+# feed label - material
+feedLabelmaterial = Label(materialSettingsFrame, text = 'Settings ➝ ', font=label_font_flag,fg=label_color)
+PlaceLable_X=50
+PlaceLable_Y=10
+feedLabelmaterial.pack(side=LEFT)
+feedLabelmaterial.place(x=PlaceLable_X,y=PlaceLable_Y)
+
+feedLabeflag = Label(materialSettingsFrame, text = 'Material', font=label_font_flag_on_page,fg=label_color)
+
+PlaceLable2_X=135
+feedLabeflag.pack(side=LEFT)
+feedLabeflag.place(x=PlaceLable2_X,y=PlaceLable_Y)
+
+##################### material #####################
+
+# material Details label
+materialLabel = Label(materialSettingsFrame, text = 'Material Details', font=sub_label_font,fg=label_color)
+# material_Lable_place_x=80
+# material_Lable_place_y=60
+
+materialLabel.pack(side=LEFT)
+materialLabel.place(x=Lable_place_x,y=Lable_place_y)
+
+###material tabel###
+scroll_width=20
+tab_side=LEFT
+x=420
+y= 150
+frame=materialSettingsFrame
+list_height=5
+# table_place_x = 80
+# table_place_y=80
+
+columns_name_list=[' Material ', 'Half-life (min)']
+
+queryMaterial = "SELECT * FROM material"
+
+material_tabel=table(frame,scroll_width,list_height,tab_side,x,y,table_place_x,
+                   table_place_y)
+material_tabel.create_fully_tabel( columns_name_list, queryMaterial)
+
+###material functions###
+def editMaterialfun():
+    selected_rec = material_tabel.selected()
+    selected_non = material_tabel.selected_is_non(selected_rec)
+    if not selected_non:
+        editMaterialPopup = Popup()
+        editMaterialPopup.open_pop('Edit Material Details')
+
+        query = "UPDATE material SET materialName = %s ,halflife_T= %s  WHERE idmaterial = %s"
+        table_name = 'material'
+        pk = selected_rec[2]
+        labels = (('Material', ''), (' Half-life', '(min)'))
+        save_title = "Save Changes"
+
+        editMaterialPopup.edit_popup(labels, selected_rec, save_title, query, pk, material_tabel,  table_name)
+
+
+def addMaterialfun():
+    addMaterialPopup = Popup()
+    addMaterialPopup.open_pop('Add Material Details')
+    labels = (('Material', ''), ('Half-life', '(min)'))
+    save_title = "Add Material"
+    insetQuery = "INSERT INTO material SET materialName = %s ,halflife_T= %s"
+    table_name='material'
+    addMaterialPopup.add_popup(labels, save_title, insetQuery, material_tabel, table_name)
+
+def deleteMaterialfun():
+    query = "DELETE FROM material WHERE idmaterial = %s"
+    table_name='material'
+    material_tabel.delete_record(query,table_name)
+
+
+#material buttons
+#Create a button in the main Window to edit  record (open the popup) - material
+materialEditIcon = Image.open("editIcon.jpg")
+resizedMaterialEditIcon = materialEditIcon.resize((20, 20), Image.ANTIALIAS)
+imgEditMaterial = ImageTk.PhotoImage(resizedMaterialEditIcon)
+editMaterialButton = Button(materialSettingsFrame, image=imgEditMaterial, borderwidth=0, command=editMaterialfun)
+editMaterialButton.pack(side= LEFT)
+editMaterialButton.place(x=table_place_x+165, y=table_place_y+15)
+
+
+#Create a button in the main Window to Delete record - material
+materialDeleteIcon = Image.open("‏‏deleteIcon.png")
+resizedMaterialDeleteIcon = materialDeleteIcon.resize((20, 20), Image.ANTIALIAS)
+imgDeleteMaterial = ImageTk.PhotoImage(resizedMaterialDeleteIcon)
+deleteMaterialButton = Button(materialSettingsFrame, image=imgDeleteMaterial, borderwidth=0, command=deleteMaterialfun)
+deleteMaterialButton.pack(side= LEFT)
+deleteMaterialButton.place(x=table_place_x+215, y=table_place_y+15)
+
+#Create a button in the main Window to add record - material
+materialAddIcon = Image.open("addIcon.png")
+resizedMaterialAddIcon = materialAddIcon.resize((25, 25), Image.ANTIALIAS)
+imgAddMaterial = ImageTk.PhotoImage(resizedMaterialAddIcon)
+addMaterialButton = Button(materialSettingsFrame, image=imgAddModule, borderwidth=0, command=addMaterialfun)
+addMaterialButton.pack(side= LEFT)
+addMaterialButton.place(x=table_place_x+115, y=table_place_y+14)
 
 
 ##################### Hospitals List #####################
 hospitalFrame = Frame(root)
-hospitalFrame.pack(fill=X)
+# hospitalFrame.pack(fill=X)
 
 # hospital label
 hospitalLabel = Label(hospitalFrame, text = 'Hospitals Details', font=label_font,fg=label_color)
@@ -666,13 +959,14 @@ def addHospitalfun():
     labels = (('Name', ''), ('Fixed activity level', '(mci/h)'), ('Transport time', '(min)'))
     save_title = "Add Hospital"
     insertQuery = "INSERT INTO hospital SET Name = %s ,Fixed_activity_level= %s,Transport_time=%s"
-    selectIDquery = "SELECT MAX(idhospital) FROM hospital"
+    # selectIDquery = "SELECT MAX(idhospital) FROM hospital"
     table_name = 'hospital'
-    addHospitalPopup.add_popup(labels, save_title, insertQuery, hospital_tabel,selectIDquery, table_name)
+    addHospitalPopup.add_popup(labels, save_title, insertQuery, hospital_tabel, table_name)
 
 def deleteHospitalfun():
     query = "DELETE FROM hospital WHERE idhospital = %s"
-    hospital_tabel.delete_record(query)
+    table_name= 'hospital'
+    hospital_tabel.delete_record(query,table_name)
 
 
 #hospital buttons
@@ -703,6 +997,7 @@ deleteHospitalButton.pack(side=LEFT)
 deleteHospitalButton.place(x=lable_place_x + 500, y=lable_place_y + 15)
 
 
-SettingsFrame.forget()
+# cycloSettingsFrame.forget()
+# moduleSettingsFrame.forget()
 # hospitalFrame.forget()
 root.mainloop()
