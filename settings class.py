@@ -1,22 +1,21 @@
 from tkinter import *
 from tkinter import ttk
 from tkinter import messagebox
+import datetime
 from PIL import Image, ImageTk, ImageFont
 import mysql.connector
 from mysql.connector import Error
 # from importlib import reload
 
-##table code
-#https://pythonguides.com/python-tkinter-table-tutorial/
 
 root = Tk()
 #root.geometry("300x300")
-
 
 root.title("Settings")
 
 #defult font
 root.option_add("*Font", "Helvetica")
+
 
 # connect to MySqL
 try:
@@ -66,9 +65,9 @@ workPlanButton = Button(toolbar, text="Work Plans",font='Helvetica 11')
 workPlanButton.pack(side=LEFT,padx=10,pady=3)
 
 
-# Hospitals button - toolbar
-hospitalsButton = Button (toolbar, text="Hospitals",font='Helvetica 11', activebackground='gray')
-hospitalsButton.pack(side=LEFT,padx=10,pady=3)
+# # Hospitals button - toolbar
+# hospitalsButton = Button (toolbar, text="Hospitals",font='Helvetica 11', activebackground='gray')
+# hospitalsButton.pack(side=LEFT,padx=10,pady=3)
 
 # Orders button - toolbar
 ordersButton = Button (toolbar, text="Orders", font='Helvetica 11')
@@ -104,6 +103,12 @@ def menu_item_selected(label):
         materialSettingsFrame.forget()
         hospitalFrame.forget()
 
+    elif label == 'Hospital':
+        hospitalFrame.pack(fill=X)
+        cycloSettingsFrame.forget()
+        materialSettingsFrame.forget()
+        moduleSettingsFrame.forget()
+
     else:
         materialSettingsFrame.pack(fill=X)
         cycloSettingsFrame.forget()
@@ -116,6 +121,8 @@ selected_settings_option.trace("w", menu_item_selected)
 mbtn.menu.add_radiobutton(label="Cyclotron", command= lambda: menu_item_selected("Cyclotron"))
 mbtn.menu.add_radiobutton(label="Module", command= lambda: menu_item_selected("Module"))
 mbtn.menu.add_radiobutton(label="Material", command= lambda: menu_item_selected("Material"))
+mbtn.menu.add_radiobutton(label="Hospital", command= lambda: menu_item_selected("Hospital"))
+
 
 
 # print(mbtn.selection_get())
@@ -145,9 +152,7 @@ dataType_col = """SELECT table_name,column_name, DATA_TYPE
 
 cursor.execute(dataType_col)
 dataType_col_list = cursor.fetchall()
-# print(dataType_col_list[1][0])
-# print(type(1))
-# print(dataType_col_list[1][0]==type(1))
+# print(dataType_col_list)
 
 
 table_pk_list = """select 
@@ -201,13 +206,20 @@ fk = cursor.fetchall()
 
 
 
-def if_NOT_NULL(table_name):
+def NOT_NULL_DataType_col(table_name):
     # column that define as NOT NULL in db
-    query = "select TABLE_NAME, COLUMN_NAME, IS_NULLABLE from information_schema.COLUMNS where TABLE_SCHEMA='cyclotron'and IS_NULLABLE='NO'order by ordinal_position "
+    # query = "select TABLE_NAME, COLUMN_NAME, IS_NULLABLE from information_schema.COLUMNS where TABLE_SCHEMA='cyclotron'and IS_NULLABLE='NO'order by ordinal_position "
+
+    query = """SELECT table_name,column_name, DATA_TYPE , IS_NULLABLE
+                    FROM INFORMATION_SCHEMA.COLUMNS where TABLE_SCHEMA='cyclotron' and table_name= '"""
+    query = query+table_name +"'"
+    print(query)
     cursor.execute(query)
     data = cursor.fetchall()
     not_null_list = [rec[1] for rec in data if rec[0] == table_name]
-    return not_null_list
+    # return not_null_list
+    return data
+
 
 def error_message(text):
     messagebox.showerror("Error",text)
@@ -264,32 +276,73 @@ class Popup(Toplevel):
 
 
 
-    def is_legal(self, table_name, entries):
+    def is_legal(self, table_name, entries, error_labels_list):
         #validation-  not null filed is not empty
         column_input = dict_input_column[table_name]
-        # print(column_input)
-        notnull_column = if_NOT_NULL(table_name)
-
+        datatype_notnull_column = NOT_NULL_DataType_col(table_name)
+        datatype_in_db = [data[1:] for data in datatype_notnull_column if data[0] == table_name and data[1] in column_input]
         input_values_list = self.get_entry(entries)
-        index_of_not_null = []
-        legal = True
-        for col in notnull_column:
-            if  col in column_input:
-                i = column_input.index(col)
-                if input_values_list[i] == "":
-                    index_of_not_null.append(i)
-                    text = "There are unallowed empty box. Please fill the empty fiels"
-                    error_message(text)
-                    legal = False
-                    exit()
-        # data type validation
-        b=[data[1:] for data in dataType_col_list if data[0]==table_name and data[1] in column_input ]
-        print(type(input_values_list[0]))
-        print(b[0])
-        # print(isinstance(0.2, b[0][1]))
 
-        # for col in b:
-        #     if b[1]== type()
+        for error_lab in error_labels_list: #inite error labeles (for more than one tries)
+            error_lab['text'] = ""
+
+        legal_notnull=True
+        legal_datatype=True
+        legal = True
+        for col in datatype_in_db:
+            if col[0] in column_input:
+                i = column_input.index(col[0])   #index in input_values_list
+                if col[2]=='NO' and input_values_list[i] == "":    # Not null validation
+                    entries[i].config(bg='red')
+                    error_labels_list[i]['text'] = "Please fill the box"
+                    legal_notnull = False
+
+                    legal=False
+                else:  # data type validation
+                    if col[1] == 'varchar':
+                        try:
+                            str(input_values_list[i])
+                        except:
+                            legal_datatype = False
+                            entries[i].config(bg='red')
+                            error_labels_list[i]['text'] = "Incorrect data format"
+                    if col[1] == 'float':
+                        try:
+                            float(input_values_list[i])
+                        except:
+                            legal_datatype = False
+                            entries[i].config(bg='red')
+                            error_labels_list[i]['text'] = "Incorrect data format"
+
+                    if col[1] == 'binary':
+                        try:
+                            bool(input_values_list[i])
+                        except:
+                            legal_datatype = False
+                            entries[i].config(bg='red')
+
+                    if col[1] == 'time':
+                        try:
+                            bool(input_values_list[i])
+
+                        except:
+                            legal_datatype = False
+                            entries[i].config(bg='red')
+
+                    if col[1] == 'date':
+                        try:
+                            datetime.datetime.strptime(input_values_list[i], '%Y-%m-%d')
+                        except:
+                            legal_datatype = False
+                            entries[i].config(bg='red')
+        if not legal_notnull:
+            text = "There are unallowed empty box. Please fill the highlighted fiels"
+            error_message(text)
+
+        if not legal_datatype:
+            legal=False
+            error_message("Incorrect data format in highlighted box")
+
         return legal
 
     def update_record(self,query, pk,list, update_values_list):
@@ -341,13 +394,14 @@ class Popup(Toplevel):
             #     text = "There are unallowed empty box. Please fill the empty fiels"
             #     error_message(text)
 
-            self.destroy()
+                self.destroy()
 
 
     def get_entry(self, entries): # to edit_popup - get user changes in entry box
         update_values_list=[]
 
         for entry in entries:
+            entry.config(bg='white')
             update_values_list.append(entry.get())
         return update_values_list
 
@@ -379,6 +433,7 @@ class Popup(Toplevel):
             value_index += 1
             entries.append(entry_box)
 
+
             if lab[1] != '':
                 p_label_units = Label(self, text=lab[1])
                 font = ("Courier", 9)
@@ -391,8 +446,8 @@ class Popup(Toplevel):
 
         self.save_cancel_button(save_title, self.update_if_selected, *args, entries)
 
-    def Add_if_legal(self, Addquery, list,table_name, entries):
-        legal = self.is_legal(table_name, entries)
+    def Add_if_legal(self, Addquery, list,table_name, entries, error_labels_list):
+        legal = self.is_legal(table_name, entries,error_labels_list)
         if legal:
             input_values_list = self.get_entry(entries)
             try:
@@ -413,10 +468,9 @@ class Popup(Toplevel):
                 # Rollback in case there is any error
                 db.rollback()
 
-        else:
 
-            error_message("There are unallowed empty box. Please fill the empty fiels")
-        self.destroy()
+            self.destroy()
+
 
 
     def add_popup(self, labels, save_title, *args):
@@ -427,17 +481,16 @@ class Popup(Toplevel):
         row_num = 1
 
         # grab record values
-
+        error_labels_list=[]
         entries = []
         for lab in labels:
             p_label = Label(self, text=lab[0])
             p_label.grid(row=row_num, column=1)
             p_label.place(x=p_last_label_x, y=p_last_label_y)
-
             row_num += 1
 
             # Entry boxes
-            entry_box = Entry(self, width=20)
+            entry_box = Entry(self, width=20,insertbackground=label_color)
             entry_box.grid(row=row_num, column=2)
             entry_box.place(x=p_last_label_x + 4, y=p_last_label_y + 30)
             entries.append( entry_box)
@@ -449,10 +502,18 @@ class Popup(Toplevel):
                 p_label_units_x = p_last_label_x + p_label.winfo_reqwidth()
                 p_label_units.place(x=p_label_units_x, y=p_last_label_y + 7)
 
-            p_last_label_y += entry_box.winfo_reqheight() + 35 + p_label.winfo_reqheight()
+            p_last_label_y += entry_box.winfo_reqheight()  + p_label.winfo_reqheight()
+
+            #error labels
+            error_label = Label(self, text='', font=('Courier',8),fg='red' )
+            error_label.place(x=p_last_label_x+1, y=p_last_label_y+5)
+            error_labels_list.append(error_label)
             row_num += 1
 
-        self.save_cancel_button(save_title, self.Add_if_legal,*args, entries ) # will add save.cancel buttons (and click on functions)
+
+            p_last_label_y += 18  + error_label.winfo_reqheight()
+
+        self.save_cancel_button(save_title, self.Add_if_legal,*args, entries,error_labels_list ) # will add save.cancel buttons (and click on functions)
 
 
 class table(ttk.Treeview):
@@ -902,18 +963,35 @@ addMaterialButton.pack(side= LEFT)
 addMaterialButton.place(x=table_place_x+115, y=table_place_y+14)
 
 
-##################### Hospitals List #####################
+##################### settings - Hospitals #####################
+#hospital frame
 hospitalFrame = Frame(root)
 # hospitalFrame.pack(fill=X)
 
-# hospital label
-hospitalLabel = Label(hospitalFrame, text = 'Hospitals Details', font=label_font,fg=label_color)
-hospital_Lable_place_x=60
-hospital_Lable_place_y=40
+# feed label - hospital
+feedLabel = Label(hospitalFrame, text = 'Settings ➝ ', font=label_font_flag,fg=label_color)
+PlaceLable_X=50
+PlaceLable_Y=10
+feedLabel.pack(side=LEFT)
+feedLabel.place(x=PlaceLable_X,y=PlaceLable_Y)
+
+feedLabeflag = Label(hospitalFrame, text = 'hospital', font=label_font_flag_on_page,fg=label_color)
+
+PlaceLable2_X=135
+feedLabeflag.pack(side=LEFT)
+feedLabeflag.place(x=PlaceLable2_X,y=PlaceLable_Y)
+
+
+# hospital Details label
+hospitalLabel = Label(hospitalFrame, text = 'Hospitals Details', font=sub_label_font,fg=label_color)
+# module_Lable_place_x=80
+# module_Lable_place_y=60
 
 hospitalLabel.pack(side=LEFT)
-hospitalLabel.place(x=hospital_Lable_place_x,y=hospital_Lable_place_y)
+hospitalLabel.place(x=Lable_place_x,y=Lable_place_y)
 
+
+#hospital table
 scroll_width=20
 tab_side=LEFT
 x=650
@@ -967,7 +1045,6 @@ def deleteHospitalfun():
     query = "DELETE FROM hospital WHERE idhospital = %s"
     table_name= 'hospital'
     hospital_tabel.delete_record(query,table_name)
-
 
 #hospital buttons
 #Create a button in the main Window to edit  record (open the popup) - hospital
