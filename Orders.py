@@ -8,6 +8,7 @@ from tkinter import filedialog as fd
 import pandas as pd
 from docx.api import Document
 import aspose.words as aw
+import xlrd #Version 1.2.0
 from tkcalendar import Calendar,DateEntry
 import csv
 from datetime import datetime
@@ -115,19 +116,59 @@ Cyclotron_scroll = Scrollbar(ordersFrame, orient="vertical", width=25)
 #my_label=Label(root,text='');
 
 #Empty page/table for new order
-OrdersTree = ttk.Treeview(ordersFrame,yscrollcommand=Cyclotron_scroll.set,columns=('1', '2'),height=20)
-OrdersTree['show'] = 'tree headings';
+OrdersTree = ttk.Treeview(ordersFrame,yscrollcommand=Cyclotron_scroll.set,columns=('1', '2','3'),height=20)
+#OrdersTree['show'] = 'tree headings';
 OrdersTree.pack(side=LEFT, padx=100, pady=110)
 
 #Foramte Columns
-OrdersTree.column("#0");
+OrdersTree.column("#0",width=0,minwidth=0);
 OrdersTree.column("1");
 OrdersTree.column("2");
+OrdersTree.column("3");
 
 #Define headers/titles in table
-OrdersTree.heading("#0", text="Hospital");
-OrdersTree.heading("1", text="Injection Date");
-OrdersTree.heading("2", text="Doses");
+OrdersTree.heading("#0", text="Label");
+OrdersTree.heading("1", text="Hospital");
+OrdersTree.heading("2", text="Injection Date");
+OrdersTree.heading("3", text="Doses");
+
+def updateOrdersTreeMainPageOutputOnly():
+    # # Absorb Orders list data from db
+    cursor = db.cursor();
+
+    #Show output to Order main page tree-id,date,sum of doses
+    #cursor.execute("SELECT idhospital,Date,SUM(amount) FROM orders GROUP BY Date,idhospital;");
+    cursor.execute("SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.idhospital GROUP BY orders.Date,orders.idhospital;");
+    SumOFAmount1 = cursor.fetchall();
+    print(SumOFAmount1);
+    #convert list of tuples into list
+    # ListofSumOfAmountPerHospital1 = [item1 for t1 in ListofSumOfAmountPerHospital for item1 in t1];
+
+    # #Remove any duplicates from a List:
+    # mylist = list(dict.fromkeys(ListofSumOfAmountPerHospital1))
+    # ListOfSumOfAmount = [item1 for t1 in mylist for item1 in t1];
+
+    # for i in range(3):
+    #     OrdersTree.insert("", "end", values=(i,"2","30.06.2022"))
+    # for i in range(1,len(AmountListFromDoc)):
+    #     ValuseTuple=(i,TempList[1],"11:20:11",AmountListFromDoc[i], TempList[0],0,0);
+    #     print("order trying to get in DB-Add pressed");
+    #     try:
+    #         cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,idhospital,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);
+
+    #output orders main data from DB
+    for record in SumOFAmount1:
+        OrdersTree.insert(parent='', index='end', text='',
+                          values=(record[0],record[1],record[2]))#record[0]=Idhospital,record[1]=Injection time,record[2]=Amount of doses
+
+
+    root.wm_state('normal');#Open orders main page
+    OrdersTree.pack();
+
+    db.commit();
+    cursor.close()
+
+updateOrdersTreeMainPageOutputOnly();
 
 #########################Orders main pages buttons###############################
 #Create Search window
@@ -144,10 +185,31 @@ SearchLabelicon=Label(image=SearchImg);
 SearchLabelicon.pack();
 SearchLabelicon.place(x=610, y=135);
 
+
+def deleteOrderfunc():
+    """Function for removing order from DB"""
+    rawSelectedToDelete=OrdersTree.selection();
+    for rawselected in rawSelectedToDelete:
+        OrdersTree.delete(rawselected);
+    # query = "DELETE FROM orders WHERE idhospital = %s"
+
+# Remove button (Icon) - List
+global imgDelete;
+deleteIcon = Image.open("./‏‏deleteIcon.png")
+resizedDeleteIcon = deleteIcon.resize((20,20), Image.ANTIALIAS)
+imgDelete = ImageTk.PhotoImage(resizedDeleteIcon)
+deleteButton=Button(ordersFrame, image=imgDelete, borderwidth=0,command=deleteOrderfunc)
+deleteButton.pack()
+deleteButton.place(x=560, y=65)
+
+
+###############################################Import File page##################################
+
+
 def WriteToCsv(result):
     """Function for creating/exporting Excel file"""
     print("try exporting new excel file...");
-    headers = ['OrderId', 'Date', 'Injection Time', 'Amount','HospitalID','batchID','decayCorrected'];
+    headers = ['OrderId', 'Date', 'Injection Time', 'Amount','idhospital','batchID','decayCorrected'];
     with open('orders.csv','a',newline="") as f:
         w = csv.writer(f,dialect='excel');
         messagebox.showinfo("message","Excel file was created");
@@ -157,7 +219,7 @@ def WriteToCsv(result):
             w.writerow(record);
 
 
-# Absorb Orders table data from db
+# Absorb Orders table data from db-for excel export
 cursor = db.cursor();
 cursor.execute("SELECT * FROM orders");
 ordersTable_in_db = cursor.fetchall();
@@ -192,38 +254,21 @@ ExportToCSVImgicon.place(x=585, y=63);
 #
 # editHospitalPopup.edit_popup(labels, selected_rec, save_title, query, pk, hospital_tabel)
 
-
-# Remove button (Icon) - List
-deleteIcon = Image.open("./Images/RemoveButton2.png")
-resizedDeleteIcon = deleteIcon.resize((105,20), Image.ANTIALIAS)
-imgDelete = ImageTk.PhotoImage(resizedDeleteIcon)
-deleteButton=Button(ordersFrame, image=imgDelete, borderwidth=0)
-deleteButton.pack()
-deleteButton.place(x=830, y=65)
-
-#remove/delete record from db
-# def deleteCyclotronfun():
-#     query = "DELETE FROM resourcecyclotron WHERE idresourceCyclotron = %s"
-#     cyclo_tabel.delete_record(query)
-
-
-# for i in range(3):
-#     OrdersTree.insert("", "end", values=(i,"2","30.06.2022"))
-################################################Import File page##################################
-
 def importFileFunc():
+    AmountListFromDoc=[];
+    InjectionTImeListFromdoc=[];
     #ListofVarImportFile=["","","","","",""];
     TempList=["",""];
     def ImportFilefunction():
-
+        TempNewLISt1=[];
         """This is function for importing Orders files"""
         filename = fd.askopenfilename(
         initialdir="D:\PythonProjects\Cyclotron",
         title="Open a file",
         filetype=(("Word files","*.docx"),("Word files","*.doc"),("Excel files","*.xlsx"),("All Files","*.*"),("PDF files","*.pdf")))
-
+        #print(filename);
         if filename:
-            if  "xlsx" in filename :                  #Excel file
+            if  "xlsx" in filename :                     #Excel file
                 try:
                     filename=r"{}".format(filename)
                     df=pd.read_excel(filename)
@@ -234,20 +279,32 @@ def importFileFunc():
                     messagebox.showinfo("Error message","File couldn't be open,try again");
                     print("Error");
 
-                clear_tree();
+                #clear_tree();
 
-                OrdersTree["column"] =  list(df.columns);
-                OrdersTree["show"] = "headings";
 
-                for column in OrdersTree["column"]:
-                    OrdersTree.heading(column,text=column)
-
-                df_rows=df.to_numpy().tolist();
-
-                for row in df_rows:
-                    OrdersTree.insert("","end",values=row)
-
-                    OrdersTree.pack();
+                #####################################################################
+                #Get data from excel
+                loc = (str(filename));
+                wb = xlrd.open_workbook(loc);
+                sheet = wb.sheet_by_index(0);
+                sheet.cell_value(0, 0);
+                #Get amount data/column from doc/excel
+                for i in range(1,sheet.nrows):
+                    AmountListFromDoc.append(sheet.cell_value(i, 2));
+                    print(AmountListFromDoc);
+                 ########################################################
+                # OrdersTree["column"] =   list(df.columns);
+                # OrdersTree["show"] = "headings";
+                #
+                # for column in OrdersTree["column"]:
+                #     OrdersTree.heading(column,text=column)
+                #
+                # df_rows=df.to_numpy().tolist();
+                #
+                # for row in df_rows:
+                #     OrdersTree.insert("","end",values=row)
+                #
+                #     OrdersTree.pack();
 
 
 
@@ -260,35 +317,46 @@ def importFileFunc():
                     doc.save(filename)
 
 
-                document = Document(filename)
-                tables = document.tables
-                df = pd.DataFrame()
+                document = Document(filename);
+                tables = document.tables;
+                df = pd.DataFrame();
 
                 for table in document.tables:
                     for row in table.rows:
-                        text = [cell.text for cell in row.cells]
-                        df = df.append([text], ignore_index=True)
+                        text = [cell.text for cell in row.cells];
+                        df = df.append([text], ignore_index=True);
 
                 #df.columns = ["Column1", "Column2","Column3","Column4","Column5","Column6","Column7","Column8"]
-                df.to_excel("D:/PythonProjects/Cyclotron/OrderOutputTest.xlsx")
+                df.to_excel("D:/PythonProjects/Cyclotron/OrderOutputTest.xlsx");
                 #print(df);
 
 
-                clear_tree();
+                #clear_tree();
+                #Get data from excel
+                loc = ("D:/PythonProjects/Cyclotron/OrderOutputTest.xlsx");
+                wb = xlrd.open_workbook(loc);
+                sheet = wb.sheet_by_index(0);
+                sheet.cell_value(0, 0);
+                #Get amount data/column from doc/excel
+                for i in range(1,sheet.nrows):
+                    AmountListFromDoc.append(sheet.cell_value(i, 2));
+                    print(AmountListFromDoc)
+# ##############################################################
+#                 OrdersTree["column"] =  list(df.columns);
+#                 OrdersTree["show"] = "headings";
+#
+#                 for column in OrdersTree["column"]:
+#                     OrdersTree.heading(column,text=column)
+#
+#                 df_rows=df.to_numpy().tolist();
+#
+#                 for row in df_rows:
+#                     OrdersTree.insert("","end",values=row)
+#
+        #ImportFilePage.pack();
+        #OrdersTree.destroy();
 
-                OrdersTree["column"] =  list(df.columns);
-                OrdersTree["show"] = "headings";
-
-                for column in OrdersTree["column"]:
-                    OrdersTree.heading(column,text=column)
-
-                df_rows=df.to_numpy().tolist();
-
-                for row in df_rows:
-                    OrdersTree.insert("","end",values=row)
-
-                    OrdersTree.pack();
-
+        root.wm_state('iconic');#minimize orders main page
 
     # Absorb hosital list data from db
     cursor = db.cursor();
@@ -328,7 +396,7 @@ def importFileFunc():
     #print(val1)
     def HospitalChoosecallback(selection):
            ChoosenHospital=selection;
-           TempList[0]=ChoosenHospital[1];
+           TempList[0]=ChoosenHospital[0];#HospitalID
            print(TempList[0])
            # for i in range(30):
            #  OrdersTree.insert("", "end", values=(ChoosenHospital[1]));
@@ -340,20 +408,39 @@ def importFileFunc():
     HospitalDropDown.pack();
     HospitalDropDown.place(x=20, y=100);
 
+    def SaveToDB():
+     cursor = db.cursor(buffered=True);
+     for i in range(1,len(AmountListFromDoc)):
+        ValuseTuple=(i,TempList[1],"11:20:11",AmountListFromDoc[i], TempList[0],0,0);
+        print("order trying to get in DB-Add pressed");
+        try:
+            cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,idhospital,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);
+        except (mysql.connector.errors.DataError):
+            messagebox.showerror("Error message","Please choose hospital and date !");
+            print("Error");
 
-    #Create a save button
-    saveFileIcon = Image.open("./Images/saveIcon.png");
-    save_next_Icon = saveFileIcon.resize((100,50), Image.ANTIALIAS);
-    saveImg = ImageTk.PhotoImage(save_next_Icon);
-    saveButton=Button(ImportFilePage,image=saveImg, borderwidth=0);
+
+     ImportFilePage.destroy();##Close import file window
+     updateOrdersTreeMainPageOutputOnly();##update orders tree main page
+     #OrdersTree.pack();
+     #Commit changes in DB and close connection
+     db.commit()
+     cursor.close()
+
+
+#Create a save button
+    # saveFileIcon = Image.open("./Images/saveIcon.png");
+    # save_next_Icon = saveFileIcon.resize((100,50), Image.ANTIALIAS);
+    # saveImg = ImageTk.PhotoImage(save_next_Icon);
+    saveButton=Button(ImportFilePage,text="Save",command=SaveToDB);
     saveButton.pack();
     saveButton.place(x=250, y=320);
 
     #Create a Cancel button
-    CancelIcon2 = Image.open("./Images/CancelIcon.png");
-    resized_Cancel_Icon2 = CancelIcon2.resize((100,50), Image.ANTIALIAS);
-    CancelImg2 = ImageTk.PhotoImage(resized_Cancel_Icon2);
-    CancelButton2=Button(ImportFilePage,image=CancelImg2, borderwidth=0,command=lambda: [ImportFilePage.destroy()]);#close window-not working
+    # CancelIcon2 = Image.open("./Images/CancelIcon.png");
+    # resized_Cancel_Icon2 = CancelIcon2.resize((100,50), Image.ANTIALIAS);
+    # CancelImg2 = ImageTk.PhotoImage(resized_Cancel_Icon2);
+    CancelButton2=Button(ImportFilePage,text="Cancel",command=lambda: [ImportFilePage.destroy()]);#close window-not working
     CancelButton2.pack();
     CancelButton2.place(x=450, y=320);
 
@@ -389,20 +476,20 @@ def importFileFunc():
 
 
     #Add calender widget/method
-    sel=tk.StringVar() # declaring string variable
+    selectedDate=tk.StringVar() # declaring string variable
     def print_sel(e):
-        ChoosenDate=cal.get_date();
-        TempList[1]=ChoosenDate;
+        ChoosenDateForImport=cal1.get_date();
+        TempList[1]=ChoosenDateForImport;
         print( TempList[1]);
         # if ((counter==0) or (counter==null)):
-        counter=0;
-        #Loop throw the tree/table
-        for recordInrow in range(len(TempList)-1):
-         OrdersTree.insert(parent="",index= "end",iid=counter, values=(TempList[0],TempList[1]));
-         OrdersTree.insert(parent=counter,index= "end",iid=counter+2,text=TempList[0]);
-         counter=counter+1;
+        # counter=0;
+        # #Loop throw the tree/table
+        # for recordInrow in range(len(TempList)-1):
+        #  OrdersTree.insert(parent="",index= "end",iid=counter, values=(TempList[0],TempList[1]));
+        #  #OrdersTree.insert(parent=counter,index= "end",iid=counter+2,text=TempList[0]);
+        #  counter=counter+1;
 
-    cal1=DateEntry(ImportFilePage,selectmode='day',textvariable=sel);
+    cal1=DateEntry(ImportFilePage,selectmode='day',textvariable=selectedDate);
     cal1.pack(pady = 20);
     cal1.place(x=20, y=240);
     cal1.bind("<<DateEntrySelected>>", print_sel);#catch date event
@@ -424,33 +511,6 @@ def importFileFunc():
     ImportFilePage.mainloop();
 
 
-
-
-# wordFile=open(filename,  errors="ignore");
-      # #stuff = wordFile.read();#convert to string
-      # new_filename1 = filename.split("/", 3);
-      # new_filename2 = new_filename1[3].split(".", 1);
-      # tempString=str(new_filename2[0])+".pdf";
-      # # # wordFile=open(filename, encoding="Latin-1");
-      # # convert(str(new_filename1[3]))
-      # # convert(str(new_filename1[3]), str(tempString))
-      # # convert("D:\PythonProjects\Cyclotron")
-      # pdfFile=PyPDF2.PdfFileReader(str(tempString));
-      # # Extract all text fron PDF-if pdf include a couple of pages
-      # # count = pdfFile.numPages
-      # # for i in range(count):
-      # #   page = pdfFile.getPage(i)
-      # #   output = []
-      # #   output.append(page.extractText())
-      # page=pdfFile.getPage(0);#Extract only from first page
-      # page_stuff=page.extractText();
-      # print(page_stuff);
-      # #not working need to be with text box and not tree
-      # for i in range(len(page_stuff)):
-      #  OrdersTree.insert('', 'end',values=i)
-      # #OrdersTree.insert(1.0,page_stuff);#not working well-need to be fixed-need to be with text box and not trre
-      # OrdersTree.pack();
-      # wordFile.close();
 
 
 
@@ -506,7 +566,7 @@ def PopUpForNewOrder():
     # Absorb hosital list data from db
     cursor = db.cursor();
     cursor.execute("SELECT idhospital,Name FROM hospital");
-    hospitals_in_db = cursor.fetchall();
+    hospitalsListForNewOrderManual = cursor.fetchall();
     #print(type(hospitals_in_db[0]));#List of hospitals
 
     #root = tk.Tk()
@@ -532,7 +592,7 @@ def PopUpForNewOrder():
     HospitalListLabel = Label(NewOrderMainPage, text="Hospital",bg='white');
     HospitalListLabel.pack();
     HospitalListLabel.place(x=20, y=70);
-    HospitalList2 = hospitals_in_db;
+    HospitalListNewOrderPage = hospitalsListForNewOrderManual;
 
     def HospitalChoosecallback2(HosiptalSelection):
         global hospitalId;
@@ -558,21 +618,22 @@ def PopUpForNewOrder():
     CLickOnHospitalDropMenu = StringVar();
     CLickOnHospitalDropMenu.set("Select Hospital"); #default value
 
-    HospitalDropDown = OptionMenu(NewOrderMainPage, CLickOnHospitalDropMenu, *HospitalList2,command=HospitalChoosecallback2);
+    HospitalDropDown = OptionMenu(NewOrderMainPage, CLickOnHospitalDropMenu, *HospitalListNewOrderPage,command=HospitalChoosecallback2);
     HospitalDropDown.config(width=12,bg='white');#color of dropdown menu
     HospitalDropDown.pack();
     HospitalDropDown.place(x=20, y=100);
 
     # declaring string variable for storing amount
     amountVar=tk.StringVar();
-    endOftimeVar=tk.StringVar();
+    # declaring string variable for storing time interval
+    TimeIntervals=tk.StringVar();
     # declaring string variable for storing time
     HoursVar = StringVar();
     MinutesVar = StringVar();
     global OrderID;
     OrderID=0;
     global idCounter;
-    ListofVal=["","","","","",""];
+    ListofVal=["","","","","","",""];
     def submit():
         global hospitalId;
         global OrderID;
@@ -581,7 +642,7 @@ def PopUpForNewOrder():
          NewOrderTree_P2.delete(rawselected);
 
         #Get Time varibles avent,hous and minutes
-        EndOfTime=endOftimeVar.get();
+        Time_Intervals=TimeIntervals.get();
         Minutes_Var=MinutesVar.get();
         Hours_Var=HoursVar.get();
         #get amount event variable
@@ -589,23 +650,24 @@ def PopUpForNewOrder():
         try:
          amount=amountVar.get();
          IntAmount=(int(amount));
-        except (ValueError,UnboundLocalError):
-         messagebox.showinfo("Error message","Please enter date,begging time and amount of doses!");
+        except (ValueError,UnboundLocalError,NameError):
+         messagebox.showerror("Error message","Please choose hospital, date,begging time and amount of doses!");
          print("Error")
-        ListofVal[0]=idCounter=0;
+        ListofVal[0]=idCounter=1;
         ListofVal[1]=amountIndividual=(IntAmount/IntAmount);
         ListofVal[2]=int(Hours_Var);
         ListofVal[3]=int(Minutes_Var);
         ListofVal[4]=IntAmount;
         ListofVal[5]=hospitalId;
+        ListofVal[6]=int(Time_Intervals);
 
         #Enter data to the the table
         # for idCounter,j in zip(range(IntAmount),range(BeginigHour,IntAmount)):
         #     NewOrderTree_P2.insert("", "end", values=(idCounter,amount2,j));
         for record in range(int(IntAmount)):
             NewOrderTree_P2.insert("", "end",values=( ListofVal[0],ListofVal[1],f'{ListofVal[2]}:{ListofVal[3]}'));
-            ListofVal[2]=ListofVal[2]+1;
-            ListofVal[3]=ListofVal[3]+30;
+            ListofVal[2]=ListofVal[2]+1;       #Hours jumps/intervals
+            ListofVal[3]=ListofVal[6];         #Add minutes intervals
             ListofVal[0]= ListofVal[0]+1;
 
         OrderID+=1;#counterID=counterID+1
@@ -644,14 +706,14 @@ def PopUpForNewOrder():
 
 
     #Add calender widget/method
-    selectDateEvent=tk.StringVar() # declaring string variable
+    selectDateEventManaulOrder=tk.StringVar() # declaring string variable
     def print_sel(e):
-        global ChoosenDate;
+        global ChoosenDateForManaulOrder;
         """ This function print to the tree/table """
-        ChoosenDate=cal.get_date();
-        #print(ChoosenDate);
+        ChoosenDateForManaulOrder=cal.get_date();
+        print(ChoosenDateForManaulOrder);
         #copy and past date event to page number 2
-        dateLabel2=Label(NewOrderMainPage, text= ChoosenDate,bg="white", font=('Helvetica 14'));
+        dateLabel2=Label(NewOrderMainPage, text= ChoosenDateForManaulOrder, bg="white", font=('Helvetica 14'));
         dateLabel2.pack();
         dateLabel2.place(x=760,y=80);
         # TempList[1]=ChoosenDate;
@@ -664,7 +726,7 @@ def PopUpForNewOrder():
         #     OrdersTree.insert(parent=counter,index= "end",iid=counter+2,text=TempList[0]);
         #     counter=counter+1;
 
-    cal=DateEntry(NewOrderMainPage,selectmode='day',textvariable=selectDateEvent);
+    cal=DateEntry(NewOrderMainPage,selectmode='day',textvariable=selectDateEventManaulOrder);
     cal.pack(pady = 20);
     cal.config(width=20);#width of window
     cal.place(x=20, y=240);
@@ -679,9 +741,9 @@ def PopUpForNewOrder():
 
     #
     #Create Time range input/Entry
-    TimerangeLabel = Label(NewOrderMainPage, text="Time Range/End time",bg="white");
+    TimerangeLabel = Label(NewOrderMainPage, text="Time Range/Intervals",bg="white");
     TimerangeLabel.place(x=400, y=200);
-    TimerangeLabelEntry = Entry(NewOrderMainPage,textvariable=endOftimeVar,font=("Halvetica",12));
+    TimerangeLabelEntry = Entry(NewOrderMainPage,textvariable=TimeIntervals,font=("Halvetica",12));
     TimerangeLabelEntry.config(width=7);#width of window
     TimerangeLabelEntry.insert(0, '');
     TimerangeLabelEntry.pack();
@@ -709,11 +771,11 @@ def PopUpForNewOrder():
     sp2.place(x=65, y=350);
 
     #Submit/Next button
-    global NextButton;
-    nextIcon = Image.open("./Images/nextButton.png");
-    resized_next_Icon = nextIcon.resize((100,50), Image.ANTIALIAS);
-    NextButton = ImageTk.PhotoImage(resized_next_Icon);
-    sub_btn=tk.Button(NewOrderMainPage ,image=NextButton, command = submit,borderwidth=0)
+    #global NextButton;
+    # nextIcon = Image.open("./Images/nextButton.png");
+    # resized_next_Icon = nextIcon.resize((100,50), Image.ANTIALIAS);
+    # NextButton = ImageTk.PhotoImage(resized_next_Icon);
+    sub_btn=tk.Button(NewOrderMainPage ,text="Next", command = submit)
     sub_btn.pack();
     sub_btn.place(x=65, y=530)
 
@@ -736,11 +798,15 @@ def PopUpForNewOrder():
      #        'batchID': 7,
      #        'DecayCorrected': 7 }  ;
      cursor = db.cursor(buffered=True);
-     for i in range(ListofVal[4]):
-      ValuseTuple=(OrderID,ChoosenDate,"11:20:11",ListofVal[1], ListofVal[5],0,0);
+     for i in range(1,ListofVal[4]+1):
+      ValuseTuple=(i, ChoosenDateForManaulOrder, "11:20:11", ListofVal[1], ListofVal[5], 0, 0);
       print("order trying to get in DB-Add pressed");
-      cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,hospitalID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);",ValuseTuple)
+      cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,idhospital,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);",ValuseTuple)
 
+
+     NewOrderMainPage.destroy();#Close import file-manual window
+     updateOrdersTreeMainPageOutputOnly();#Refresh/Update Main page
+     OrdersTree.pack();         #open order main page immedaitly
     #Commit changes in DB
      db.commit()
      cursor.close()
@@ -748,20 +814,20 @@ def PopUpForNewOrder():
      #db.close()
 
     #Create ADD button
-    global addImg;
-    AddFileIcon = Image.open("./Images/AddButton.png");
-    resized_add_Icon = AddFileIcon.resize((100,50), Image.ANTIALIAS);
-    addImg = ImageTk.PhotoImage(resized_add_Icon);
-    AddButton=Button(NewOrderMainPage,image=addImg, borderwidth=0,command=enterToDB);
+    # global addImg;
+    # AddFileIcon = Image.open("./Images/AddButton.png");
+    # resized_add_Icon = AddFileIcon.resize((100,50), Image.ANTIALIAS);
+    # addImg = ImageTk.PhotoImage(resized_add_Icon);
+    AddButton=Button(NewOrderMainPage,text="Save Order",command=enterToDB);
     AddButton.pack();
     AddButton.place(x=850, y=520);
 
-    #Create a Cancel button
-    global CancelImg;
-    CancelIcon = Image.open("./Images/CancelButton.png");
-    resized_Cancel_Icon = CancelIcon.resize((100,50), Image.ANTIALIAS);
-    CancelImg = ImageTk.PhotoImage(resized_Cancel_Icon);
-    CancelButton2=Button(NewOrderMainPage,image=CancelImg, borderwidth=0,command=lambda: [NewOrderMainPage.destroy()]);#close window-not working
+    # #Create a Cancel button
+    # global CancelImg;
+    # CancelIcon = Image.open("./Images/CancelButton.png");
+    # resized_Cancel_Icon = CancelIcon.resize((100,50), Image.ANTIALIAS);
+    # CancelImg = ImageTk.PhotoImage(resized_Cancel_Icon);
+    CancelButton2=Button(NewOrderMainPage,text="Cancel",command=lambda: [NewOrderMainPage.destroy()]);#close window-not working
     CancelButton2.pack();
     CancelButton2.place(x=1000, y=520);
 
@@ -871,6 +937,7 @@ def PopUpForNewOrder():
         rowTreetoAdd=(ListofVal[0],ListofVal[1],ListofVal[2]);
         NewOrderTree_P2.insert("", "end", values=rowTreetoAdd);
         ListofVal[0]=ListofVal[0]+1;
+        ListofVal[4]+=1;#current amount= courrent amount+1
 
     def removeRawFunc():
         #rowTree=rowTree.get();
@@ -878,9 +945,13 @@ def PopUpForNewOrder():
         rawSelectedToDelete=NewOrderTree_P2.selection();
         for rawselected in rawSelectedToDelete:
          NewOrderTree_P2.delete(rawselected);
-
+        ListofVal[4]=ListofVal[4]-1;#current amount= current amount-1
     #amountVar.set("");
 
+
+
+
+    ####################Buttons for new order-manual page##########################
     # Remove button (Icon) - List
     global imgDelete2;
     deleteIcon2 = Image.open("./‏‏deleteIcon.png");
@@ -918,21 +989,21 @@ def PopUpForNewOrder():
 ###########################Spacial buttons#################################################
 
 #Create a button for import orders files (Excel or Word)
-ImportFileIcon = Image.open("ImportFile2.png")
-ImportFileIcon = Image.open("ImportFile2.png")
-resized_Edit_Icon = ImportFileIcon.resize((80,20), Image.ANTIALIAS)
-img_Edit = ImageTk.PhotoImage(resized_Edit_Icon)
-importFileButton=Button(ordersFrame, image=img_Edit, borderwidth=0,command=importFileFunc)
+# ImportFileIcon = Image.open("ImportFile2.png")
+# ImportFileIcon = Image.open("ImportFile2.png")
+# resized_Edit_Icon = ImportFileIcon.resize((80,20), Image.ANTIALIAS)
+# img_Edit = ImageTk.PhotoImage(resized_Edit_Icon)
+importFileButton=Button(ordersFrame, text="Import file",command=importFileFunc)
 importFileButton.pack()
-importFileButton.place(x=230, y=65)
+importFileButton.place(x=250, y=65)
 
 
 
 #Create New order button
-NewOrderIcon = Image.open("./Images/AddnewOrder2.png")
-resizedNewOrderIconIcon = NewOrderIcon.resize((120,20), Image.ANTIALIAS)
-NewOrderIconimg = ImageTk.PhotoImage(resizedNewOrderIconIcon)
-editButton=Button(ordersFrame, image=NewOrderIconimg, borderwidth=0,command=PopUpForNewOrder)
+# NewOrderIcon = Image.open("./Images/AddnewOrder2.png")
+# resizedNewOrderIconIcon = NewOrderIcon.resize((120,20), Image.ANTIALIAS)
+# NewOrderIconimg = ImageTk.PhotoImage(resizedNewOrderIconIcon)
+editButton=Button(ordersFrame, text="Add new order",command=PopUpForNewOrder)
 editButton.pack()
 editButton.place(x=100, y=65)
 
