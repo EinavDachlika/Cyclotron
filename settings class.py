@@ -5,6 +5,7 @@ import datetime
 from PIL import Image, ImageTk, ImageFont
 import mysql.connector
 from mysql.connector import Error
+from datetime import datetime , date
 # from importlib import reload
 
 
@@ -16,6 +17,13 @@ root.title("Settings")
 #defult font
 root.option_add("*Font", "Helvetica")
 
+#general
+label_font = ('Helvetica',26, 'bold')
+label_font_flag_on_page = ('Helvetica 12 bold underline')
+label_font_flag = ('Helvetica 12')
+sub_label_font = ('Helvetica',18, 'bold')
+label_color = '#034672'
+red_color =  '#f5bfbf'
 
 # connect to MySqL
 try:
@@ -64,10 +72,6 @@ Label(toolbar,image=LogoImage).pack(side=LEFT,padx=10,pady=6)
 workPlanButton = Button(toolbar, text="Work Plans",font='Helvetica 11')
 workPlanButton.pack(side=LEFT,padx=10,pady=3)
 
-
-# # Hospitals button - toolbar
-# hospitalsButton = Button (toolbar, text="Hospitals",font='Helvetica 11', activebackground='gray')
-# hospitalsButton.pack(side=LEFT,padx=10,pady=3)
 
 # Orders button - toolbar
 ordersButton = Button (toolbar, text="Orders", font='Helvetica 11')
@@ -152,7 +156,6 @@ dataType_col = """SELECT table_name,column_name, DATA_TYPE
 
 cursor.execute(dataType_col)
 dataType_col_list = cursor.fetchall()
-# print(dataType_col_list)
 
 
 table_pk_list = """select 
@@ -213,11 +216,8 @@ def NOT_NULL_DataType_col(table_name):
     query = """SELECT table_name,column_name, DATA_TYPE , IS_NULLABLE
                     FROM INFORMATION_SCHEMA.COLUMNS where TABLE_SCHEMA='cyclotron' and table_name= '"""
     query = query+table_name +"'"
-    print(query)
     cursor.execute(query)
     data = cursor.fetchall()
-    not_null_list = [rec[1] for rec in data if rec[0] == table_name]
-    # return not_null_list
     return data
 
 
@@ -293,48 +293,49 @@ class Popup(Toplevel):
             if col[0] in column_input:
                 i = column_input.index(col[0])   #index in input_values_list
                 if col[2]=='NO' and input_values_list[i] == "":    # Not null validation
-                    entries[i].config(bg='red')
+                    entries[i].config(bg=red_color)
                     error_labels_list[i]['text'] = "Please fill the box"
                     legal_notnull = False
-
                     legal=False
+
                 else:  # data type validation
                     if col[1] == 'varchar':
                         try:
                             str(input_values_list[i])
                         except:
                             legal_datatype = False
-                            entries[i].config(bg='red')
+                            entries[i].config(bg=red_color)
                             error_labels_list[i]['text'] = "Incorrect data format"
                     if col[1] == 'float':
                         try:
                             float(input_values_list[i])
                         except:
                             legal_datatype = False
-                            entries[i].config(bg='red')
+                            entries[i].config(bg=red_color)
                             error_labels_list[i]['text'] = "Incorrect data format"
 
-                    if col[1] == 'binary':
+                    if col[1] == 'boolean':
                         try:
                             bool(input_values_list[i])
                         except:
                             legal_datatype = False
-                            entries[i].config(bg='red')
+                            entries[i].config(bg=red_color)
 
                     if col[1] == 'time':
                         try:
-                            bool(input_values_list[i])
+                            datetime.strptime(input_values_list[i], '%H:%M').time()
 
                         except:
                             legal_datatype = False
-                            entries[i].config(bg='red')
+                            entries[i].config(bg=red_color)
 
                     if col[1] == 'date':
                         try:
-                            datetime.datetime.strptime(input_values_list[i], '%Y-%m-%d')
+                            datetime.strptime(input_values_list[i], '%d/%m/%Y').date() or datetime.strptime(input_values_list[i], '%d-%m-%Y').date()
                         except:
                             legal_datatype = False
-                            entries[i].config(bg='red')
+                            entries[i].config(bg=red_color)
+
         if not legal_notnull:
             text = "There are unallowed empty box. Please fill the highlighted fiels"
             error_message(text)
@@ -343,7 +344,9 @@ class Popup(Toplevel):
             legal=False
             error_message("Incorrect data format in highlighted box")
 
+        self.lift() #move popup to front
         return legal
+
 
     def update_record(self,query, pk,list, update_values_list):
         selected = list.focus()
@@ -381,13 +384,13 @@ class Popup(Toplevel):
         cancel_button.place(x=save_button.winfo_reqwidth() + save_button_position_x + 10, y=save_button_position_y)
 
 
-    def update_if_selected(self,query,pk,list,table_name,entries):
+    def update_if_selected(self,query,pk,list,table_name,entries,error_labels_list):
         update_values_list=self.get_entry(entries)
         update_values_list.append(pk)
         if update_values_list is None: #if the user dont select record
             error_message("Please select record")
         else:
-            legal = self.is_legal(table_name, entries)
+            legal = self.is_legal(table_name, entries,error_labels_list )
             if legal:
                 self.update_record(query, pk,list,update_values_list)
             # else:
@@ -416,6 +419,7 @@ class Popup(Toplevel):
 
         # temp_label.config(text=selected)
         entries = []
+        error_labels_list=[]
         for lab in labels:
             p_label = Label(self, text=lab[0])
             p_label.grid(row=row_num, column=1)
@@ -433,7 +437,6 @@ class Popup(Toplevel):
             value_index += 1
             entries.append(entry_box)
 
-
             if lab[1] != '':
                 p_label_units = Label(self, text=lab[1])
                 font = ("Courier", 9)
@@ -441,10 +444,20 @@ class Popup(Toplevel):
                 p_label_units_x = p_last_label_x + p_label.winfo_reqwidth()
                 p_label_units.place(x=p_label_units_x, y=p_last_label_y + 7)
 
-            p_last_label_y += entry_box.winfo_reqheight() + 35 + p_label.winfo_reqheight()
+            # p_last_label_y += entry_box.winfo_reqheight() + 35 + p_label.winfo_reqheight()
+            # row_num += 1
+
+            p_last_label_y += entry_box.winfo_reqheight() + p_label.winfo_reqheight()
+
+            # error labels
+            error_label = Label(self, text='', font=('Courier', 8), fg='red')
+            error_label.place(x=p_last_label_x + 1, y=p_last_label_y)
+            error_labels_list.append(error_label)
             row_num += 1
 
-        self.save_cancel_button(save_title, self.update_if_selected, *args, entries)
+            p_last_label_y += 18 + error_label.winfo_reqheight()
+
+        self.save_cancel_button(save_title, self.update_if_selected, *args, entries,error_labels_list)
 
     def Add_if_legal(self, Addquery, list,table_name, entries, error_labels_list):
         legal = self.is_legal(table_name, entries,error_labels_list)
@@ -467,7 +480,6 @@ class Popup(Toplevel):
             except:
                 # Rollback in case there is any error
                 db.rollback()
-
 
             self.destroy()
 
@@ -506,7 +518,7 @@ class Popup(Toplevel):
 
             #error labels
             error_label = Label(self, text='', font=('Courier',8),fg='red' )
-            error_label.place(x=p_last_label_x+1, y=p_last_label_y+5)
+            error_label.place(x=p_last_label_x+1, y=p_last_label_y)
             error_labels_list.append(error_label)
             row_num += 1
 
@@ -537,7 +549,6 @@ class table(ttk.Treeview):
         # scroll.place(x=x_crol, y=y_crol)
         #
         # list = ttk.Treeview(frame, yscrollcommand=scroll.set, height=list_height)
-
 
         self['columns'] = columns_name_list
 
@@ -628,15 +639,6 @@ class table(ttk.Treeview):
                     cursor.execute(query2)
                     db.commit()
                 self.delete(self.selection()[0])
-
-
-
-#general
-label_font = ('Helvetica',26, 'bold')
-label_font_flag_on_page = ('Helvetica 12 bold underline')
-label_font_flag = ('Helvetica 12')
-sub_label_font = ('Helvetica',18, 'bold')
-label_color = '#034672'
 
 
 ##################### settings - cyclotron #####################
