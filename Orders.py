@@ -136,8 +136,9 @@ def updateOrdersTreeMainPageOutputOnly():
     # # Absorb Orders list data from db
     cursor = db.cursor();
 
-    #cursor.execute("DESC orders;");
-    cursor.execute("SELECT idhospital,Date,SUM(amount) FROM orders GROUP BY Date,idhospital;");
+    #Show output to Order main page tree-id,date,sum of doses
+    #cursor.execute("SELECT idhospital,Date,SUM(amount) FROM orders GROUP BY Date,idhospital;");
+    cursor.execute("SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.idhospital GROUP BY orders.Date,orders.idhospital;");
     SumOFAmount1 = cursor.fetchall();
     print(SumOFAmount1);
     #convert list of tuples into list
@@ -994,7 +995,7 @@ def PopUpForNewOrder():
 # img_Edit = ImageTk.PhotoImage(resized_Edit_Icon)
 importFileButton=Button(ordersFrame, text="Import file",command=importFileFunc)
 importFileButton.pack()
-importFileButton.place(x=247, y=65)
+importFileButton.place(x=250, y=65)
 
 
 

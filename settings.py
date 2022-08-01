@@ -57,7 +57,7 @@ dbCursor.execute("CREATE TABLE IF NOT EXISTS hospital ("
                  ",Fixed_activity_level float"
                  ",Transport_time float,"
                  "deleted BOOLEAN,"
-                 "PRIMARY KEY(idhospital,Name))");
+                 "PRIMARY KEY(idhospital))");
 
 dbCursor.execute("CREATE TABLE IF NOT EXISTS resourcecyclotron ("
                  "idresourceCyclotron int(255)"
