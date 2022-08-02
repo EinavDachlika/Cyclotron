@@ -158,7 +158,7 @@ def updateOrdersTreeMainPageOutputOnly():
     #     try:
     #         cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,idhospital,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);
 
-    #output orders main data from DB
+    #output orders main data from DB to the orders tree
     for record in SumOFAmount1:
         OrdersTree.insert(parent='', index='end', text='',
                           values=(record[0],record[1],record[2]))#record[0]=Idhospital,record[1]=Injection time,record[2]=Amount of doses
@@ -304,27 +304,20 @@ def importFileFunc():
                 wb = xlrd.open_workbook(loc);
                 sheet = wb.sheet_by_index(0);
                 sheet.cell_value(0, 0);
-                #Get amount data/column from doc/excel
+                #Get amount data/column from doc/excel-Get amount
                 for i in range(1,sheet.nrows):
                     AmountListFromDoc.append(sheet.cell_value(i, 2));
-                    print(AmountListFromDoc);
+                    print(f"Amount number{i}:{AmountListFromDoc[i-1]}");
+
+                    #Get Injection time data/column from doc/excel-Get Injection time
+                for i in range(1,sheet.nrows):
+                    InjectionTImeListFromdoc.append(sheet.cell_value(i, 5));
+                    print(f'InjectionTIme numner {i}: {InjectionTImeListFromdoc[i-1]}');
                  ########################################################
-                # OrdersTree["column"] =   list(df.columns);
-                # OrdersTree["show"] = "headings";
-                #
-                # for column in OrdersTree["column"]:
-                #     OrdersTree.heading(column,text=column)
-                #
-                # df_rows=df.to_numpy().tolist();
-                #
-                # for row in df_rows:
-                #     OrdersTree.insert("","end",values=row)
-                #
-                #     OrdersTree.pack();
 
+            #word files
 
-
-            if "docx" in filename or "doc" in filename:     #word files
+            if "docx" in filename or "doc" in filename:
                 #convert word to excel
 
                 if (("doc" in filename) and ("docx" not in filename)):#convert docx to doc
@@ -357,20 +350,13 @@ def importFileFunc():
                 for i in range(1,sheet.nrows):
                     AmountListFromDoc.append(sheet.cell_value(i, 2));
                     print(AmountListFromDoc)
+
+                    #Get Injection time data/column from doc/excel-Get Injection time
+                for i in range(1,sheet.nrows):
+                    InjectionTImeListFromdoc.append(sheet.cell_value(i, 5));
+                    print(f'InjectionTIme numner {i}: {InjectionTImeListFromdoc[i-1]}');
 # ##############################################################
-#                 OrdersTree["column"] =  list(df.columns);
-#                 OrdersTree["show"] = "headings";
-#
-#                 for column in OrdersTree["column"]:
-#                     OrdersTree.heading(column,text=column)
-#
-#                 df_rows=df.to_numpy().tolist();
-#
-#                 for row in df_rows:
-#                     OrdersTree.insert("","end",values=row)
-#
-        #ImportFilePage.pack();
-        #OrdersTree.destroy();
+
 
         root.wm_state('iconic');#minimize orders main page
 
@@ -427,18 +413,18 @@ def importFileFunc():
     def SaveToDB():
      cursor = db.cursor(buffered=True);
      for i in range(1,len(AmountListFromDoc)):
-        ValuseTuple=(i,TempList[1],"11:20:11",AmountListFromDoc[i], TempList[0],0,0);
+        ValuseTuple=(i,TempList[1],InjectionTImeListFromdoc[i],AmountListFromDoc[i], TempList[0],0,0);
         print("order trying to get in DB-Add pressed");
         try:
             cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,idhospital,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);
-        except (mysql.connector.errors.DataError):
-            messagebox.showerror("Error message","Please choose hospital and date !");
+        except Exception as e:
+            logging.error(traceback.format_exc());
+            #messagebox.showerror("Error message","Error !");
             print("Error");
 
 
      ImportFilePage.destroy();##Close import file window
      updateOrdersTreeMainPageOutputOnly();##update orders tree main page
-     #OrdersTree.pack();
      #Commit changes in DB and close connection
      db.commit()
      cursor.close()
@@ -535,6 +521,10 @@ def importFileFunc():
 def clear_tree():
     OrdersTree.delete(*OrdersTree.get_children())
 
+def ClearEdittree_2():
+      #"""Initialization-clear/Delete all the records"""
+    for rawselected in EditTree.get_children():
+     EditTree.delete(rawselected);
 
 
 
@@ -563,12 +553,8 @@ def clear_tree():
 # edit_button.place(x=450, y=50)
 # edit_button.pack(side=LEFT, padx=PlaceLable_X+100, pady=PlaceLable_Y+50)
 
-#Create a button in the main Window to open the popup
 
-#######################Add new order page##########################################
-
-
-############################new order page#########################################
+############################new order page###################################################
 
 def PopUpForNewOrder():
     # def nextButtonSwap():
@@ -650,6 +636,7 @@ def PopUpForNewOrder():
     OrderID=0;
     global idCounter;
     ListofVal=["","","","","","",""];
+    ListofTimeIntervals=[];
     def submit():
         global hospitalId;
         global OrderID;
@@ -670,9 +657,12 @@ def PopUpForNewOrder():
          messagebox.showerror("Error message","Please choose hospital, date,begging time and amount of doses!");
          print("Error")
         ListofVal[0]=idCounter=1;
-        ListofVal[1]=amountIndividual=(IntAmount/IntAmount);
+        ListofVal[1]=(IntAmount/IntAmount);
         ListofVal[2]=int(Hours_Var);
         ListofVal[3]=int(Minutes_Var);
+        TimeInjectionVar=f'{ListofVal[2]}:{ListofVal[3]}';
+        #print(TimeInjectionVar);
+        #print(type(TimeInjectionVar));#string time
         ListofVal[4]=IntAmount;
         ListofVal[5]=hospitalId;
         ListofVal[6]=int(Time_Intervals);
@@ -685,13 +675,14 @@ def PopUpForNewOrder():
             ListofVal[2]=ListofVal[2]+1;       #Hours jumps/intervals
             ListofVal[3]=ListofVal[6];         #Add minutes intervals
             ListofVal[0]= ListofVal[0]+1;
-
+            TimeInjectionVar=f'{ListofVal[2]}:{ListofVal[3]}';
+            ListofTimeIntervals.append(TimeInjectionVar)
         OrderID+=1;#counterID=counterID+1
         #print(OrderID);
         amountVar.set("");
         MinutesVar.set("");
         HoursVar.set("");
-
+        print(ListofTimeIntervals);
 
 
     #Create Amount of Doses input
@@ -815,7 +806,7 @@ def PopUpForNewOrder():
      #        'DecayCorrected': 7 }  ;
      cursor = db.cursor(buffered=True);
      for i in range(1,ListofVal[4]+1):
-      ValuseTuple=(i, ChoosenDateForManaulOrder, "11:20:11", ListofVal[1], ListofVal[5], 0, 0);
+      ValuseTuple=(i, ChoosenDateForManaulOrder, ListofTimeIntervals[i-1], ListofVal[1], ListofVal[5], 0, 0);
       #print("order trying to get in DB-Add pressed");
       try:
        UpdateSQlQuery="INSERT INTO orders (idorders,Date,injection_time,amount,idhospital,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);";
@@ -1014,12 +1005,12 @@ def UpdateOrder(event):
     DateSelected=DataOfRowSelectedList[1];
     AmountOfDosesSelected=DataOfRowSelectedList[2];
 
-    #search hospital by name from db and grt the ID and the name as output
+    #search hospital by name from hospital table db and get the ID and the name as output
     cursor = db.cursor();
     cursor.execute(f'SELECT idhospital,Name FROM hospital where Name="{HospitalSelected}"');
     hospitalsListForNewOrderManual = cursor.fetchall();
     HospitalListNewOrderPage = hospitalsListForNewOrderManual;
-
+    print(HospitalListNewOrderPage);
 
     EditPage =Toplevel(root);
     EditPage.title("Edit Order");
@@ -1041,6 +1032,7 @@ def UpdateOrder(event):
     # CLickOnHospitalDropMenu.set(hospitalsListForNewOrderManual); #default value
     # def HospitalChoosecallback2(HosiptalSelection):
      #   """This function is to catch Hopital name event and past/print it to page number 2 """
+
     global hospitalId;
     HospitalLabel2=Label(EditPage, text=HospitalListNewOrderPage,bg="white", font=('Helvetica 14'));
     x=str(HospitalListNewOrderPage);#string type here
@@ -1080,6 +1072,19 @@ def UpdateOrder(event):
     EditTree.heading("Amount", text="Amount",anchor=CENTER);
     EditTree.heading("Injection time", text="Injection time",anchor=W);
 
+    #get order detail from DB by hospitalID and Date
+    cursor = db.cursor();
+    SearchSpecOrderQueryByDoubleclick=f'SELECT idorders,amount,Injection_time FROM orders where idhospital="{hospitalId}" AND Date="{DateSelected}"';
+    cursor.execute(SearchSpecOrderQueryByDoubleclick);
+    OrderDatatoSpecificOrder = cursor.fetchall();
+    print(f"order selected: {OrderDatatoSpecificOrder}");
+    ListOfInjectionTime=[];
+    #output orders main data from DB to the orders tree
+    for record in OrderDatatoSpecificOrder:
+        EditTree.insert(parent='', index='end',values=(record[0],record[1],record[2]));#record[0]=Id,record[1]=amount,record[2]=injection time
+        ListOfInjectionTime.append(record[2])
+    #EditTree.pack();
+    print(ListOfInjectionTime)
     # declaring string variable for storing amount
     amountVar=AmountOfDosesSelected;
     # declaring string variable for storing time interval
@@ -1087,15 +1092,14 @@ def UpdateOrder(event):
     # declaring string variable for storing time
     HoursVar = "1";
     MinutesVar = "1";
-    global OrderID;
+    global OrderID,DosesSelectedEvent,idCounter;
+    #global DosesSelectedEvent;
     OrderID=0;
-    global idCounter;
+    #global idCounter;
     ListofVal=["","","","","","",""];
     #global hospitalId;
     #global OrderID;
-    #Initialization-clear/Delete all the records
-    for rawselected in EditTree.get_children():
-        EditTree.delete(rawselected);
+
 
     #Get Time varibles avent,hous and minutes
     Time_Intervals=TimeIntervals;
@@ -1106,7 +1110,7 @@ def UpdateOrder(event):
     amount=amountVar;
     IntAmount=(int(amount));
     ListofVal[0]=idCounter=1;
-    ListofVal[1]=amountIndividual=(IntAmount/IntAmount);
+    ListofVal[1]=(IntAmount / IntAmount);
     ListofVal[2]=int(Hours_Var);
     ListofVal[3]=int(Minutes_Var);
     ListofVal[4]=IntAmount;
@@ -1114,13 +1118,12 @@ def UpdateOrder(event):
     ListofVal[6]=int(Time_Intervals);
 
     #Enter data to the the table
-    # for idCounter,j in zip(range(IntAmount),range(BeginigHour,IntAmount)):
-    #     EditTree.insert("", "end", values=(idCounter,amount2,j));
-    for record in range(int(IntAmount)):
-        EditTree.insert("", "end",values=( ListofVal[0],ListofVal[1],f'{ListofVal[2]}:{ListofVal[3]}'));
-        ListofVal[2]=ListofVal[2]+1;       #Hours jumps/intervals
-        ListofVal[3]=ListofVal[6];         #Add minutes intervals
-        ListofVal[0]= ListofVal[0]+1;
+
+    # for record in range(int(IntAmount)):
+    #     EditTree.insert("", "end",values=( ListofVal[0],ListofVal[1],f'{ListofVal[2]}:{ListofVal[3]}'));
+    #     ListofVal[2]=ListofVal[2]+1;       #Hours jumps/intervals
+    #     ListofVal[3]=ListofVal[6];         #Add minutes intervals
+    #     ListofVal[0]= ListofVal[0]+1;
 
     OrderID+=1;#counterID=counterID+1
     #print(OrderID);
@@ -1153,16 +1156,31 @@ def UpdateOrder(event):
 
     def enterToDB_UpdateOrder():
         #Function to insert data into My-SQL Db
-        global TempAmount;
-        ListofVal[1]=TempAmount;
-        injection_time="05:05:05"#Just for test
+        global DosesSelectedEvent;
+        #ListofVal[1]=DosesSelectedEvent;
+        #injection_time="05:05:05"#Just for test
         #ChoosenDateForManaulOrder="2022-07-20";#test
         cursor = db.cursor(buffered=True);
+
+        # for record in OrderDatatoSpecificOrder:
+        #     #ValuseTuple=("11:20:11", ListofVal[1], ListofVal[5], 0, 0);# ListofVal[5]=HospitalID,ListofVal[1]=Individual amount
+        #     #print("trying to update DB");
+        #     try:
+        #         UpdateSQlQuery=f"UPDATE  orders SET injection_time='{ListOfInjectionTime}',amount='{record[1]}',batchID='{0}',DecayCorrected='{0}'  WHERE idhospital = '{hospitalId}' AND Date='{ChoosenDateForManaulOrder}';";
+        #         cursor.execute(UpdateSQlQuery);
+        #         print("DB updated successfully ");
+        #     except Exception as e:
+        #         logging.error(traceback.format_exc())
+        #         print("Error-Order was not updated-please check MySQL")
+
+                #EditTree.insert(parent='', index='end',values=(record[0],record[1],record[2]));#record[0]=Id,record[1]=amount,record[2]=injection time
+
+
         for i in range(1,ListofVal[4]+1):
             #ValuseTuple=("11:20:11", ListofVal[1], ListofVal[5], 0, 0);# ListofVal[5]=HospitalID,ListofVal[1]=Individual amount
             #print("trying to update DB");
             try:
-             UpdateSQlQuery=f"UPDATE  orders SET injection_time='{injection_time}',amount='{ListofVal[1]}',batchID='{0}',DecayCorrected='{0}'  WHERE idhospital = '{hospitalId}' AND Date='{ChoosenDateForManaulOrder}';";
+             UpdateSQlQuery=f"UPDATE  orders SET injection_time='{ListOfInjectionTime[i-1]}',amount='{ListofVal[1]}',batchID='{0}',DecayCorrected='{0}'  WHERE idhospital = '{hospitalId}' AND Date='{ChoosenDateForManaulOrder}';";
              cursor.execute(UpdateSQlQuery);
              print("DB updated successfully ");
             except Exception as e:
@@ -1215,8 +1233,9 @@ def UpdateOrder(event):
     EditTree.bind('<<TreeviewSelect>>', treeAmountSelect);
 
     def set_amount(AmountValue):
-        global TempAmount;
-        TempAmount=AmountValue;
+        global DosesSelectedEvent;
+        DosesSelectedEvent=AmountValue;
+        #print(DosesSelectedEvent)
         row = EditTree.focus();
         if row:
             EditTree.set(row, '1', AmountValue);
@@ -1252,7 +1271,7 @@ def UpdateOrder(event):
     EditTree.bind('<<TreeviewSelect>>', InjectionTimeselect)
 
     def setInjectionTime(value):
-        #print(value)
+        print(value)
         row = EditTree.focus()
         if row:
             EditTree.set(row, '2', value)
