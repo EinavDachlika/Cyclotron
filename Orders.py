@@ -381,6 +381,13 @@ def importFileFunc():
                     print(f'InjectionTIme numner {i}: {InjectionTImeListFromdoc[i-1]}');
 # ##############################################################
 
+        FileImportedLabel1=Label(ImportFilePage, text="FIle imported successfully",fg="red", font=('Helvetica 12'));
+        FileImportedLabel1.pack();
+        FileImportedLabel1.place(x=450,y=180);
+
+        FileImportedLabel2=Label(ImportFilePage, text=filename, font=('Helvetica 12'),fg="red");
+        FileImportedLabel2.pack();
+        FileImportedLabel2.place(x=450,y=200);
 
         root.wm_state('iconic');#minimize orders main page
 
