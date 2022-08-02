@@ -145,7 +145,7 @@ def ClearEdittree_2():
     for rawselected in EditTree.get_children():
         EditTree.delete(rawselected);
 
-
+ListofCurrnetHospitalOrderMainPage=[];
 def updateOrdersTreeMainPageOutputOnly():
     clear_tree();
     # # Absorb Orders list data from db
@@ -170,11 +170,39 @@ def updateOrdersTreeMainPageOutputOnly():
     #     print("order trying to get in DB-Add pressed");
     #     try:
     #         cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,idhospital,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);
-
     #output orders main data from DB to the orders tree
     for record in SumOFAmount1:
-        OrdersTree.insert(parent='', index='end', text='',
-                          values=(record[0],record[1],record[2]))#record[0]=Idhospital,record[1]=Injection time,record[2]=Amount of doses
+        OrdersTree.insert(parent='', index='end', text='',values=(record[0],record[1],record[2]))#record[0]=Idhospital,record[1]=Injection time,record[2]=Amount of doses
+        ListofCurrnetHospitalOrderMainPage.append(record[0]);
+
+    #print(ListofCurrnetHospitalOrderMainPage);
+    root.wm_state('normal');#Open orders main page
+    OrdersTree.pack();
+
+    db.commit();
+    cursor.close()
+
+updateOrdersTreeMainPageOutputOnly();
+
+def SearchOutpout(data):
+    """Function for updating List of mian tree order main-output for searching component """
+    clear_tree();
+    # # Absorb Orders list data from db
+    cursor = db.cursor();
+
+    #Show output to Order main page tree-id,date,sum of doses
+    #cursor.execute("SELECT idhospital,Date,SUM(amount) FROM orders GROUP BY Date,idhospital;");
+    cursor.execute("SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.idhospital GROUP BY orders.Date,orders.idhospital;");
+    SumOFAmount1 = cursor.fetchall();
+    #convert list of tuples into list
+    # y = [item1 for t1 in SumOFAmount1 for item1 in t1];
+    # print(y);
+    #print(SumOFAmount1);
+    countertemp=0
+    for record in SumOFAmount1:
+        print(record)
+        OrdersTree.insert(parent='', index='end', text='',values=(data[countertemp],record[1],record[2]));   #record[0]=hospital name,record[1]=Injection time,record[2]=Amount of doses
+        countertemp=countertemp+1;
 
 
     root.wm_state('normal');#Open orders main page
@@ -183,7 +211,7 @@ def updateOrdersTreeMainPageOutputOnly():
     db.commit();
     cursor.close()
 
-updateOrdersTreeMainPageOutputOnly();
+
 
 
 # def callback(event):
@@ -224,6 +252,22 @@ SearchImg = ImageTk.PhotoImage(resizedSearchedEditIcon);
 SearchLabelicon=Label(image=SearchImg);
 SearchLabelicon.pack();
 SearchLabelicon.place(x=610, y=135);
+
+def SearchComponent(event):
+      """Function for creating search component """
+      typed = searchEntry.get();
+      if typed == '':#if nothing typed in the entry
+          dataList = ListofCurrnetHospitalOrderMainPage;#return all of curent list(relevant orders)
+      else:
+          dataList=[];
+          for item in ListofCurrnetHospitalOrderMainPage:
+              if typed.lower() in item.lower():#catch capital and lower case
+                  dataList.append(item);
+                  print(dataList);
+
+      SearchOutpout(dataList);#update past list in the new searched list
+
+searchEntry.bind("<KeyRelease>",SearchComponent)#catch any key pressed and released from keyboard- event
 
 
 def deleteOrderfunc():
