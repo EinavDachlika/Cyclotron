@@ -6,6 +6,10 @@ from PIL import Image, ImageTk, ImageFont
 import mysql.connector
 from mysql.connector import Error
 from datetime import datetime , date
+from tkcalendar import Calendar, DateEntry
+from openpyxl import *
+from openpyxl.styles import *
+
 # from importlib import reload
 
 
@@ -139,6 +143,7 @@ dict_input_column = { 'hospital':('Name', 'Fixed_activity_level', 'Transport_tim
                        'resourcecyclotron':('version', 'capacity', 'constant_efficiency', 'description') ,
                       'resourcemodule': ('version', 'capacity', 'description' ) ,
                       'material':('materialName', 'halflife_T')}
+
 #Einav
 query_index_col = """select 
         col.table_name as 'table',
@@ -206,7 +211,8 @@ order by col.table_schema,
          col.ordinal_position;"""
 cursor.execute(fk_query)
 fk = cursor.fetchall()
-
+# print(fk)
+# print([data for data in fk if data[3]=='idworkplan'])
 
 
 def NOT_NULL_DataType_col(table_name):
@@ -320,6 +326,8 @@ class Popup(Toplevel):
                         except:
                             legal_datatype = False
                             entries[i].config(bg=red_color)
+                            error_labels_list[i]['text'] = "Incorrect data format"
+
 
                     if col[1] == 'time':
                         try:
@@ -328,13 +336,16 @@ class Popup(Toplevel):
                         except:
                             legal_datatype = False
                             entries[i].config(bg=red_color)
+                            error_labels_list[i]['text'] = "Incorrect data format"
 
                     if col[1] == 'date':
                         try:
-                            datetime.strptime(input_values_list[i], '%d/%m/%Y').date() or datetime.strptime(input_values_list[i], '%d-%m-%Y').date()
+                            datetime.strptime(input_values_list[i], '%m/%d/%Y').date() or datetime.strptime(input_values_list[i], '%m-%d-%Y').date()
                         except:
                             legal_datatype = False
                             entries[i].config(bg=red_color)
+                            error_labels_list[i]['text'] = "Incorrect data format"
+
 
         if not legal_notnull:
             text = "There are unallowed empty box. Please fill the highlighted fiels"
@@ -482,7 +493,161 @@ class Popup(Toplevel):
                 db.rollback()
 
             self.destroy()
+    def export_WP_To_Excel(self,selected_date, selected_material):
+        ordersQuery = """SELECT h.Name,h.Fixed_activity_level , o.injection_time,o.amount, m.materialName, o.Date
+                                    FROM hospital h INNER JOIN orders o ON  h.idhospital=o.hospitalID INNER JOIN material m ON m.idmaterial=o.materialID
+                                    where Date = '""" + selected_date + """' and m.materialName= '""" + selected_material + "' ORDER BY hospitalID, injection_time "
 
+        cursor.execute(ordersQuery)
+        data = cursor.fetchall()
+
+        FilePath = "FDG format.xlsx"
+
+        wb = load_workbook(FilePath)
+
+        # writer = pd.ExcelWriter(FilePath, engine = 'openpyxl')
+        # writer.book = wb
+        sheet = wb.active
+        sheet = wb['work plan']
+
+        hospitals = []
+        row_index = 9
+        for order in data:
+            if order[0] not in hospitals:
+                grey = "c0c0c0"
+                col_start = 4
+                col_end = 16
+
+                sheet.cell(row=row_index, column=col_start).fill = PatternFill(start_color=grey, end_color=grey,
+                                                                               fill_type="solid")  # bg of buffer cell
+
+                merge_buffer = sheet.merge_cells(start_row=row_index, start_column=col_start, end_row=row_index,
+                                                 end_column=col_end)
+
+                i = 1
+                col_index = 3
+                row_index += 1
+                hospital_orders = [row[1:] for row in data if row[0] == order[0]]
+                end_row_to_merge = row_index + len(hospital_orders) - 1
+                hospital_name_cell = sheet.cell(row=row_index, column=col_index)
+                hospital_name_cell.value = order[0]  # insert hoapital name to the first col
+                merge_hospital_name_cells = sheet.merge_cells(start_row=row_index, start_column=col_index,
+                                                              end_row=end_row_to_merge, end_column=col_index)
+                hospitals.append(order[0])
+
+                for row in hospital_orders:
+                    DosemCi = row[0] * row[2]
+                    # sheet.cell(row=row_index, column=4).value = i  # serial number
+                    # sheet.cell(row=row_index, column=6).value = DosemCi
+                    # sheet.cell(row=row_index, column=11).value = str(row[1])  # injection time
+
+                    sheet.cell(row=row_index, column=4).value = i  # serial number
+                    sheet.cell(row=row_index, column=6).value = DosemCi
+                    sheet.cell(row=row_index, column=9).value = str(row[1])  # injection time
+                    i += 1
+                    row_index += 1
+        wb_name = 'workplan' + selected_date +'.xls'
+        wb.save(wb_name)
+
+
+
+    def wp_popup(self,selected_date, selected_material):
+        excelIcon = Image.open("excelIcon.png")
+        resizedExcelIcon = excelIcon.resize((40, 40), Image.ANTIALIAS)
+        imgExcel = ImageTk.PhotoImage(resizedExcelIcon)
+        ExcelButton = Button(self, image=imgExcel, borderwidth=0,
+                                     command=lambda: self.export_WP_To_Excel(selected_date, selected_material))
+        # ExcelButton.pack(side=LEFT)
+        ExcelButton.place(x= 70, y=90)
+
+        Label(self, text = 'Export to Excel File', font=('Helvetica 12'), fg='grey').place(x= 60 - ExcelButton.winfo_reqwidth()/2, y=90+ExcelButton.winfo_reqheight())
+
+        self.pack()
+
+
+    def legal_wp(self,material_var,error_labels_list):
+        legal = True
+        if material_var.get()=='Select a material':
+            error_message('Please select a material')
+            # entries[0].config(bg=red_color)
+            error_labels_list[0]['text'] = "Please select a material"
+            legal = False
+
+        if not legal:
+            self.lift()
+        return legal
+
+
+    def create_wp(self,material_var,cal,error_labels_list):
+        legal = self.legal_wp(material_var,error_labels_list)
+        if legal:
+            selected_date = cal.get()
+            selected_material = material_var.get()
+            self.destroy()
+            export_popup=Popup()
+            title = 'Work Plan - '+selected_material +' '+ selected_date
+            export_popup.open_pop(title)
+            export_popup.wp_popup(selected_date,selected_material)
+
+
+
+    def add_wp_popup(self):
+        # labels and entry box
+        p_last_label_x = 30
+        p_last_label_y = 80
+        value_index = 0
+        row_num = 1
+        labels = ['Material','Date']
+        entries=[]
+        error_labels_list=[]
+
+        for lab in labels:
+            p_label = Label(self, text=lab)
+            p_label.grid(row=row_num, column=1)
+            p_label.place(x=p_last_label_x, y=p_last_label_y)
+            row_num += 1
+
+            if lab == 'Material':
+                material_var = StringVar(self)
+                material_var.set("Select a material")  # default value
+
+                query= "SELECT materialName,idmaterial FROM material"
+                cursor.execute(query)
+                material_options_list = cursor.fetchall()
+
+                materialname = [m[0] for m in material_options_list ]
+                material_dropdown = OptionMenu(self, material_var, *materialname)
+                material_dropdown.place(x=p_last_label_x + 4, y=p_last_label_y + 30)
+                p_last_label_y += material_dropdown.winfo_reqheight() + p_label.winfo_reqheight()
+
+            elif lab=='Date':
+                # Add Calendar
+                cal = DateEntry(self, width=12, background='darkblue',
+                                foreground='white', borderwidth=2, date_pattern='yyyy-mm-dd')
+                cal.place(x=p_last_label_x + 4, y=p_last_label_y + 30)
+                p_last_label_y += cal.winfo_reqheight() + p_label.winfo_reqheight()
+
+                        # error labels
+            error_label = Label(self, text='', font=('Courier', 8), fg='red')
+            error_label.place(x=p_last_label_x + 1, y=p_last_label_y)
+            error_labels_list.append(error_label)
+            row_num += 1
+
+            p_last_label_y += 18 + error_label.winfo_reqheight()
+
+            #buttons
+            save_button = Button(self, text='Create a work plan',
+                                 command=lambda: self.create_wp(material_var,cal,error_labels_list ))
+
+            save_button.pack(side=LEFT)
+            save_button_position_x = self.winfo_screenheight() / 2 - save_button.winfo_reqwidth() / 2
+            save_button_position_y = 450
+
+            save_button.place(x=save_button_position_x, y=save_button_position_y)
+
+            cancel_button = Button(self, text="Cancle", command=lambda: self.cancel_popup())
+            cancel_button.pack(side=LEFT)
+            cancel_button.place(x=save_button.winfo_reqwidth() + save_button_position_x + 10, y=save_button_position_y)
 
 
     def add_popup(self, labels, save_title, *args):
@@ -567,10 +732,10 @@ class table(ttk.Treeview):
             self.column(column_name, anchor=CENTER, width=width)
             # # Create Headings
             self.heading(column_name, text=column_name, anchor=CENTER)
-        query = query + " WHERE ISNULL(deleted)"
+        # query = query + " WHERE ISNULL(deleted)"
         cursor.execute(query)
         data = cursor.fetchall()
-
+        # print(query,data)
         iid=0
         for recorf in data:
             val=[]
@@ -680,7 +845,7 @@ table_place_x = 80
 table_place_y = 80
 columns_name_list=('Version', 'Capacity (mci/h)', 'Constant Efficiency (mCi/mA)', 'Description')
 
-query = "SELECT * FROM resourcecyclotron"
+query = "SELECT * FROM resourcecyclotron WHERE ISNULL(deleted)"
 
 # cyclo_tabel=table(scroll_width,tab_side, x,y,frame,list_height,lable_place_x,lable_place_y, columns_name_list, query )
 cyclo_tabel=table(frame,scroll_width,list_height,tab_side,x,y,table_place_x,
@@ -791,7 +956,7 @@ list_height=5
 
 columns_name_list=('Version', 'Capacity (mci/h)', 'Description')
 
-queryModule = "SELECT * FROM resourcemodule"
+queryModule = "SELECT * FROM resourcemodule WHERE ISNULL(deleted)"
 
 module_tabel=table(frame,scroll_width,list_height,tab_side,x,y,table_place_x,
                    table_place_y)
@@ -900,7 +1065,7 @@ list_height=5
 
 columns_name_list=[' Material ', 'Half-life (min)']
 
-queryMaterial = "SELECT * FROM material"
+queryMaterial = "SELECT * FROM material WHERE ISNULL(deleted)"
 
 material_tabel=table(frame,scroll_width,list_height,tab_side,x,y,table_place_x,
                    table_place_y)
@@ -1007,7 +1172,7 @@ lable_place_y=70
 
 columns_name_list=('        Name        ', 'Fixed Activity Level (mci)', 'Transport Time (minutes)')
 
-hospital_query="SELECT * FROM hospital"
+hospital_query="SELECT * FROM hospital WHERE ISNULL(deleted)"
 
 hospital_tabel=table(frame,scroll_width,list_height,tab_side,x,y,lable_place_x,
                      lable_place_y)
@@ -1075,8 +1240,102 @@ deleteHospitalButton = Button(hospitalFrame, image=imgDeleteHospital, borderwidt
 deleteHospitalButton.pack(side=LEFT)
 deleteHospitalButton.place(x=lable_place_x + 500, y=lable_place_y + 15)
 
+#################### Work Plan Page #####################
+#Work Plan frame
+WorkPlanFrame = Frame(root)
+# h = Scrollbar(WorkPlanFrame, orient='horizontal')
+WorkPlanFrame.pack(fill=X)
 
-# cycloSettingsFrame.forget()
-# moduleSettingsFrame.forget()
-# hospitalFrame.forget()
+##################### Work Plan #####################
+# Work Plan Details label
+WorkPlanLabel = Label(WorkPlanFrame, text = 'Work Plan', font=sub_label_font,fg=label_color)
+Lable_place_x=80
+Lable_place_y=60
+
+WorkPlanLabel.pack(side=LEFT)
+WorkPlanLabel.place(x=Lable_place_x,y=Lable_place_y)
+
+###Work Plan tabel###
+scroll_width=20
+tab_side=LEFT
+x=613
+y= 140
+frame=WorkPlanFrame
+list_height=5
+table_place_x = 80
+table_place_y = 80
+columns_name_list=('    Date   ',' Material ' )
+# idworkplan, Date, Cyclotron_activation_time, materialID
+query = "SELECT WP.idworkplan, WP.Date, m.materialName FROM workplan WP JOIN material M ON WP.materialID=M.idmaterial"
+
+wp_tabel=table(frame,scroll_width,list_height,tab_side,x,y,table_place_x,
+                  table_place_y,)
+wp_tabel.create_fully_tabel( columns_name_list, query)
+
+
+# ###Work Plan functions###
+# def editWPfun():
+#     selected_rec = cyclo_tabel.selected()
+#     selected_non=cyclo_tabel.selected_is_non(selected_rec)
+#     if not selected_non:
+#         editCyclPopup = Popup()
+#         editCyclPopup.open_pop('Edit Cyclotron Details')
+#
+#         query = "UPDATE resourcecyclotron SET version = %s ,capacity= %s, constant_efficiency= %s,description=%s  WHERE idresourceCyclotron = %s"
+#         pk = selected_rec[4]
+#         table_name = 'resourcecyclotron'
+#         labels = (('Version', ''), ('Capacity', '(mci/h)'), ('Constant Efficiency', '(mCi/mA)'), ('Description', ''))
+#         save_title = "Save Changes"
+#
+#         editCyclPopup.edit_popup(labels, selected_rec, save_title, query, pk, cyclo_tabel,table_name)
+#
+#
+# def deleteCyclotronfun():
+#     query = "DELETE FROM resourcecyclotron WHERE idresourceCyclotron = %s"
+#     table_name='resourcecyclotron'
+#     cyclo_tabel.delete_record(query,table_name)
+#
+def addWPfun():
+    addWPPopup = Popup()
+    addWPPopup.open_pop('Create Work Plan')
+    labels = (('Version', ''), ('Capacity', '(mci/h)'), ('Constant Efficiency', '(mCi/mA)'), ('Description', ''))
+    save_title = "Add Cyclotron"
+    insertquery = "INSERT INTO resourcecyclotron SET version = %s ,capacity= %s, constant_efficiency= %s,description=%s"
+    # selectIDquery = "SELECT MAX(idresourceCyclotron) FROM resourcecyclotron"
+    table_name='resourcecyclotron'
+    addWPPopup.add_wp_popup()
+
+# #work plan buttons
+# #Create a button in the main Window to edit  record (open the popup) - work plan
+# wpEditIcon = Image.open("editIcon.jpg")
+# resizedWPEditIcon = wpEditIcon.resize((20, 20), Image.ANTIALIAS)
+# imgEditwp = ImageTk.PhotoImage(resizedWPEditIcon)
+# # editCyclotronButton = Button(ctcloSettingsFrame, image=imgEditCyclotron, borderwidth=0, command= lambda :editCyclotronfun())
+# editWPButton = Button(WorkPlanFrame, image=imgEditwp, borderwidth=0, command= lambda :editCyclotronfun())
+#
+# editWPButton.pack(side= LEFT)
+# editWPButton.place(x=table_place_x+450, y=table_place_y+15)
+#
+#Create a button in the main Window to add record - work plan
+wpAddIcon = Image.open("addIcon.png")
+resizedWPAddIcon = wpAddIcon.resize((25, 25), Image.ANTIALIAS)
+imgAddWP = ImageTk.PhotoImage(resizedWPAddIcon)
+addWPButton = Button(WorkPlanFrame, image=imgAddWP, borderwidth=0, command=lambda : addWPfun())
+addWPButton.pack(side= LEFT)
+addWPButton.place(x=table_place_x+400, y=table_place_y+14)
+#
+#
+# # Create a button in the main Window to Delete record - work plan
+# wpDeleteIcon = Image.open("‏‏deleteIcon.png")
+# resizedWPDeleteIcon = wpDeleteIcon.resize((20, 20), Image.ANTIALIAS)
+# imgDeleteWP = ImageTk.PhotoImage(resizedWPDeleteIcon)
+# deleteWPButton = Button(WorkPlanFrame, image=imgDeleteWP, borderwidth=0, command=lambda : deleteCyclotronfun())
+# deleteWPButton.pack(side=LEFT)
+# deleteWPButton.place(x=table_place_x + 500, y=table_place_y + 15)
+
+
+cycloSettingsFrame.forget()
+moduleSettingsFrame.forget()
+hospitalFrame.forget()
+
 root.mainloop()
