@@ -134,7 +134,20 @@ OrdersTree.heading("1", text="Hospital");
 OrdersTree.heading("2", text="Injection Date");
 OrdersTree.heading("3", text="Doses");
 
+#clear/delete Order main page tree-all records
+def clear_tree():
+    OrdersTree.delete(*OrdersTree.get_children());
+
+
+#clear/delete Edit page tree-all records
+def ClearEdittree_2():
+    #"""Initialization-clear/Delete all the records"""
+    for rawselected in EditTree.get_children():
+        EditTree.delete(rawselected);
+
+
 def updateOrdersTreeMainPageOutputOnly():
+    clear_tree();
     # # Absorb Orders list data from db
     cursor = db.cursor();
 
@@ -187,6 +200,17 @@ updateOrdersTreeMainPageOutputOnly();
 
 
 #########################Orders main pages buttons###############################
+
+#Create Refresh(DB) button
+# global reafreahImg;
+# reafreshIcon = Image.open("./Images/regreshButton.png");
+# resizedReafreshEditIcon = reafreshIcon.resize((23,23), Image.ANTIALIAS);
+# reafreahImg = ImageTk.PhotoImage(resizedReafreshEditIcon);
+# ReafrshButton=Button(ordersFrame, image=reafreahImg, borderwidth=0,command=updateOrdersTreeMainPageOutputOnly)
+# ReafrshButton.pack();
+# ReafrshButton.place(x=530, y=63);
+
+
 #Create Search window
 searchEntry = Entry(ordersFrame,font=("Halvetica",12));
 searchEntry.insert(0, 'Search Hospital Name');
@@ -511,20 +535,6 @@ def importFileFunc():
 
     #print(TempList);
     ImportFilePage.mainloop();
-
-
-
-
-
-
-
-def clear_tree():
-    OrdersTree.delete(*OrdersTree.get_children())
-
-def ClearEdittree_2():
-      #"""Initialization-clear/Delete all the records"""
-    for rawselected in EditTree.get_children():
-     EditTree.delete(rawselected);
 
 
 
