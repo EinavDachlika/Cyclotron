@@ -146,6 +146,7 @@ def ClearEdittree_2():
         EditTree.delete(rawselected);
 
 ListofCurrnetHospitalOrderMainPage=[];
+
 def updateOrdersTreeMainPageOutputOnly():
     clear_tree();
     # # Absorb Orders list data from db
@@ -180,7 +181,7 @@ def updateOrdersTreeMainPageOutputOnly():
     OrdersTree.pack();
 
     db.commit();
-    cursor.close()
+    cursor.close();
 
 updateOrdersTreeMainPageOutputOnly();
 
@@ -270,6 +271,55 @@ def SearchComponent(event):
 searchEntry.bind("<KeyRelease>",SearchComponent)#catch any key pressed and released from keyboard- event
 
 
+#######Filter by material-drop down##################################################
+# MaterialClickDropDownMenu = StringVar();
+# MaterialClickDropDownMenu.set("Material"); #default value
+#
+# Absorb materials list data from db
+cursor = db.cursor();
+cursor.execute("SELECT * FROM material");
+Material_in_db = cursor.fetchall();
+print(Material_in_db);
+
+def updateOrdersTreeByMaterialFiltering(materialSelData):
+    clear_tree();
+    # # Absorb Orders list data from db
+    cursor = db.cursor();
+
+    #Show output to Order main page tree-id,date,sum of doses filtering by Material ID
+    cursor.execute(f"SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders  INNER JOIN hospital ON hospital.idhospital = orders.idhospital WHERE materialID={materialSelData} GROUP BY orders.Date,orders.idhospital ;");
+    filteringRowsFromDB = cursor.fetchall();
+    print(filteringRowsFromDB);
+    for record in filteringRowsFromDB:
+        OrdersTree.insert(parent='', index='end', text='',values=(record[0],record[1],record[2]))#record[0]=Idhospital,record[1]=Injection time,record[2]=Amount of doses
+        ListofCurrnetHospitalOrderMainPage.append(record[0]);
+
+    #print(ListofCurrnetHospitalOrderMainPage);
+    root.wm_state('normal');#Open orders main page
+    OrdersTree.pack();
+
+    db.commit();
+    cursor.close();
+
+
+# #function to get the value from the drop down menu
+def MaterialsSelectedeFilteringFunc(event):
+    #MaterialDropDownLabel=Label(ordersFrame,text=MaterialsDropDownFilteringMainPage.get()).pack()
+    MaterialSelected=MaterialsDropDownFilteringMainPage.get();
+    Mlist=list(MaterialSelected);
+    print(Mlist[0]);
+    updateOrdersTreeByMaterialFiltering(Mlist[0]);#Calling to output sql function
+
+
+MaterialsDropDownFilteringMainPage = ttk.Combobox(ordersFrame,state="readonly",value=Material_in_db,width=9);
+MaterialsDropDownFilteringMainPage.current(0);
+
+MaterialsDropDownFilteringMainPage.bind("<<ComboboxSelected>>",MaterialsSelectedeFilteringFunc)
+MaterialsDropDownFilteringMainPage.pack();
+MaterialsDropDownFilteringMainPage.place(x=370, y=70);
+
+
+############################################################################
 def deleteOrderfunc():
     """Function for removing order from DB"""
     rawSelectedToDelete=OrdersTree.selection();
