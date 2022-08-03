@@ -342,7 +342,7 @@ def importFileFunc():
     AmountListFromDoc=[];
     InjectionTImeListFromdoc=[];
     #ListofVarImportFile=["","","","","",""];
-    TempList=["",""];
+    TempList=["","",""];
     def ImportFilefunction():
         TempNewLISt1=[];
         """This is function for importing Orders files"""
@@ -485,13 +485,48 @@ def importFileFunc():
     HospitalDropDown.pack();
     HospitalDropDown.place(x=20, y=100);
 
+    # Absorb materials list data from db
+    cursor = db.cursor();
+    cursor.execute("SELECT * FROM material");
+    Material_in_db = cursor.fetchall();
+    print(Material_in_db);
+
+    #Create Material Drop-Dowm menu
+
+    #matrial label
+    MaterialListLabel = Label(ImportFilePage, text="Material",bg='white');
+    MaterialListLabel.pack();
+    MaterialListLabel.place(x=20, y=280);
+
+
+    MaterialClickDropDownMenu = StringVar();
+    MaterialClickDropDownMenu.set("Select Material"); #default value
+
+    #function to get the value from the drop down menu
+    def MaterialsChoosecallback(MaterialSelectedValue):
+        ChoosenMaterial2=MaterialSelectedValue;
+        temp_Var_=list(ChoosenMaterial2);
+        TempList[2]=ChoosenMaretrialIDNewOrderManual=int(temp_Var_[0])
+        print(TempList[2])
+        # for i in range(30):
+        #  OrdersTree.insert("", "end", values=(ChoosenHospital[1]));
+        #print(selection[1]);
+        return ChoosenMaterial2;
+
+    MaterialsDropDown = OptionMenu(ImportFilePage, MaterialClickDropDownMenu, *Material_in_db,command=MaterialsChoosecallback);
+    MaterialsDropDown.config(width=15,bg='white');#color of dropdown menu
+    MaterialsDropDown.pack();
+    MaterialsDropDown.place(x=18, y=310);
+
+
+
     def SaveToDB():
      cursor = db.cursor(buffered=True);
      for i in range(1,len(AmountListFromDoc)):
-        ValuseTuple=(i,TempList[1],InjectionTImeListFromdoc[i],AmountListFromDoc[i], TempList[0],0,0);
+        ValuseTuple=(i,TempList[1],InjectionTImeListFromdoc[i],AmountListFromDoc[i], TempList[0],TempList[2],0,0);
         print("order trying to get in DB-Add pressed");
         try:
-            cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,idhospital,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);
+            cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,idhospital,materialID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);
         except Exception as e:
             logging.error(traceback.format_exc());
             #messagebox.showerror("Error message","Error !");
@@ -686,6 +721,50 @@ def PopUpForNewOrder():
     HospitalDropDown.pack();
     HospitalDropDown.place(x=20, y=100);
 
+    # Absorb materials list data from db
+    cursor = db.cursor();
+    cursor.execute("SELECT * FROM material");
+    Material_in_db1 = cursor.fetchall();
+    print(Material_in_db1);
+
+    #Create Material Drop-Dowm menu
+
+    #matrial label
+    MaterialListLabel1 = Label(NewOrderMainPage, text="Material",bg='white');
+    MaterialListLabel1.pack();
+    MaterialListLabel1.place(x=400, y=300);
+
+
+    MaterialClickDropDownMenu1 = StringVar();
+    MaterialClickDropDownMenu1.set("Select Material"); #default value
+
+    #function to get the value from the drop down menu
+    def MaterialsChoosecallback(MaterialSelectedValue1):
+        ChoosenMaterial1=MaterialSelectedValue1;
+        temp_Var_=list(ChoosenMaterial1);
+        ListofVal[7]=ChoosenMaretrialIDNewOrderManual=int(temp_Var_[0])
+        print(ListofVal[7])
+
+        # hospitalLabel = temp_Var_.split(",",1);
+        # hospitalNameTemp=hospitalLabel[1];
+        # print(hospitalNameTemp);
+        # hospitalIDTemp=hospitalLabel[0];
+        # #print(hospitalIDTemp);
+        # HospitalID=hospitalIDTemp.split("(");
+        # hospitalId=int(HospitalID[1]);
+        #print(ListofVal[7])
+
+        return ChoosenMaterial1;
+
+    MaterialsDropDown1 = OptionMenu(NewOrderMainPage, MaterialClickDropDownMenu1, *Material_in_db1,command=MaterialsChoosecallback);
+    MaterialsDropDown1.config(width=15,bg='white');#color of dropdown menu
+    MaterialsDropDown1.pack();
+    MaterialsDropDown1.place(x=400, y=330);
+
+
+
+
+
     # declaring string variable for storing amount
     amountVar=tk.StringVar();
     # declaring string variable for storing time interval
@@ -696,7 +775,7 @@ def PopUpForNewOrder():
     global OrderID;
     OrderID=0;
     global idCounter;
-    ListofVal=["","","","","","",""];
+    ListofVal=["","","","","","","",""];
     ListofTimeIntervals=[];
     def submit():
         global hospitalId;
@@ -867,13 +946,15 @@ def PopUpForNewOrder():
      #        'DecayCorrected': 7 }  ;
      cursor = db.cursor(buffered=True);
      for i in range(1,ListofVal[4]+1):
-      ValuseTuple=(i, ChoosenDateForManaulOrder, ListofTimeIntervals[i-1], ListofVal[1], ListofVal[5], 0, 0);
+      ValuseTuple=(i, ChoosenDateForManaulOrder, ListofTimeIntervals[i-1], ListofVal[1], ListofVal[5],ListofVal[7], 0, 0);
       #print("order trying to get in DB-Add pressed");
       try:
-       UpdateSQlQuery="INSERT INTO orders (idorders,Date,injection_time,amount,idhospital,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);";
+       UpdateSQlQuery="INSERT INTO orders (idorders,Date,injection_time,amount,idhospital,materialID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);";
        cursor.execute(UpdateSQlQuery,ValuseTuple);
        print("DB updated successfully ");
-      except:
+      except Exception as e:
+       logging.error(traceback.format_exc());
+       #messagebox.showerror("Error message","Error !");
        print("Error-Order was not updated-please check MySQL")
 
 
