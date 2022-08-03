@@ -51,6 +51,7 @@ except Error as e:
     print("Error while connecting to MySQL", e)
 
 #create tables
+#Create table of hospitals
 dbCursor.execute("CREATE TABLE IF NOT EXISTS hospital ("
                  "idhospital int(255) NOT NULL"
                  ",Name varchar(45) NOT NULL"
@@ -59,6 +60,7 @@ dbCursor.execute("CREATE TABLE IF NOT EXISTS hospital ("
                  "deleted BOOLEAN,"
                  "PRIMARY KEY(idhospital))");
 
+#Create table of resourcecyclotron
 dbCursor.execute("CREATE TABLE IF NOT EXISTS resourcecyclotron ("
                  "idresourceCyclotron int(255)"
                  ",version varchar(45)"
@@ -67,6 +69,7 @@ dbCursor.execute("CREATE TABLE IF NOT EXISTS resourcecyclotron ("
                  "description varchar(45),"
                  "deleted BOOLEAN)");
 
+#Create table of resourcemoule
 dbCursor.execute("CREATE TABLE IF NOT EXISTS resourcemodule ("
                  "idresourcemodule int(255)"
                  ",version varchar(45)"
@@ -74,12 +77,14 @@ dbCursor.execute("CREATE TABLE IF NOT EXISTS resourcemodule ("
                  "description varchar(45),"
                  "deleted BOOLEAN)");
 
+#Create table of workplan
 dbCursor.execute("CREATE TABLE IF NOT EXISTS workplan ("
                  "idworkplan int(255)"
                  ",Date date"
                  ",Cyclotron_activation_time time,"
                  "materialID int(255))");
 
+#Create table of orders
 dbCursor.execute("CREATE TABLE IF NOT EXISTS orders ("
                  "idorders int(255)"
                  ",Date date"
@@ -90,7 +95,7 @@ dbCursor.execute("CREATE TABLE IF NOT EXISTS orders ("
                  ",batchID int(255)"
                  ",DecayCorrected float)");
 
-
+#Create table of batches
 dbCursor.execute("CREATE TABLE IF NOT EXISTS batch("
                  "idbatch int(255)"
                  ",Total_eos_date date"
@@ -106,9 +111,11 @@ dbCursor.execute("CREATE TABLE IF NOT EXISTS batch("
                  "SynthesisTime int(255),"
                  "Radioactivity_to_cyclotron int(255))");
 
+#Create table of materials
 dbCursor.execute("CREATE TABLE IF NOT EXISTS material("
                  "materialID int(255),"
-                 "materialName varchar(45))");
+                 "materialName varchar(45),"
+                 "PRIMARY KEY(materialID))");
 
 
 ######################Hospital page##########################################
@@ -164,6 +171,9 @@ hospitals_in_db = cursor.fetchall();
 #Insert data of Hospitals into My-SQl DB
 #The INSERT IGNORE statement will cause MySQL to do nothing when the insertion throws an error. If there’s no error, then a new row will be added to the table.
 cursor.execute("INSERT IGNORE INTO hospital (idhospital,Name,Fixed_activity_level,Transport_time,deleted) VALUES (1,'Belinson',9.2,15.0,true),(2,'Ichilov',10.0,20.0,false),(3,'Assuta TA',10.9,30.0,true),(4,'Sheb',10.5,35.0,true),(5,'Ziv',11.0,25.0,true),(6,'Assuta Ashdod',13.1,60.0,false),(7,'Assaf Harofeh',10.6,65.0,false),(8,'Augusta Victoria',9.6,50.0,false),(9,'Hila Pharma',9.6,50.0,false),(10,'Hadassah',9.5,0.0,false);")
+
+#Insert 2 material to the DB,material table
+cursor.execute("INSERT IGNORE INTO material (materialID,materialName) VALUES (1,'FDG'),(2,'FDOPA');")
 #cleanup DB
 db.commit();
 # cursor.close();
