@@ -485,10 +485,7 @@ def importFileFunc():
 
         root.wm_state('iconic');#minimize orders main page
 
-    # Absorb hosital list data from db
-    cursor = db.cursor();
-    cursor.execute("SELECT idhospital,Name FROM hospital");
-    hospitals_in_db = cursor.fetchall();
+
 
 ##########################################
     ImportFilePage = Toplevel(root);
@@ -503,39 +500,35 @@ def importFileFunc():
     HospitalListLabel = Label(ImportFilePage, text="Hospital",bg='white');
     HospitalListLabel.pack();
     HospitalListLabel.place(x=20, y=70);
+
+    #Create hospital drop-down
+    # Absorb hosital list data from db
+    cursor = db.cursor();
+    cursor.execute("SELECT idhospital,Name FROM hospital");
+    hospitals_in_db = cursor.fetchall();
     HospitalList2 = hospitals_in_db;
 
 
-    CLickOnHospitalDropMenu2 = StringVar();
-    CLickOnHospitalDropMenu2.set("Select Hospital"); #default value
+    def HospitalChooseImportFile(HospitalSelectedEvent):
+        """Function for create Hospital Drop-Down menu -absorb data from DB"""
+        ChoosenHospitalNewOrder=HospitalSelectedImportFile.get();
+        print(ChoosenHospitalNewOrder);
+        TempList[0]=ChoosenHospitalNewOrder[0];#HospitalID
+        print(TempList[0]);
 
-    # def my_upd(*args):                                    # triggered when value of string varaible changes
-    #     l1.config(text=CLickOnHospitalDropMenu2.get());
-    #     # read and display date
-    #
-    # l1=tk.Label(ImportFilePage);  # Label to display date
-    # print(type(l1));
-    # l1.pack();
-    #
-    # CLickOnHospitalDropMenu2.trace('w',my_upd) ;#
-    # on change of string variable
-    #val1=CLickOnHospitalDropMenu2.get();
-    #print(val1)
-    def HospitalChoosecallback(selection):
-           ChoosenHospital=selection;
-           TempList[0]=ChoosenHospital[0];#HospitalID
-           print(TempList[0])
-           # for i in range(30):
-           #  OrdersTree.insert("", "end", values=(ChoosenHospital[1]));
-           #print(selection[1]);
-           return ChoosenHospital;
 
-    HospitalDropDown = OptionMenu(ImportFilePage, CLickOnHospitalDropMenu2, *HospitalList2,command=HospitalChoosecallback);
-    HospitalDropDown.config(width=15,bg='white');#color of dropdown menu
-    HospitalDropDown.pack();
-    HospitalDropDown.place(x=20, y=100);
+
+    HospitalSelectedImportFile = ttk.Combobox(ImportFilePage,state="readonly",value=HospitalList2,width=9);
+    HospitalSelectedImportFile.current(0);
+
+    HospitalSelectedImportFile.bind("<<ComboboxSelected>>",HospitalChooseImportFile)
+    HospitalSelectedImportFile.pack();
+    HospitalSelectedImportFile.place(x=20, y=100);
+
+
 
     # Absorb materials list data from db
+    #################Absorb materials list DB#########################
     cursor = db.cursor();
     cursor.execute("SELECT * FROM material");
     Material_in_db = cursor.fetchall();
@@ -548,26 +541,22 @@ def importFileFunc():
     MaterialListLabel.pack();
     MaterialListLabel.place(x=20, y=280);
 
-
-    MaterialClickDropDownMenu = StringVar();
-    MaterialClickDropDownMenu.set("Select Material"); #default value
-
-    #function to get the value from the drop down menu
-    def MaterialsChoosecallback(MaterialSelectedValue):
-        ChoosenMaterial2=MaterialSelectedValue;
+    def MaterialsSelectedeImportFile(MaterialSelectedEvent):
+        """Function for create Material Drop-Down menu -absorb data from DB"""
+        ChoosenMaterialNewOrder=MaterialsSelectedImportFile.get();
+        print(ChoosenMaterialNewOrder);
+        ChoosenMaterial2=ChoosenMaterialNewOrder;
         temp_Var_=list(ChoosenMaterial2);
-        TempList[2]=ChoosenMaretrialIDNewOrderManual=int(temp_Var_[0])
-        print(TempList[2])
-        # for i in range(30):
-        #  OrdersTree.insert("", "end", values=(ChoosenHospital[1]));
-        #print(selection[1]);
-        return ChoosenMaterial2;
+        TempList[2]=ChoosenMaretrialIDNewOrderManual=int(temp_Var_[0]);
+        print(TempList[2]);
 
-    MaterialsDropDown = OptionMenu(ImportFilePage, MaterialClickDropDownMenu, *Material_in_db,command=MaterialsChoosecallback);
-    MaterialsDropDown.config(width=15,bg='white');#color of dropdown menu
-    MaterialsDropDown.pack();
-    MaterialsDropDown.place(x=18, y=310);
 
+    MaterialsSelectedImportFile = ttk.Combobox(ImportFilePage,state="readonly",value=Material_in_db,width=9);
+    MaterialsSelectedImportFile.current(0);
+
+    MaterialsSelectedImportFile.bind("<<ComboboxSelected>>",MaterialsSelectedeImportFile)
+    MaterialsSelectedImportFile.pack();
+    MaterialsSelectedImportFile.place(x=18, y=310);
 
 
     def SaveToDB():
@@ -711,11 +700,6 @@ def PopUpForNewOrder():
     # def outputSelectedHospital():
     #     HospitalLabelSelected=Label(NewOrdersecondaryPage,text=CLickOnHospitalDropMenu.get())
     #     HospitalLabelSelected.pack();
-    # Absorb hosital list data from db
-    cursor = db.cursor();
-    cursor.execute("SELECT idhospital,Name FROM hospital");
-    hospitalsListForNewOrderManual = cursor.fetchall();
-    #print(type(hospitals_in_db[0]));#List of hospitals
 
     #root = tk.Tk()
 
@@ -740,36 +724,40 @@ def PopUpForNewOrder():
     HospitalListLabel = Label(NewOrderMainPage, text="Hospital",bg='white');
     HospitalListLabel.pack();
     HospitalListLabel.place(x=20, y=70);
-    HospitalListNewOrderPage = hospitalsListForNewOrderManual;
 
-    def HospitalChoosecallback2(HosiptalSelection):
+    # Absorb hosital list data from db
+    cursor = db.cursor();
+    cursor.execute("SELECT idhospital,Name FROM hospital");
+    hospitalsListForNewOrderManual = cursor.fetchall();
+
+    def HospitalChooseNewOrder(HospitalSelectedEvent):
+        """Function for create Hospital Drop-Down menu -absorb data from DB"""
         global hospitalId;
-        """This function is to catch Hopital name event and past/print it to page number 2 """
-        HospitalLabel2=Label(NewOrderMainPage, text=CLickOnHospitalDropMenu.get(),bg="white", font=('Helvetica 14'));
-        x=CLickOnHospitalDropMenu.get();#string type here
-        #print(x);
-        hospitalLabel = x.split(",",1);
-        hospitalNameTemp=hospitalLabel[1];
-        print(hospitalNameTemp);
-        hospitalIDTemp=hospitalLabel[0];
-        #print(hospitalIDTemp);
-        HospitalID=hospitalIDTemp.split("(");
-        hospitalId=int(HospitalID[1]);
-
+        ChoosenHospitalNewOrder=(HospitalSelectedNewOrder.get());
+        print(ChoosenHospitalNewOrder);
+        #Print to the screen the hospital selected
+        HospitalLabel2=Label(NewOrderMainPage, text= ChoosenHospitalNewOrder, bg="white", font=('Helvetica 14'));
         HospitalLabel2.pack();
-        HospitalLabel2.place(x=650,y=80);
+        HospitalLabel2.place(x=620,y=80);
 
-        # for i in range(30):
-        #  OrdersTree.insert("", "end", values=(ChoosenHospital[1]));
-        #print(selection[1]);
+        HospitalIDFromChoosenHospital = "";
+        for index in ChoosenHospitalNewOrder:
+            if index.isdigit():
+                HospitalIDFromChoosenHospital = HospitalIDFromChoosenHospital + index;
 
-    CLickOnHospitalDropMenu = StringVar();
-    CLickOnHospitalDropMenu.set("Select Hospital"); #default value
 
-    HospitalDropDown = OptionMenu(NewOrderMainPage, CLickOnHospitalDropMenu, *HospitalListNewOrderPage,command=HospitalChoosecallback2);
-    HospitalDropDown.config(width=12,bg='white');#color of dropdown menu
-    HospitalDropDown.pack();
-    HospitalDropDown.place(x=20, y=100);
+        hospitalId=int(HospitalIDFromChoosenHospital);
+
+
+    HospitalSelectedNewOrder = ttk.Combobox(NewOrderMainPage,state="readonly",value=hospitalsListForNewOrderManual,width=9);
+    HospitalSelectedNewOrder.current(0);
+
+    HospitalSelectedNewOrder.bind("<<ComboboxSelected>>",HospitalChooseNewOrder);
+    HospitalSelectedNewOrder.pack();
+    HospitalSelectedNewOrder.place(x=20, y=100);
+
+
+###########################################################################
 
     # Absorb materials list data from db
     cursor = db.cursor();
@@ -785,33 +773,21 @@ def PopUpForNewOrder():
     MaterialListLabel1.place(x=400, y=300);
 
 
-    MaterialClickDropDownMenu1 = StringVar();
-    MaterialClickDropDownMenu1.set("Select Material"); #default value
-
-    #function to get the value from the drop down menu
-    def MaterialsChoosecallback(MaterialSelectedValue1):
-        ChoosenMaterial1=MaterialSelectedValue1;
-        temp_Var_=list(ChoosenMaterial1);
+    def MaterialsSelectedeNewOrder(MaterialSelectedEvent):
+        """Function for create Material Drop-Down menu -absorb data from DB"""
+        ChoosenMaterialNewOrder=MaterialsSelectedNeworder.get();
+        print(ChoosenMaterialNewOrder);
+        temp_Var_=list(ChoosenMaterialNewOrder);
         ListofVal[7]=ChoosenMaretrialIDNewOrderManual=int(temp_Var_[0])
-        print(ListofVal[7])
-
-        # hospitalLabel = temp_Var_.split(",",1);
-        # hospitalNameTemp=hospitalLabel[1];
-        # print(hospitalNameTemp);
-        # hospitalIDTemp=hospitalLabel[0];
-        # #print(hospitalIDTemp);
-        # HospitalID=hospitalIDTemp.split("(");
-        # hospitalId=int(HospitalID[1]);
         #print(ListofVal[7])
 
-        return ChoosenMaterial1;
 
-    MaterialsDropDown1 = OptionMenu(NewOrderMainPage, MaterialClickDropDownMenu1, *Material_in_db1,command=MaterialsChoosecallback);
-    MaterialsDropDown1.config(width=15,bg='white');#color of dropdown menu
-    MaterialsDropDown1.pack();
-    MaterialsDropDown1.place(x=400, y=330);
+    MaterialsSelectedNeworder = ttk.Combobox(NewOrderMainPage,state="readonly",value=Material_in_db1,width=9);
+    MaterialsSelectedNeworder.current(0);
 
-
+    MaterialsSelectedNeworder.bind("<<ComboboxSelected>>",MaterialsSelectedeNewOrder)
+    MaterialsSelectedNeworder.pack();
+    MaterialsSelectedNeworder.place(x=400, y=330);
 
 
 
@@ -857,9 +833,7 @@ def PopUpForNewOrder():
         ListofVal[5]=hospitalId;
         ListofVal[6]=int(Time_Intervals);
 
-        #Enter data to the the table
-        # for idCounter,j in zip(range(IntAmount),range(BeginigHour,IntAmount)):
-        #     NewOrderTree_P2.insert("", "end", values=(idCounter,amount2,j));
+
         for record in range(int(IntAmount)):
             NewOrderTree_P2.insert("", "end",values=( ListofVal[0],ListofVal[1],f'{ListofVal[2]}:{ListofVal[3]}'));
             ListofVal[2]=ListofVal[2]+1;       #Hours jumps/intervals
@@ -913,15 +887,6 @@ def PopUpForNewOrder():
         dateLabel2=Label(NewOrderMainPage, text= ChoosenDateForManaulOrder, bg="white", font=('Helvetica 14'));
         dateLabel2.pack();
         dateLabel2.place(x=760,y=80);
-        # TempList[1]=ChoosenDate;
-        # print( TempList[1]);
-        # if ((counter==0) or (counter==null)):
-        # counter=0;
-        # #Loop throw the tree/table
-        # for recordInrow in range(len(TempList)-1):
-        #     OrdersTree.insert(parent="",index= "end",iid=counter, values=(TempList[0],TempList[1]));
-        #     OrdersTree.insert(parent=counter,index= "end",iid=counter+2,text=TempList[0]);
-        #     counter=counter+1;
 
     cal=DateEntry(NewOrderMainPage,selectmode='day',textvariable=selectDateEventManaulOrder);
     cal.pack(pady = 20);
@@ -929,12 +894,6 @@ def PopUpForNewOrder():
     cal.place(x=20, y=240);
     cal.bind("<<DateEntrySelected>>", print_sel);#catch date event
 
-
-
-# InjectionTimeLabelEntry = Entry(NewOrderMainPage,font=("Halvetica",12));
-    # InjectionTimeLabelEntry.insert(0, '');
-    # InjectionTimeLabelEntry.pack();
-    # InjectionTimeLabelEntry.place(x=20, y=180);
 
     #
     #Create Time range input/Entry
@@ -1121,19 +1080,6 @@ def PopUpForNewOrder():
 
 
     #Create ADD row button+icon
-
-    #by class-option
-    # class MyApp(tk.Tk):
-    #     def __init__(self, *args, **kwargs,):
-    #         tk.Tk.__init__(self, *args, **kwargs)
-    #         self.newOrderFrameTemp = tk.Frame(NewOrderMainPage)
-    #         self.newOrderFrameTemp.pack()
-    #
-    #         self.image = tk.PhotoImage(file='./addIcon.png')
-    #         self.gmail = tk.Label(self.newOrderFrameTemp, image=self.image)
-    #         self.gmail.pack()
-    #app = MyApp()
-
 # defining a function that will
 # print them on the screen
     #rowTree = StringVar();
