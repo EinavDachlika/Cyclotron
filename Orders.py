@@ -740,6 +740,7 @@ def PopUpForNewOrder():
         HospitalLabel2.pack();
         HospitalLabel2.place(x=620,y=80);
 
+        #loop for findinf Id number in the string
         HospitalIDFromChoosenHospital = "";
         for index in ChoosenHospitalNewOrder:
             if index.isdigit():
