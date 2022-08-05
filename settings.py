@@ -96,7 +96,7 @@ dbCursor.execute("CREATE TABLE IF NOT EXISTS workplan ("
 
 #Create table of batches
 dbCursor.execute("CREATE TABLE IF NOT EXISTS batch("
-                 "idbatch int(255) not null "
+                 "idbatch int(255) "
                  ",Total_eos_date date"
                  ",Time_leaves_Hadassah_time date,"
                  "Production_site varchar(45),"
@@ -117,8 +117,9 @@ dbCursor.execute("CREATE TABLE IF NOT EXISTS batch("
 
 #Create table of orders
 dbCursor.execute("CREATE TABLE IF NOT EXISTS orders ("
-                 "idorders int(255) NOT NULL AUTO_INCREMENT"
-                 ",hospitalID int(255) NOT NULL,"
+                 "idorders int(255) NOT NULL AUTO_INCREMENT,"
+                 "DoseNumber int(255) NOT NULL,"
+                 "hospitalID int(255) NOT NULL,"
                  "materialID int(255) NOT NULL"
                  ",batchID int(255) "
                  ",Date date NOT NULL"

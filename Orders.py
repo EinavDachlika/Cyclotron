@@ -56,6 +56,16 @@ except Error as e:
     print("Error while connecting to MySQL", e)
 ##################### toolbar #####################
 
+
+#############################################
+#
+Hack_Disabled_ChildSqlForeignKeys="SET FOREIGN_KEY_CHECKS=0;"
+cursor = db.cursor();
+cursor.execute(Hack_Disabled_ChildSqlForeignKeys);
+# db.commit();
+# cursor.close();
+
+################################################################
 toolbarbgcolor = "white"
 toolbar = Frame(root, bg=toolbarbgcolor)
 toolbar.grid(sticky='nesw')
@@ -153,7 +163,7 @@ def updateOrdersTreeMainPageOutputOnly():
     cursor = db.cursor();
 
     #Show output to Order main page tree-id,date,sum of doses
-    #cursor.execute("SELECT idhospital,Date,SUM(amount) FROM orders GROUP BY Date,idhospital;");
+    #cursor.execute("SELECT hospitalID,Date,SUM(amount) FROM orders GROUP BY Date,hospitalID;");
     cursor.execute("SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID GROUP BY orders.Date,orders.hospitalID;");
     SumOFAmount1 = cursor.fetchall();
     print(SumOFAmount1);
@@ -170,7 +180,7 @@ def updateOrdersTreeMainPageOutputOnly():
     #     ValuseTuple=(i,TempList[1],"11:20:11",AmountListFromDoc[i], TempList[0],0,0);
     #     print("order trying to get in DB-Add pressed");
     #     try:
-    #         cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,idhospital,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);
+    #         cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,hospitalID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);
     #output orders main data from DB to the orders tree
     for record in SumOFAmount1:
         OrdersTree.insert(parent='', index='end', text='',values=(record[0],record[1],record[2]))#record[0]=Idhospital,record[1]=Injection time,record[2]=Amount of doses
@@ -192,7 +202,7 @@ def SearchOutpout(data):
     cursor = db.cursor();
 
     #Show output to Order main page tree-id,date,sum of doses
-    #cursor.execute("SELECT idhospital,Date,SUM(amount) FROM orders GROUP BY Date,idhospital;");
+    #cursor.execute("SELECT hospitalID,Date,SUM(amount) FROM orders GROUP BY Date,hospitalID;");
     cursor.execute("SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID GROUP BY orders.Date,orders.hospitalID;");
     SumOFAmount1 = cursor.fetchall();
     #convert list of tuples into list
@@ -287,7 +297,7 @@ def updateOrdersTreeByMaterialFiltering(materialSelData):
     cursor = db.cursor();
 
     #Show output to Order main page tree-id,date,sum of doses filtering by Material ID
-    cursor.execute(f"SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders  INNER JOIN hospital ON hospital.idhospital = orders.hospitalID WHERE idmaterial={materialSelData} GROUP BY orders.Date,orders.hospitalID ;");
+    cursor.execute(f"SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders  INNER JOIN hospital ON hospital.idhospital = orders.hospitalID WHERE materialID={materialSelData} GROUP BY orders.Date,orders.hospitalID ;");
     filteringRowsFromDB = cursor.fetchall();
     print(filteringRowsFromDB);
     for record in filteringRowsFromDB:
@@ -559,13 +569,13 @@ def importFileFunc():
     MaterialsSelectedImportFile.place(x=18, y=310);
 
 
-    def SaveToDB():
+    def SaveToDB():                            # Function to save order into DB from Import file
      cursor = db.cursor(buffered=True);
      for i in range(1,len(AmountListFromDoc)):
         ValuseTuple=(i,TempList[1],InjectionTImeListFromdoc[i],AmountListFromDoc[i], TempList[0],TempList[2],0,0);
         print("order trying to get in DB-Add pressed");
         try:
-            cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,idhospital,idmaterial,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);
+            cursor.execute("INSERT INTO orders (DoseNumber,Date,injection_time,amount,hospitalID,materialID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);
         except Exception as e:
             logging.error(traceback.format_exc());
             #messagebox.showerror("Error message","Error !");
@@ -959,7 +969,7 @@ def PopUpForNewOrder():
       ValuseTuple=(i, ChoosenDateForManaulOrder, ListofTimeIntervals[i-1], ListofVal[1], ListofVal[5],ListofVal[7], 0, 0);
       #print("order trying to get in DB-Add pressed");
       try:
-       UpdateSQlQuery="INSERT INTO orders (idorders,Date,injection_time,amount,idhospital,idmaterial,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);";
+       UpdateSQlQuery="INSERT INTO orders (DoseNumber,Date,injection_time,amount,hospitalID,materialID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);";
        cursor.execute(UpdateSQlQuery,ValuseTuple);
        print("DB updated successfully ");
       except Exception as e:
@@ -1213,7 +1223,7 @@ def UpdateOrder(event):
 
     #get order detail from DB by hospitalID and Date
     cursor = db.cursor();
-    SearchSpecOrderQueryByDoubleclick=f'SELECT idorders,amount,Injection_time FROM orders where idhospital="{hospitalId}" AND Date="{DateSelected}"';
+    SearchSpecOrderQueryByDoubleclick=f'SELECT idorders,amount,Injection_time FROM orders where hospitalID="{hospitalId}" AND Date="{DateSelected}"';
     cursor.execute(SearchSpecOrderQueryByDoubleclick);
     OrderDatatoSpecificOrder = cursor.fetchall();
     print(f"order selected: {OrderDatatoSpecificOrder}");
@@ -1305,7 +1315,7 @@ def UpdateOrder(event):
         #     #ValuseTuple=("11:20:11", ListofVal[1], ListofVal[5], 0, 0);# ListofVal[5]=HospitalID,ListofVal[1]=Individual amount
         #     #print("trying to update DB");
         #     try:
-        #         UpdateSQlQuery=f"UPDATE  orders SET injection_time='{ListOfInjectionTime}',amount='{record[1]}',batchID='{0}',DecayCorrected='{0}'  WHERE idhospital = '{hospitalId}' AND Date='{ChoosenDateForManaulOrder}';";
+        #         UpdateSQlQuery=f"UPDATE  orders SET injection_time='{ListOfInjectionTime}',amount='{record[1]}',batchID='{0}',DecayCorrected='{0}'  WHERE hospitalID = '{hospitalId}' AND Date='{ChoosenDateForManaulOrder}';";
         #         cursor.execute(UpdateSQlQuery);
         #         print("DB updated successfully ");
         #     except Exception as e:
@@ -1319,7 +1329,7 @@ def UpdateOrder(event):
             #ValuseTuple=("11:20:11", ListofVal[1], ListofVal[5], 0, 0);# ListofVal[5]=HospitalID,ListofVal[1]=Individual amount
             #print("trying to update DB");
             try:
-             UpdateSQlQuery=f"UPDATE  orders SET injection_time='{ListOfInjectionTime[i-1]}',amount='{ListofVal[1]}',batchID='{0}',DecayCorrected='{0}'  WHERE idhospital = '{hospitalId}' AND Date='{ChoosenDateForManaulOrder}';";
+             UpdateSQlQuery=f"UPDATE  orders SET injection_time='{ListOfInjectionTime[i-1]}',amount='{ListofVal[1]}',batchID='{0}',DecayCorrected='{0}'  WHERE hospitalID = '{hospitalId}' AND Date='{ChoosenDateForManaulOrder}';";
              cursor.execute(UpdateSQlQuery);
              print("DB updated successfully ");
             except Exception as e:
