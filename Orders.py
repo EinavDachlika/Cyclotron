@@ -971,8 +971,6 @@ def PopUpForNewOrder():
 
     NewOrderMainPage.pack(fill='both',expand=1);
 
-    #####################################New order 2, second page numer 2###################################################
-
 
     #####################################New order 2, second page numer 2###################################################
 
@@ -1022,6 +1020,8 @@ def PopUpForNewOrder():
     AddButton=Button(NewOrdersecondaryPage,text="Save Order",command=enterToDB);
     AddButton.pack();
     AddButton.place(x=170, y=520);
+
+
 
     # #Create a Cancel button
     # global CancelImg;
@@ -1136,23 +1136,23 @@ def PopUpForNewOrder():
         ListofVal[4]=ListofVal[4]-1;#current amount= current amount-1
     #amountVar.set("");
 
-
-
-
-    ####################Buttons for new order-manual page##########################
-    # Remove button (Icon) - List
-    # global imgDelete2;
+    #Remove button (Icon) - List-ORders page number 2
+    global imgDelete2;
     # deleteIcon2 = Image.open("./‏‏deleteIcon.png");
     # resizedDeleteIcon2 = deleteIcon2.resize((25,25), Image.ANTIALIAS);
     # imgDelete2 = ImageTk.PhotoImage(resizedDeleteIcon2);
-    # deleteButton2=Button(NewOrdersecondaryPage, image=imgDelete2, borderwidth=0,command=removeRawFunc);
-    # deleteButton2.pack();
-    # deleteButton2.place(x=1000, y=98);
+    deleteButton2=Button(NewOrdersecondaryPage, text="remove",bg="white",font=('Helvetica 14'), borderwidth=0,command=removeRawFunc);
+    deleteButton2.pack();
+    deleteButton2.place(x=410, y=95);
 
     #remove/delete record from db
     # def deleteCyclotronfun():
     #     query = "DELETE FROM resourcecyclotron WHERE idresourceCyclotron = %s"
     #     cyclo_tabel.delete_record(query)
+
+
+
+    ####################Buttons for new order-manual page##########################
 
 
     global addROWImg;
