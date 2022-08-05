@@ -154,7 +154,7 @@ def updateOrdersTreeMainPageOutputOnly():
 
     #Show output to Order main page tree-id,date,sum of doses
     #cursor.execute("SELECT idhospital,Date,SUM(amount) FROM orders GROUP BY Date,idhospital;");
-    cursor.execute("SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.idhospital GROUP BY orders.Date,orders.idhospital;");
+    cursor.execute("SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID GROUP BY orders.Date,orders.hospitalID;");
     SumOFAmount1 = cursor.fetchall();
     print(SumOFAmount1);
     #convert list of tuples into list
@@ -193,7 +193,7 @@ def SearchOutpout(data):
 
     #Show output to Order main page tree-id,date,sum of doses
     #cursor.execute("SELECT idhospital,Date,SUM(amount) FROM orders GROUP BY Date,idhospital;");
-    cursor.execute("SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.idhospital GROUP BY orders.Date,orders.idhospital;");
+    cursor.execute("SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID GROUP BY orders.Date,orders.hospitalID;");
     SumOFAmount1 = cursor.fetchall();
     #convert list of tuples into list
     # y = [item1 for t1 in SumOFAmount1 for item1 in t1];
@@ -287,7 +287,7 @@ def updateOrdersTreeByMaterialFiltering(materialSelData):
     cursor = db.cursor();
 
     #Show output to Order main page tree-id,date,sum of doses filtering by Material ID
-    cursor.execute(f"SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders  INNER JOIN hospital ON hospital.idhospital = orders.idhospital WHERE materialID={materialSelData} GROUP BY orders.Date,orders.idhospital ;");
+    cursor.execute(f"SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders  INNER JOIN hospital ON hospital.idhospital = orders.hospitalID WHERE idmaterial={materialSelData} GROUP BY orders.Date,orders.hospitalID ;");
     filteringRowsFromDB = cursor.fetchall();
     print(filteringRowsFromDB);
     for record in filteringRowsFromDB:
@@ -565,7 +565,7 @@ def importFileFunc():
         ValuseTuple=(i,TempList[1],InjectionTImeListFromdoc[i],AmountListFromDoc[i], TempList[0],TempList[2],0,0);
         print("order trying to get in DB-Add pressed");
         try:
-            cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,idhospital,materialID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);
+            cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,idhospital,idmaterial,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);
         except Exception as e:
             logging.error(traceback.format_exc());
             #messagebox.showerror("Error message","Error !");
@@ -959,7 +959,7 @@ def PopUpForNewOrder():
       ValuseTuple=(i, ChoosenDateForManaulOrder, ListofTimeIntervals[i-1], ListofVal[1], ListofVal[5],ListofVal[7], 0, 0);
       #print("order trying to get in DB-Add pressed");
       try:
-       UpdateSQlQuery="INSERT INTO orders (idorders,Date,injection_time,amount,idhospital,materialID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);";
+       UpdateSQlQuery="INSERT INTO orders (idorders,Date,injection_time,amount,idhospital,idmaterial,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);";
        cursor.execute(UpdateSQlQuery,ValuseTuple);
        print("DB updated successfully ");
       except Exception as e:
