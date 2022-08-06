@@ -109,28 +109,36 @@ toolbar.grid_columnconfigure(1, weight=1)
 ##################### Start Order page ###################################################
 
 ordersFrame = Frame(root);
+ordersFrame.config(bg="#F0F3F4");#color of page-white-gray
 
-#h = Scrollbar(ordersFrame, orient='horizontal')
 ordersFrame.pack(fill=X)
 
-
+# ScrollbarOrderMainPage = Scrollbar(ordersFrame, orient='vertical')
+# ScrollbarOrderMainPage.pack();
+# ScrollbarOrderMainPage.place(x=50,y=120);
 # feed label
 feedLabel = Label(ordersFrame, text ='Orders', font=('Helvetica', 26, 'bold'), fg='#034672');
 feedLabel.pack(side=LEFT);
 feedLabel.place(x=50,y=10);
 
 
-# scrollbar
-Cyclotron_scroll = Scrollbar(ordersFrame, orient="vertical", width=25)
-# Cyclotron_scroll.pack(side=LEFT)
-# Cyclotron_scroll.place(x=550, y= 160)
+
 
 #my_label=Label(root,text='');
 
 #Empty page/table for new order
-OrdersTree = ttk.Treeview(ordersFrame,yscrollcommand=Cyclotron_scroll.set,columns=('1', '2','3'),height=20)
-#OrdersTree['show'] = 'tree headings';
+OrdersTree = ttk.Treeview(ordersFrame,height=20);
+
+# Defining number of columns
+OrdersTree["columns"]=("1","2","3");
+
 OrdersTree.pack(side=LEFT, padx=100, pady=110)
+
+#Order main page scrollbar-vertical
+OrderMainPagescroll = Scrollbar(ordersFrame, orient="vertical",command = OrdersTree.yview);
+OrderMainPagescroll.pack(side=LEFT);
+OrdersTree.configure(yscrollcommand = OrderMainPagescroll.set);
+
 
 #Foramte Columns
 OrdersTree.column("#0",width=0,minwidth=0);
@@ -174,12 +182,6 @@ def updateOrdersTreeMainPageOutputOnly():
     # mylist = list(dict.fromkeys(ListofSumOfAmountPerHospital1))
     # ListOfSumOfAmount = [item1 for t1 in mylist for item1 in t1];
 
-    # for i in range(3):
-    #     OrdersTree.insert("", "end", values=(i,"2","30.06.2022"))
-    # for i in range(1,len(AmountListFromDoc)):
-    #     ValuseTuple=(i,TempList[1],"11:20:11",AmountListFromDoc[i], TempList[0],0,0);
-    #     print("order trying to get in DB-Add pressed");
-    #     try:
     #         cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,hospitalID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);
     #output orders main data from DB to the orders tree
     for record in SumOFAmount1:
@@ -221,20 +223,6 @@ def SearchOutpout(data):
 
     db.commit();
     cursor.close()
-
-
-
-
-# def callback(event):
-#     print("Double clicked pressed")
-#
-# ordersFrame.bind("<Double-Button-1>", callback)
-
-# def UpdateOrder(event):
-#     """Function for catch event,double-click on row on main tree page for updating order"""
-#     # row = OrdersTree.focus();
-#     # print(f'Double click on a row selected,row number: {row}');
-#     UpdateOrder();
 
 
 
@@ -290,14 +278,20 @@ cursor = db.cursor();
 cursor.execute("SELECT * FROM material");
 Material_in_db = cursor.fetchall();
 print(Material_in_db);
-
+AllListOption=("All");
+Material_in_db.append(AllListOption);
+print(Material_in_db);
 def updateOrdersTreeByMaterialFiltering(materialSelData):
     clear_tree();
     # # Absorb Orders list data from db
     cursor = db.cursor();
-
+    if materialSelData=='A':
     #Show output to Order main page tree-id,date,sum of doses filtering by Material ID
-    cursor.execute(f"SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders  INNER JOIN hospital ON hospital.idhospital = orders.hospitalID WHERE materialID={materialSelData} GROUP BY orders.Date,orders.hospitalID ;");
+     cursor.execute(f"SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders  INNER JOIN hospital ON hospital.idhospital = orders.hospitalID  GROUP BY orders.Date,orders.hospitalID ;");
+    else:
+    #Show output to Order main page tree-id,date,sum of doses filtering by Material ID
+     cursor.execute(f"SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders  INNER JOIN hospital ON hospital.idhospital = orders.hospitalID WHERE materialID={materialSelData} GROUP BY orders.Date,orders.hospitalID ;");
+
     filteringRowsFromDB = cursor.fetchall();
     print(filteringRowsFromDB);
     for record in filteringRowsFromDB:
@@ -322,7 +316,7 @@ def MaterialsSelectedeFilteringFunc(event):
 
 
 MaterialsDropDownFilteringMainPage = ttk.Combobox(ordersFrame,state="readonly",value=Material_in_db,width=9);
-MaterialsDropDownFilteringMainPage.current(0);
+MaterialsDropDownFilteringMainPage.current(2);
 
 MaterialsDropDownFilteringMainPage.bind("<<ComboboxSelected>>",MaterialsSelectedeFilteringFunc)
 MaterialsDropDownFilteringMainPage.pack();
@@ -718,13 +712,17 @@ def PopUpForNewOrder():
 
     #NewOrderMainPage =Toplevel(root);
     NewOrderMainPage =tk.Frame(root);
+    NewOrderMainPage.config(bg="#F0F3F4");#color of page-white-gray
+
     # NewOrderMainPage.title("New Order");
     # NewOrderMainPage.geometry("1200x600");
     #NewOrderMainPage.config(bg="#F0F3F4");#Color of page(White-Gray)
 
     #NewOrderMainPage.place(x=450,y=70);
 
+    #Create secnd pop-up window for order page
     NewOrdersecondaryPage = tk.Frame(root);
+    NewOrdersecondaryPage.config(bg="#F0F3F4");#color of page-white-gray
 
 
 #########################page number 1,New order page#########################################################
@@ -912,6 +910,12 @@ def PopUpForNewOrder():
         dateLabel2.pack();
         dateLabel2.place(x=130,y=80);
 
+    def destroyNewOrderFunc():
+        """Function for cancel button"""
+        root.destroy();
+        updateOrdersTreeMainPageOutputOnly();#Refresh/Update Main page
+        OrdersTree.pack();         #open order main page immedaitly
+
     cal=DateEntry(NewOrderMainPage,selectmode='day',textvariable=selectDateEventManaulOrder);
     cal.pack(pady = 20);
     cal.config(width=20);#width of window
@@ -955,9 +959,9 @@ def PopUpForNewOrder():
     # CancelIcon = Image.open("./Images/CancelButton.png");
     # resized_Cancel_Icon = CancelIcon.resize((100,50), Image.ANTIALIAS);
     # CancelImg = ImageTk.PhotoImage(resized_Cancel_Icon);
-    CancelButtonNewOrderPage1=Button(NewOrderMainPage,text="Cancel",command=lambda: [NewOrderMainPage.destroy()]);#close window-not working
+    CancelButtonNewOrderPage1=Button(NewOrderMainPage,text="Cancel",command=destroyNewOrderFunc);#close window-not working
     CancelButtonNewOrderPage1.pack();
-    CancelButtonNewOrderPage1.place(x=350, y=530);
+    CancelButtonNewOrderPage1.place(x=400, y=530);
 
 
     #Submit/Next button
@@ -967,7 +971,7 @@ def PopUpForNewOrder():
     # NextButton = ImageTk.PhotoImage(resized_next_Icon);
     sub_btn=tk.Button(NewOrderMainPage ,text="Next", command = submitToNextPage)
     sub_btn.pack();
-    sub_btn.place(x=65, y=530)
+    sub_btn.place(x=200, y=530)
 
     NewOrderMainPage.pack(fill='both',expand=1);
 
@@ -1002,8 +1006,8 @@ def PopUpForNewOrder():
                 print("Error-Order was not updated-please check MySQL")
 
 
-
-        NewOrderMainPage.destroy();#Close import file-manual window
+        NewOrdersecondaryPage.destroy();
+        NewOrderMainPage.destroy();#Close -manual window
         updateOrdersTreeMainPageOutputOnly();#Refresh/Update Main page
         OrdersTree.pack();         #open order main page immedaitly
         #Commit changes in DB
@@ -1011,6 +1015,8 @@ def PopUpForNewOrder():
         cursor.close()
         #Close connection to DB
         #db.close()
+
+
 
     #Create Save order/ADD button
     # global addImg;
@@ -1028,18 +1034,24 @@ def PopUpForNewOrder():
     # CancelIcon = Image.open("./Images/CancelButton.png");
     # resized_Cancel_Icon = CancelIcon.resize((100,50), Image.ANTIALIAS);
     # CancelImg = ImageTk.PhotoImage(resized_Cancel_Icon);
-    CancelButton2=Button(NewOrdersecondaryPage,text="Cancel",command=lambda: [NewOrdersecondaryPage.destroy()]);#close window-not working
+    CancelButton2=Button(NewOrdersecondaryPage,text="Cancel",command=destroyNewOrderFunc);#close window-not working
     CancelButton2.pack();
     CancelButton2.place(x=450, y=520);
 
 
     #Empty page/table for new order,create New tree for page 2
-    NewOrderTree_P2 = ttk.Treeview(NewOrdersecondaryPage,yscrollcommand=Cyclotron_scroll.set,height=15);
-    NewOrderTree_P2['columns']= ("ID","Amount","Injection time")
-    #NewOrderTree_P2['show'] = 'tree headings';
+    NewOrderTree_P2 = ttk.Treeview(NewOrdersecondaryPage,height=15);
     NewOrderTree_P2.pack();
     NewOrderTree_P2.place(x=170,y=130);
-    #Foramte Columns
+
+    #Order main page scrollbar-vertical
+    NewOrderTree_P2_Scroollbar = Scrollbar(NewOrdersecondaryPage, orient="vertical",command = NewOrderTree_P2.yview);
+    NewOrderTree_P2_Scroollbar.pack(side="right");
+    NewOrderTree_P2.configure(yscrollcommand = NewOrderTree_P2_Scroollbar.set);
+
+    # Defining number of columns
+    NewOrderTree_P2['columns']= ("ID","Amount","Injection time");
+#Foramte Columns
     NewOrderTree_P2.column("#0",width=0,minwidth=0);
     NewOrderTree_P2.column("ID",anchor=W,width=80,minwidth=25);
     NewOrderTree_P2.column("Amount",anchor=CENTER,width=120,minwidth=25);
