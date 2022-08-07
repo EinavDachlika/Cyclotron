@@ -272,6 +272,8 @@ dict_batch3_general = {}
 batches_general_data = [dict_batch1_general, dict_batch2_general, dict_batch3_general]
 batches =[batch1, batch2, batch3]
 
+max_activity_batch = 7000
+
 hospital_activity_output = [] #for output
 # len_batches = len(batches)
 # hospital_activity = [{}]
@@ -309,7 +311,7 @@ for b in batches: #calculate T1,Tout, Tcal,Teos
             hospital_name=order['Name']
             if hospital_name not in hospitals: # order[1] = hospital name in order
                 hospitals.append(hospital_name)
-                hospital_activity_output.append({'Name':hospital_name,"Activity":0})
+                hospital_activity_output.append({'Name':hospital_name,"Activity":0,'Batch':index+1})
 
                 if index != 1:  #condition for choosing Transport_time (min/max) - according to number of batch
                     tout_temp = order['injection_time'] - timedelta(minutes=(order['Transport_time_max']))
@@ -348,34 +350,95 @@ for b in batches: #calculate T1,Tout, Tcal,Teos
         batches_general_data[index][Teos_key] = t_eos_final
 
 
-        bottles_b = len(hospitals) + 2
-        bottels_key = "bottles_mum"
-        batches_general_data[index][bottels_key] = bottles_b
+        # bottles_b = len(hospitals) + 2
+        # bottels_key = "bottles_mum"
+        # batches_general_data[index][bottels_key] = bottles_b
 
 
 for b in batches:
     if len(b)!= 0 :
         index = batches.index(b)
 
+        batches_general_data[index]["Activity"]=0  #define the key
         for order in b:
             # insert (A) Activity_Tcal - Activity for Tcal time
             A_Tcal_key = "Activity_Tcal"
             injection_time= order["injection_time"]
             T_cal = batches_general_data[index]["Tcal"]
             A=order["Fixed_activity_level"]
-            # print(A)
+
             diff = (injection_time-T_cal).total_seconds() /60  #convert to minutes and then to float
-            A_Tcal = A * math.pow((math.e),diff*lamda)
+            A_Tcal = math.ceil(A * math.pow((math.e),diff*lamda))  # math.ceil is round up
             order[A_Tcal_key] = A_Tcal
 
-            hospital = next(h for h in hospital_activity_output if h["Name"] == order["Name"])
-            hospital["Activity"] +=A_Tcal # Hagai - calculate for each bath and hospital separately??
+
+            if batches_general_data[index]["Activity"] + A_Tcal >= max_activity_batch:
+                batches[index+1].append(order)
+
+            else:
+                try:
+                    hospital = next(h for h in hospital_activity_output if h["Name"] == order["Name"] and h["Batch"]==index+1)
+                except:
+                    hospital_activity_output.append({"Name":order["Name"],"Activity":0,'Batch':index+1 })
+
+                hospital["Activity"] +=A_Tcal # Hagai - calculate for each bath and hospital separately??
+
+                batches_general_data[index]["Activity"] += A_Tcal
+#modules
+modules = [1]
+
+for m in modules:
+    previous_module_data_query="""SELECT ROUND(avg(b.EOS_activity/b.DecayCorrected_TTA)*100,0) as Yield_EOB FROM batch b  
+                                where b.resourcemoduleID= """ + str(m) + " ORDER BY b.idbatch LIMIT 7"
+    cursor = db.cursor()
+    cursor.execute(previous_module_data_query)
+    previous_module_data = cursor.fetchall()
+
+#cyclotron
+cyclotron = 2
+previous_cyclotron_data_query="""SELECT b.TargetCurrentLB , rc.constant_efficiency
+                                FROM batch b JOIN workplan w
+                                ON b.workplanID=w.idworkplan
+                                JOIN resourcecyclotron rc 
+                                ON rc.idresourceCyclotron = b.resourcecyclotronID
+                                where b.resourcecyclotronID= """ + str(cyclotron) + " ORDER BY w.Date LIMIT 1 "
+cursor = db.cursor(dictionary=True)
+cursor.execute(previous_cyclotron_data_query)
+previous_cyclotron_data = cursor.fetchall()
+
+for b in batches_general_data:
+    i=batches_general_data.index(b)
+
+    try:
+        #calculation Activity for batch considering previous modules yields
+        A =round((b["Activity"] * 100) / (previous_module_data[i][0]))
+        b["Activity_considering_yields"] = A
+        # Activity with 5% Confidence percentage
+        A_plus_5 = round(A *1.05)
+        b["Activity_Confidence_percentage"] = A_plus_5
 
 
+        # calculation t
+        K = previous_cyclotron_data_query[0]["constant_efficiency"]
+        I = previous_cyclotron_data_query[0]["TargetCurrentLB"]
+        t = round(  -1 / lamda * ln(1 -A_plus_5/(K*I))  )
+        b["Start_of_exposure_time"] = t
+
+    except:
+        continue
+
+
+
+# cursor.execute(previous_cyclotron_data_query)
+# previous_cyclotron_data = cursor.fetchall()
+
+
+
+print(previous_cyclotron_data)
 
 print("hospital_activity_output ",hospital_activity_output)
-print(batches)
-print(batches_general_data)
+print("batches ", batches)
+print("batches_general_data ",batches_general_data)
 
 
 # root.mainloop()
