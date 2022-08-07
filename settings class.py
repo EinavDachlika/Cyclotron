@@ -35,19 +35,19 @@ red_color =  '#f5bfbf'
 try:
 
     # # Maor local DB Mysql
-    db = mysql.connector.connect(
-        host="localhost",
-        port=3308,
-        user="root",
-        password="root",
-        database="cyclotron")
+    # db = mysql.connector.connect(
+    #     host="localhost",
+    #     port=3308,
+    #     user="root",
+    #     password="root",
+    #     database="cyclotron")
 
     # Einav local DB-Mysql
-    # db = mysql.connector.connect(
-    #   host="localhost",
-    #   user="root",
-    #   password="Cyclotron2022@?%",
-    #   database= "cyclotron")
+    db = mysql.connector.connect(
+      host="localhost",
+      user="root",
+      password="Cyclotron2022@?%",
+      database= "cyclotron")
 
     if db.is_connected():
         # db_Info = db.get_server_info()
@@ -157,7 +157,7 @@ toolbar.grid_columnconfigure(1, weight=1)
 dict_input_column = { 'hospital':('Name', 'Fixed_activity_level', 'Transport_time_min', 'Transport_time_max') ,
                        'resourcecyclotron':('version', 'capacity', 'constant_efficiency', 'description') ,
                       'resourcemodule': ('version', 'capacity', 'description' ) ,
-                      'material':('materialName', 'halflife_T')}
+                      'material':('materialName')}
 
 #Einav
 query_index_col = """select 
@@ -420,7 +420,7 @@ class Popup(Toplevel):
 
         save_button.place(x=save_button_position_x, y=save_button_position_y)
 
-        cancel_button = Button(self, text="Cancle", command=lambda: self.cancel_popup())
+        cancel_button = Button(self, text="Cancel", command=lambda: self.cancel_popup())
         cancel_button.pack(side=LEFT)
         cancel_button.place(x=save_button.winfo_reqwidth() + save_button_position_x + 10, y=save_button_position_y)
 
@@ -583,24 +583,6 @@ class Popup(Toplevel):
         webbrowser.open(downloads_path)
 
 
-
-
-    def wp_popup(self,selected_date, selected_material,data):
-
-
-        excelIcon = Image.open("excelIcon.png")
-        resizedExcelIcon = excelIcon.resize((40, 40), Image.ANTIALIAS)
-        imgExcel = ImageTk.PhotoImage(resizedExcelIcon)
-        ExcelButton = Button(self, image=imgExcel, borderwidth=0,
-                                     command=lambda: self.export_WP_To_Excel(selected_date, selected_material,data))
-        # ExcelButton.pack(side=LEFT)
-        ExcelButton.place(x= 70, y=90)
-
-        Label(self, text = 'Export to Excel File', font=('Helvetica 12'), fg='grey').place(x= 60 - ExcelButton.winfo_reqwidth()/2, y=90+ExcelButton.winfo_reqheight())
-
-        root.mainloop()
-
-
     def legal_wp(self,selected_material,selected_date,error_labels_list, data):
         legal = True
         for error_lab in error_labels_list: #inite error labeles (for more than one tries)
@@ -623,7 +605,107 @@ class Popup(Toplevel):
         return legal
 
 
-    def create_wp(self,material_var,cal,error_labels_list):
+    def select_resources(self, selected_date, selected_material, data):
+        # labels and entry box
+        p_last_label_x = 30
+        p_last_label_y = 80
+        value_index = 0
+        row_num = 1
+        labels = ['Cyclotron', 'Module', 'Module', 'Module']
+        entries = []
+        error_labels_list = []
+        rec_var_list=[]
+
+        for lab in labels:
+            p_label = Label(self, text=lab)
+            p_label.grid(row=row_num, column=1)
+            p_label.place(x=p_last_label_x, y=p_last_label_y)
+            row_num += 1
+
+            if lab == 'Cyclotron':
+                rec_var = StringVar(self)
+                rec_var.set("Select a Cyclotron")  # default value
+
+                query = "SELECT version,idresourceCyclotron FROM resourcecyclotron"
+                cursor.execute(query)
+                rec_options_list = cursor.fetchall()
+
+
+            elif lab == 'Module':
+                rec_var = StringVar(self)
+                rec_var.set("Select a module")  # default value
+
+                query = "SELECT version,idresourcemodule FROM resourcemodule"
+                cursor.execute(query)
+                rec_options_list = cursor.fetchall()
+
+            rec_var_list.append(rec_var)
+            recname = [m[0] for m in rec_options_list]
+            rec_dropdown = OptionMenu(self, rec_var, *recname)
+            rec_dropdown.place(x=p_last_label_x + 4, y=p_last_label_y + 30)
+            p_last_label_y += rec_dropdown.winfo_reqheight() + p_label.winfo_reqheight()
+
+            # error labels
+            error_label = Label(self, text='', font=('Courier', 8), fg='red')
+            error_label.place(x=p_last_label_x + 1, y=p_last_label_y)
+            error_labels_list.append(error_label)
+            row_num += 1
+
+            p_last_label_y += 15 + error_label.winfo_reqheight()
+
+            # buttons
+            save_button = Button(self, text='Create a work plan',
+                                 command=lambda: self.create_wp_popup(rec_var_list,selected_date, selected_material, data,error_labels_list,OptionMenu))
+
+            save_button.pack(side=LEFT)
+            save_button_position_x = self.winfo_screenheight() / 2 - save_button.winfo_reqwidth() / 2
+            #
+            save_button_position_y = self.winfo_screenwidth() / 2 - save_button.winfo_reqwidth()
+
+            save_button.place(x=save_button_position_x, y=save_button_position_y)
+
+            cancel_button = Button(self, text="Cancle", command=lambda: self.cancel_popup())
+            cancel_button.pack(side=LEFT)
+            cancel_button.place(x=save_button.winfo_reqwidth() + save_button_position_x + 10, y=save_button_position_y)
+
+
+    def create_wp_popup(self, rec_var_list,selected_date, selected_material, data, error_labels_list,OptionMenu):
+        #validation - selected recourcrs
+        legal = True
+
+        i=0
+        for rec in rec_var_list:
+            error_labels_list[i]['text'] =""
+            selected_rec = rec.get()
+            # if selected_rec[:8] == "Select a":
+            #     error_labels_list[i]
+            #     error_labels_list[i]['text'] = "Please select a resource"
+            #     legal = False
+            i+=1
+
+        if not legal :
+            error_message('Please select a resources')
+            self.lift()
+
+        else:
+            selected_cyclotron =rec_var_list[0].get()
+            #excel
+            excelIcon = Image.open("excelIcon.png")
+            resizedExcelIcon = excelIcon.resize((40, 40), Image.ANTIALIAS)
+            imgExcel = ImageTk.PhotoImage(resizedExcelIcon)
+            ExcelButton = Button(self, image=imgExcel, borderwidth=0,
+                                 command=lambda: self.export_WP_To_Excel(selected_date, selected_material, data))
+            # ExcelButton.pack(side=LEFT)
+            ExcelButton.place(x=70, y=90)
+
+            Label(self, text='Export to Excel File', font=('Helvetica 12'), fg='grey').place(
+                x=60 - ExcelButton.winfo_reqwidth() / 2, y=90 + ExcelButton.winfo_reqheight())
+
+            root.mainloop()
+
+
+    def wp_validation_plus(self,material_var,cal,error_labels_list):
+
         selected_date = cal.get()
         selected_material = material_var.get()
 
@@ -633,16 +715,20 @@ class Popup(Toplevel):
 
         cursor.execute(ordersQuery)
         data = cursor.fetchall()
-        popup_size= "800x450"
+        popup_size= "850x550"
 
         legal = self.legal_wp(selected_material,selected_date,error_labels_list, data)
         if legal:
             self.destroy()
-            export_popup=Popup()
-            title = 'Work Plan - '+selected_material +' '+ selected_date
-            export_popup.open_pop(title,popup_size)
-            export_popup.wp_popup(selected_date, selected_material,data)
+            # export_popup=Popup()
+            # title = 'Work Plan - '+selected_material +' '+ selected_date
+            # export_popup.open_pop(title,popup_size)
+            # export_popup.wp_popup(selected_date, selected_material,data)
 
+            select_rec = Popup()
+            title = 'Work Plan - ' + selected_material + ' ' + selected_date
+            select_rec.open_pop(title, popup_size)
+            select_rec.select_resources(selected_date, selected_material, data)
 
 
     def add_wp_popup(self):
@@ -681,7 +767,7 @@ class Popup(Toplevel):
                 cal.place(x=p_last_label_x + 4, y=p_last_label_y + 30)
                 p_last_label_y += cal.winfo_reqheight() + p_label.winfo_reqheight()
 
-                        # error labels
+            # error labels
             error_label = Label(self, text='', font=('Courier', 8), fg='red')
             error_label.place(x=p_last_label_x + 1, y=p_last_label_y)
             error_labels_list.append(error_label)
@@ -690,19 +776,34 @@ class Popup(Toplevel):
             p_last_label_y += 18 + error_label.winfo_reqheight()
 
             #buttons
-            save_button = Button(self, text='Create a work plan',
-                                 command=lambda: self.create_wp(material_var,cal,error_labels_list ))
+            next_button = Button(self, text='Next',
+                                 command=lambda: self.wp_validation_plus( material_var,cal,error_labels_list ))
 
-            save_button.pack(side=LEFT)
-            save_button_position_x = self.winfo_screenheight() / 2 - save_button.winfo_reqwidth() / 2
+            next_button.pack(side=LEFT)
+            save_button_position_x = self.winfo_screenheight() / 2 - next_button.winfo_reqwidth() / 2
             #
             save_button_position_y = self.winfo_screenheight() / 2
 
-            save_button.place(x=save_button_position_x, y=save_button_position_y)
+            next_button.place(x=save_button_position_x, y=save_button_position_y)
 
-            cancel_button = Button(self, text="Cancle", command=lambda: self.cancel_popup())
+            cancel_button = Button(self, text="Cancel", command=lambda: self.cancel_popup())
             cancel_button.pack(side=LEFT)
-            cancel_button.place(x=save_button.winfo_reqwidth() + save_button_position_x + 10, y=save_button_position_y)
+            cancel_button.place(x=next_button.winfo_reqwidth() + save_button_position_x + 10, y=save_button_position_y)
+
+            # #buttons
+            # save_button = Button(self, text='Create a work plan',
+            #                      command=lambda: self.create_wp(material_var,cal,error_labels_list ))
+            #
+            # save_button.pack(side=LEFT)
+            # save_button_position_x = self.winfo_screenheight() / 2 - save_button.winfo_reqwidth() / 2
+            # #
+            # save_button_position_y = self.winfo_screenheight() / 2
+            #
+            # save_button.place(x=save_button_position_x, y=save_button_position_y)
+            #
+            # cancel_button = Button(self, text="Cancle", command=lambda: self.cancel_popup())
+            # cancel_button.pack(side=LEFT)
+            # cancel_button.place(x=save_button.winfo_reqwidth() + save_button_position_x + 10, y=save_button_position_y)
 
 
     def add_popup(self, labels, save_title, *args):
@@ -1126,7 +1227,7 @@ list_height=5
 # table_place_x = 80
 # table_place_y=80
 
-columns_name_list=[' Material ', 'Half-life (min)']
+columns_name_list=[' Material ']
 
 queryMaterial = "SELECT * FROM material WHERE ISNULL(deleted)"
 
@@ -1140,14 +1241,14 @@ def editMaterialfun():
     selected_non = material_tabel.selected_is_non(selected_rec)
     if not selected_non:
         # popup_size = "800x450"
-        popup_size = "900x550"
+        popup_size = "700x550"
         editMaterialPopup = Popup()
         editMaterialPopup.open_pop('Edit Material Details', popup_size)
 
-        query = "UPDATE material SET materialName = %s ,halflife_T= %s  WHERE idmaterial = %s"
+        query = "UPDATE material SET materialName = %s   WHERE idmaterial = %s"
         table_name = 'material'
-        pk = selected_rec[2]
-        labels = (('Material', ''), (' Half-life', '(min)'))
+        pk = selected_rec[1]
+        labels = [('Material', '')]
         save_title = "Save Changes"
 
         editMaterialPopup.edit_popup(labels, selected_rec, save_title, query, pk, material_tabel,  table_name)
@@ -1158,9 +1259,9 @@ def addMaterialfun():
     # popup_size = "800x450"
     popup_size = "900x550"
     addMaterialPopup.open_pop('Add Material Details', popup_size)
-    labels = (('Material', ''), ('Half-life', '(min)'))
+    labels = [('Material', '')]
     save_title = "Add Material"
-    insetQuery = "INSERT INTO material SET materialName = %s ,halflife_T= %s"
+    insetQuery = "INSERT INTO material SET materialName = %s "
     table_name='material'
     addMaterialPopup.add_popup(labels, save_title, insetQuery, material_tabel, table_name)
 
@@ -1259,7 +1360,7 @@ def editHospitalfun():
         table_name= 'hospital'
         query = "UPDATE hospital SET Name = %s ,Fixed_activity_level= %s, Transport_time_min=%s ,Transport_time_max=%s WHERE idhospital = %s"
 
-        pk = selected_rec[3]
+        pk = selected_rec[4]
 
         labels = (('Name', ''), ('Fixed activity level', '(mci/h)'),  ('Transport time - min', '(min)'),  ('Transport time - max', '(min)'))
         save_title = "Save Changes"
