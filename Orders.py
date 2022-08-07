@@ -56,6 +56,16 @@ except Error as e:
     print("Error while connecting to MySQL", e)
 ##################### toolbar #####################
 
+
+#############################################
+#
+Hack_Disabled_ChildSqlForeignKeys="SET FOREIGN_KEY_CHECKS=0;"
+cursor = db.cursor();
+cursor.execute(Hack_Disabled_ChildSqlForeignKeys);
+# db.commit();
+# cursor.close();
+
+################################################################
 toolbarbgcolor = "white"
 toolbar = Frame(root, bg=toolbarbgcolor)
 toolbar.grid(sticky='nesw')
@@ -99,28 +109,36 @@ toolbar.grid_columnconfigure(1, weight=1)
 ##################### Start Order page ###################################################
 
 ordersFrame = Frame(root);
+ordersFrame.config(bg="#F0F3F4");#color of page-white-gray
 
-#h = Scrollbar(ordersFrame, orient='horizontal')
 ordersFrame.pack(fill=X)
 
-
+# ScrollbarOrderMainPage = Scrollbar(ordersFrame, orient='vertical')
+# ScrollbarOrderMainPage.pack();
+# ScrollbarOrderMainPage.place(x=50,y=120);
 # feed label
 feedLabel = Label(ordersFrame, text ='Orders', font=('Helvetica', 26, 'bold'), fg='#034672');
 feedLabel.pack(side=LEFT);
 feedLabel.place(x=50,y=10);
 
 
-# scrollbar
-Cyclotron_scroll = Scrollbar(ordersFrame, orient="vertical", width=25)
-# Cyclotron_scroll.pack(side=LEFT)
-# Cyclotron_scroll.place(x=550, y= 160)
+
 
 #my_label=Label(root,text='');
 
 #Empty page/table for new order
-OrdersTree = ttk.Treeview(ordersFrame,yscrollcommand=Cyclotron_scroll.set,columns=('1', '2','3'),height=20)
-#OrdersTree['show'] = 'tree headings';
+OrdersTree = ttk.Treeview(ordersFrame,height=20);
+
+# Defining number of columns
+OrdersTree["columns"]=("1","2","3");
+
 OrdersTree.pack(side=LEFT, padx=100, pady=110)
+
+#Order main page scrollbar-vertical
+OrderMainPagescroll = Scrollbar(ordersFrame, orient="vertical",command = OrdersTree.yview);
+OrderMainPagescroll.pack(side=LEFT);
+OrdersTree.configure(yscrollcommand = OrderMainPagescroll.set);
+
 
 #Foramte Columns
 OrdersTree.column("#0",width=0,minwidth=0);
@@ -153,8 +171,8 @@ def updateOrdersTreeMainPageOutputOnly():
     cursor = db.cursor();
 
     #Show output to Order main page tree-id,date,sum of doses
-    #cursor.execute("SELECT idhospital,Date,SUM(amount) FROM orders GROUP BY Date,idhospital;");
-    cursor.execute("SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.idhospital GROUP BY orders.Date,orders.idhospital;");
+    #cursor.execute("SELECT hospitalID,Date,SUM(amount) FROM orders GROUP BY Date,hospitalID;");
+    cursor.execute("SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID GROUP BY orders.Date,orders.hospitalID;");
     SumOFAmount1 = cursor.fetchall();
     print(SumOFAmount1);
     #convert list of tuples into list
@@ -164,13 +182,7 @@ def updateOrdersTreeMainPageOutputOnly():
     # mylist = list(dict.fromkeys(ListofSumOfAmountPerHospital1))
     # ListOfSumOfAmount = [item1 for t1 in mylist for item1 in t1];
 
-    # for i in range(3):
-    #     OrdersTree.insert("", "end", values=(i,"2","30.06.2022"))
-    # for i in range(1,len(AmountListFromDoc)):
-    #     ValuseTuple=(i,TempList[1],"11:20:11",AmountListFromDoc[i], TempList[0],0,0);
-    #     print("order trying to get in DB-Add pressed");
-    #     try:
-    #         cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,idhospital,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);
+    #         cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,hospitalID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);
     #output orders main data from DB to the orders tree
     for record in SumOFAmount1:
         OrdersTree.insert(parent='', index='end', text='',values=(record[0],record[1],record[2]))#record[0]=Idhospital,record[1]=Injection time,record[2]=Amount of doses
@@ -192,8 +204,8 @@ def SearchOutpout(data):
     cursor = db.cursor();
 
     #Show output to Order main page tree-id,date,sum of doses
-    #cursor.execute("SELECT idhospital,Date,SUM(amount) FROM orders GROUP BY Date,idhospital;");
-    cursor.execute("SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.idhospital GROUP BY orders.Date,orders.idhospital;");
+    #cursor.execute("SELECT hospitalID,Date,SUM(amount) FROM orders GROUP BY Date,hospitalID;");
+    cursor.execute("SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID GROUP BY orders.Date,orders.hospitalID;");
     SumOFAmount1 = cursor.fetchall();
     #convert list of tuples into list
     # y = [item1 for t1 in SumOFAmount1 for item1 in t1];
@@ -211,20 +223,6 @@ def SearchOutpout(data):
 
     db.commit();
     cursor.close()
-
-
-
-
-# def callback(event):
-#     print("Double clicked pressed")
-#
-# ordersFrame.bind("<Double-Button-1>", callback)
-
-# def UpdateOrder(event):
-#     """Function for catch event,double-click on row on main tree page for updating order"""
-#     # row = OrdersTree.focus();
-#     # print(f'Double click on a row selected,row number: {row}');
-#     UpdateOrder();
 
 
 
@@ -280,14 +278,20 @@ cursor = db.cursor();
 cursor.execute("SELECT * FROM material");
 Material_in_db = cursor.fetchall();
 print(Material_in_db);
-
+AllListOption=("All");
+Material_in_db.append(AllListOption);
+print(Material_in_db);
 def updateOrdersTreeByMaterialFiltering(materialSelData):
     clear_tree();
     # # Absorb Orders list data from db
     cursor = db.cursor();
-
+    if materialSelData=='A':
     #Show output to Order main page tree-id,date,sum of doses filtering by Material ID
-    cursor.execute(f"SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders  INNER JOIN hospital ON hospital.idhospital = orders.idhospital WHERE materialID={materialSelData} GROUP BY orders.Date,orders.idhospital ;");
+     cursor.execute(f"SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders  INNER JOIN hospital ON hospital.idhospital = orders.hospitalID  GROUP BY orders.Date,orders.hospitalID ;");
+    else:
+    #Show output to Order main page tree-id,date,sum of doses filtering by Material ID
+     cursor.execute(f"SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders  INNER JOIN hospital ON hospital.idhospital = orders.hospitalID WHERE materialID={materialSelData} GROUP BY orders.Date,orders.hospitalID ;");
+
     filteringRowsFromDB = cursor.fetchall();
     print(filteringRowsFromDB);
     for record in filteringRowsFromDB:
@@ -312,7 +316,7 @@ def MaterialsSelectedeFilteringFunc(event):
 
 
 MaterialsDropDownFilteringMainPage = ttk.Combobox(ordersFrame,state="readonly",value=Material_in_db,width=9);
-MaterialsDropDownFilteringMainPage.current(0);
+MaterialsDropDownFilteringMainPage.current(2);
 
 MaterialsDropDownFilteringMainPage.bind("<<ComboboxSelected>>",MaterialsSelectedeFilteringFunc)
 MaterialsDropDownFilteringMainPage.pack();
@@ -559,13 +563,13 @@ def importFileFunc():
     MaterialsSelectedImportFile.place(x=18, y=310);
 
 
-    def SaveToDB():
+    def SaveToDB():                            # Function to save order into DB from Import file
      cursor = db.cursor(buffered=True);
      for i in range(1,len(AmountListFromDoc)):
         ValuseTuple=(i,TempList[1],InjectionTImeListFromdoc[i],AmountListFromDoc[i], TempList[0],TempList[2],0,0);
         print("order trying to get in DB-Add pressed");
         try:
-            cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,idhospital,materialID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);
+            cursor.execute("INSERT INTO orders (DoseNumber,Date,injection_time,amount,hospitalID,materialID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);
         except Exception as e:
             logging.error(traceback.format_exc());
             #messagebox.showerror("Error message","Error !");
@@ -701,23 +705,30 @@ def PopUpForNewOrder():
     #     HospitalLabelSelected=Label(NewOrdersecondaryPage,text=CLickOnHospitalDropMenu.get())
     #     HospitalLabelSelected.pack();
 
-    #root = tk.Tk()
+    root = tk.Tk()
+    root.title("New Order")
+    root.geometry("700x600");
+    root.configure(bg="#F0F3F4")
 
+    #NewOrderMainPage =Toplevel(root);
+    NewOrderMainPage =tk.Frame(root);
+    NewOrderMainPage.config(bg="#F0F3F4");#color of page-white-gray
 
-    NewOrderMainPage =Toplevel(root);
-    NewOrderMainPage.title("New Order");
-    NewOrderMainPage.geometry("1200x600");
-    NewOrderMainPage.config(bg="#F0F3F4");#Color of page(White-Gray)
+    # NewOrderMainPage.title("New Order");
+    # NewOrderMainPage.geometry("1200x600");
+    #NewOrderMainPage.config(bg="#F0F3F4");#Color of page(White-Gray)
 
     #NewOrderMainPage.place(x=450,y=70);
 
-    #NewOrdersecondaryPage = tk.Frame(root);
+    #Create secnd pop-up window for order page
+    NewOrdersecondaryPage = tk.Frame(root);
+    NewOrdersecondaryPage.config(bg="#F0F3F4");#color of page-white-gray
 
 
 #########################page number 1,New order page#########################################################
-    NeworderTitleLabel=Label(NewOrderMainPage, text="New Order #1",bg="#F0F3F4", font=('Helvetica 17 bold'), fg='#034672');
+    NeworderTitleLabel=Label(NewOrderMainPage, text="New Order ",bg="#F0F3F4", font=('Helvetica 17 bold'), fg='#034672');
     NeworderTitleLabel.pack();
-    NeworderTitleLabel.place(x=200,y=25);
+    NeworderTitleLabel.place(x=270,y=25);
     # labels
     #Create hospital Drop-down menu
 
@@ -735,11 +746,12 @@ def PopUpForNewOrder():
         global hospitalId;
         ChoosenHospitalNewOrder=(HospitalSelectedNewOrder.get());
         print(ChoosenHospitalNewOrder);
-        #Print to the screen the hospital selected
-        HospitalLabel2=Label(NewOrderMainPage, text= ChoosenHospitalNewOrder, bg="white", font=('Helvetica 14'));
+        #Print to the screen the hospital selected-print to page number 2
+        HospitalLabel2=Label(NewOrdersecondaryPage, text= ChoosenHospitalNewOrder, bg="white", font=('Helvetica 14'));
         HospitalLabel2.pack();
-        HospitalLabel2.place(x=620,y=80);
+        HospitalLabel2.place(x=20,y=80);
 
+        #loop for findinf Id number in the string
         HospitalIDFromChoosenHospital = "";
         for index in ChoosenHospitalNewOrder:
             if index.isdigit():
@@ -791,8 +803,6 @@ def PopUpForNewOrder():
 
 
 
-    # declaring string variable for storing amount
-    amountVar=tk.StringVar();
     # declaring string variable for storing time interval
     TimeIntervals=tk.StringVar();
     # declaring string variable for storing time
@@ -801,27 +811,35 @@ def PopUpForNewOrder():
     global OrderID;
     OrderID=0;
     global idCounter;
+    global amount;
+    # declaring string variable for storing amount
+    amountVar=tk.StringVar();
     ListofVal=["","","","","","","",""];
     ListofTimeIntervals=[];
-    def submit():
+    #Get Time varibles avent,hous and minutes
+
+    def submitToNextPage():
+        global amount;
         global hospitalId;
         global OrderID;
+
         #Initialization-clear/Delete all the records
         for rawselected in NewOrderTree_P2.get_children():
-         NewOrderTree_P2.delete(rawselected);
+            NewOrderTree_P2.delete(rawselected);
 
-        #Get Time varibles avent,hous and minutes
-        Time_Intervals=TimeIntervals.get();
-        Minutes_Var=MinutesVar.get();
-        Hours_Var=HoursVar.get();
+
+
         #get amount event variable
         #message box if not try to click next if inputs are empty
         try:
-         amount=amountVar.get();
-         IntAmount=(int(amount));
+            Time_Intervals=TimerangeLabelEntry.get();
+            Minutes_Var=MinutesCLockSelected.get();
+            Hours_Var=HoursClockedSelected.get();
+            IntAmount=(int(AmountOfDosesLabelEntry.get()));
+        #print(amount);
         except (ValueError,UnboundLocalError,NameError):
-         messagebox.showerror("Error message","Please choose hospital, date,begging time and amount of doses!");
-         print("Error")
+            messagebox.showerror("Error message","Error!");
+        #print("Error")
         ListofVal[0]=idCounter=1;
         ListofVal[1]=(IntAmount/IntAmount);
         ListofVal[2]=int(Hours_Var);
@@ -848,6 +866,10 @@ def PopUpForNewOrder():
         HoursVar.set("");
         print(ListofTimeIntervals);
 
+        #swap function for viewing New order page,frame 2,after pressing "next" """
+        NewOrderMainPage.forget();
+        NewOrdersecondaryPage.pack(fill='both',expand=1);
+
 
     #Create Amount of Doses input
     AmountOfDosesLabel = Label(NewOrderMainPage, text="Amount of rows",bg="white");
@@ -868,12 +890,12 @@ def PopUpForNewOrder():
 
     #Calender
     #add calender icon
-    CalendarIcon1 = Image.open("./Images/CalendarIcon.png");
-    resizedCalenderIcon1 = CalendarIcon1.resize((23,23), Image.ANTIALIAS);
-    CalenderImg1 = ImageTk.PhotoImage(resizedCalenderIcon1);
-    CalenderLabelicon1=Label(NewOrderMainPage,image=CalenderImg1);
-    CalenderLabelicon1.pack();
-    CalenderLabelicon1.place(x=180, y=238);
+    # CalendarIcon1 = Image.open("./Images/CalendarIcon.png");
+    # resizedCalenderIcon1 = CalendarIcon1.resize((23,23), Image.ANTIALIAS);
+    # CalenderImg1 = ImageTk.PhotoImage(resizedCalenderIcon1);
+    # CalenderLabelicon1=Label(NewOrderMainPage,image=CalenderImg1);
+    # CalenderLabelicon1.pack();
+    # CalenderLabelicon1.place(x=180, y=238);
 
 
     #Add calender widget/method
@@ -884,9 +906,15 @@ def PopUpForNewOrder():
         ChoosenDateForManaulOrder=cal.get_date();
         print(ChoosenDateForManaulOrder);
         #copy and past date event to page number 2
-        dateLabel2=Label(NewOrderMainPage, text= ChoosenDateForManaulOrder, bg="white", font=('Helvetica 14'));
+        dateLabel2=Label(NewOrdersecondaryPage, text= ChoosenDateForManaulOrder, bg="white", font=('Helvetica 14'));
         dateLabel2.pack();
-        dateLabel2.place(x=760,y=80);
+        dateLabel2.place(x=130,y=80);
+
+    def destroyNewOrderFunc():
+        """Function for cancel button"""
+        root.destroy();
+        updateOrdersTreeMainPageOutputOnly();#Refresh/Update Main page
+        OrdersTree.pack();         #open order main page immedaitly
 
     cal=DateEntry(NewOrderMainPage,selectmode='day',textvariable=selectDateEventManaulOrder);
     cal.pack(pady = 20);
@@ -918,91 +946,112 @@ def PopUpForNewOrder():
 
     ################FIxed hour,minutes,and secondes########################
     #Hours
-    sp1 = Spinbox(NewOrderMainPage,textvariable=HoursVar,from_= 0, to = 24,wrap=True,width=2);
-    sp1.pack();
-    sp1.place(x=20, y=350);
+    HoursClockedSelected = Spinbox(NewOrderMainPage,textvariable=HoursVar,from_= 0, to = 24,wrap=True,width=2);
+    HoursClockedSelected.pack();
+    HoursClockedSelected.place(x=20, y=350);
     # Minutes
-    sp2 = Spinbox(NewOrderMainPage,textvariable=MinutesVar ,from_= 0, to = 59,wrap=True,width=2);
-    sp2.pack();
-    sp2.place(x=65, y=350);
-
-    #Submit/Next button
-    #global NextButton;
-    # nextIcon = Image.open("./Images/nextButton.png");
-    # resized_next_Icon = nextIcon.resize((100,50), Image.ANTIALIAS);
-    # NextButton = ImageTk.PhotoImage(resized_next_Icon);
-    sub_btn=tk.Button(NewOrderMainPage ,text="Next", command = submit)
-    sub_btn.pack();
-    sub_btn.place(x=65, y=530)
-
-
-
-    #####################################New order 2, second page numer 2###################################################
-
-    NewOrdersecondaryLabel=Label(NewOrderMainPage, text="New Order #2",bg="#F0F3F4", font=('Helvetica 17 bold'), fg='#034672');
-    NewOrdersecondaryLabel.pack();
-    NewOrdersecondaryLabel.place(x=900,y=27);
-
-
-    def enterToDB():#Function to insert data into My-SQL Db
-     # ValuseDic = {
-     #        'idorders': 4,
-     #        'Date': '2002-03-92',
-     #        'injection_time': '11:20:11',
-     #        'amount': 7,
-     #        'hospitalID': 7,
-     #        'batchID': 7,
-     #        'DecayCorrected': 7 }  ;
-     cursor = db.cursor(buffered=True);
-     for i in range(1,ListofVal[4]+1):
-      ValuseTuple=(i, ChoosenDateForManaulOrder, ListofTimeIntervals[i-1], ListofVal[1], ListofVal[5],ListofVal[7], 0, 0);
-      #print("order trying to get in DB-Add pressed");
-      try:
-       UpdateSQlQuery="INSERT INTO orders (idorders,Date,injection_time,amount,idhospital,materialID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);";
-       cursor.execute(UpdateSQlQuery,ValuseTuple);
-       print("DB updated successfully ");
-      except Exception as e:
-       logging.error(traceback.format_exc());
-       #messagebox.showerror("Error message","Error !");
-       print("Error-Order was not updated-please check MySQL")
-
-
-
-     NewOrderMainPage.destroy();#Close import file-manual window
-     updateOrdersTreeMainPageOutputOnly();#Refresh/Update Main page
-     OrdersTree.pack();         #open order main page immedaitly
-    #Commit changes in DB
-     db.commit()
-     cursor.close()
-     #Close connection to DB
-     #db.close()
-
-    #Create ADD button
-    # global addImg;
-    # AddFileIcon = Image.open("./Images/AddButton.png");
-    # resized_add_Icon = AddFileIcon.resize((100,50), Image.ANTIALIAS);
-    # addImg = ImageTk.PhotoImage(resized_add_Icon);
-    AddButton=Button(NewOrderMainPage,text="Save Order",command=enterToDB);
-    AddButton.pack();
-    AddButton.place(x=850, y=520);
+    MinutesCLockSelected = Spinbox(NewOrderMainPage,textvariable=MinutesVar ,from_= 0, to = 59,wrap=True,width=2);
+    MinutesCLockSelected.pack();
+    MinutesCLockSelected.place(x=65, y=350);
 
     # #Create a Cancel button
     # global CancelImg;
     # CancelIcon = Image.open("./Images/CancelButton.png");
     # resized_Cancel_Icon = CancelIcon.resize((100,50), Image.ANTIALIAS);
     # CancelImg = ImageTk.PhotoImage(resized_Cancel_Icon);
-    CancelButton2=Button(NewOrderMainPage,text="Cancel",command=lambda: [NewOrderMainPage.destroy()]);#close window-not working
+    CancelButtonNewOrderPage1=Button(NewOrderMainPage,text="Cancel",command=destroyNewOrderFunc);#close window-not working
+    CancelButtonNewOrderPage1.pack();
+    CancelButtonNewOrderPage1.place(x=400, y=530);
+
+
+    #Submit/Next button
+    #global NextButton;
+    # nextIcon = Image.open("./Images/nextButton.png");
+    # resized_next_Icon = nextIcon.resize((100,50), Image.ANTIALIAS);
+    # NextButton = ImageTk.PhotoImage(resized_next_Icon);
+    sub_btn=tk.Button(NewOrderMainPage ,text="Next", command = submitToNextPage)
+    sub_btn.pack();
+    sub_btn.place(x=200, y=530)
+
+    NewOrderMainPage.pack(fill='both',expand=1);
+
+
+    #####################################New order 2, second page numer 2###################################################
+
+    NewOrdersecondaryLabel=Label(NewOrdersecondaryPage, text="New Order",bg="#F0F3F4", font=('Helvetica 17 bold'), fg='#034672');
+    NewOrdersecondaryLabel.pack();
+    NewOrdersecondaryLabel.place(x=270,y=27);
+
+
+    def enterToDB():#Function to insert data into My-SQL Db
+        # ValuseDic = {
+        #        'idorders': 4,
+        #        'Date': '2002-03-92',
+        #        'injection_time': '11:20:11',
+        #        'amount': 7,
+        #        'hospitalID': 7,
+        #        'batchID': 7,
+        #        'DecayCorrected': 7 }  ;
+        cursor = db.cursor(buffered=True);
+        for i in range(1,ListofVal[4]+1):
+            ValuseTuple=(i, ChoosenDateForManaulOrder, ListofTimeIntervals[i-1], ListofVal[1], ListofVal[5],ListofVal[7], 0, 0);
+            #print("order trying to get in DB-Add pressed");
+            try:
+                UpdateSQlQuery="INSERT INTO orders (DoseNumber,Date,injection_time,amount,hospitalID,materialID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);";
+                cursor.execute(UpdateSQlQuery,ValuseTuple);
+                print("DB updated successfully ");
+            except Exception as e:
+                logging.error(traceback.format_exc());
+                #messagebox.showerror("Error message","Error !");
+                print("Error-Order was not updated-please check MySQL")
+
+
+        NewOrdersecondaryPage.destroy();
+        NewOrderMainPage.destroy();#Close -manual window
+        updateOrdersTreeMainPageOutputOnly();#Refresh/Update Main page
+        OrdersTree.pack();         #open order main page immedaitly
+        #Commit changes in DB
+        db.commit()
+        cursor.close()
+        #Close connection to DB
+        #db.close()
+
+
+
+    #Create Save order/ADD button
+    # global addImg;
+    # AddFileIcon = Image.open("./Images/AddButton.png");
+    # resized_add_Icon = AddFileIcon.resize((100,50), Image.ANTIALIAS);
+    # addImg = ImageTk.PhotoImage(resized_add_Icon);
+    AddButton=Button(NewOrdersecondaryPage,text="Save Order",command=enterToDB);
+    AddButton.pack();
+    AddButton.place(x=170, y=520);
+
+
+
+    # #Create a Cancel button
+    # global CancelImg;
+    # CancelIcon = Image.open("./Images/CancelButton.png");
+    # resized_Cancel_Icon = CancelIcon.resize((100,50), Image.ANTIALIAS);
+    # CancelImg = ImageTk.PhotoImage(resized_Cancel_Icon);
+    CancelButton2=Button(NewOrdersecondaryPage,text="Cancel",command=destroyNewOrderFunc);#close window-not working
     CancelButton2.pack();
-    CancelButton2.place(x=1000, y=520);
+    CancelButton2.place(x=450, y=520);
 
 
     #Empty page/table for new order,create New tree for page 2
-    NewOrderTree_P2 = ttk.Treeview(NewOrderMainPage,yscrollcommand=Cyclotron_scroll.set,height=15);
-    NewOrderTree_P2['columns']= ("ID","Amount","Injection time")
-    #NewOrderTree_P2['show'] = 'tree headings';
+    NewOrderTree_P2 = ttk.Treeview(NewOrdersecondaryPage,height=15);
     NewOrderTree_P2.pack();
-    NewOrderTree_P2.place(x=750,y=130);
-    #Foramte Columns
+    NewOrderTree_P2.place(x=170,y=130);
+
+    #Order main page scrollbar-vertical
+    NewOrderTree_P2_Scroollbar = Scrollbar(NewOrdersecondaryPage, orient="vertical",command = NewOrderTree_P2.yview);
+    NewOrderTree_P2_Scroollbar.pack(side="right");
+    NewOrderTree_P2.configure(yscrollcommand = NewOrderTree_P2_Scroollbar.set);
+
+    # Defining number of columns
+    NewOrderTree_P2['columns']= ("ID","Amount","Injection time");
+#Foramte Columns
     NewOrderTree_P2.column("#0",width=0,minwidth=0);
     NewOrderTree_P2.column("ID",anchor=W,width=80,minwidth=25);
     NewOrderTree_P2.column("Amount",anchor=CENTER,width=120,minwidth=25);
@@ -1037,13 +1086,13 @@ def PopUpForNewOrder():
             NewOrderTree_P2.set(row, '1', value)
 
 
-    dropDownAmountM = ttk.OptionMenu(NewOrderMainPage, status, "0", *AmountList, command=set_batch);
+    dropDownAmountM = ttk.OptionMenu(NewOrdersecondaryPage, status, "0", *AmountList, command=set_batch);
     dropDownAmountM.pack();
-    dropDownAmountM.place(x=900, y=490);
+    dropDownAmountM.place(x=250, y=490);
     #Change Amount time manual label
-    ChangeAmountLabel=Label(NewOrderMainPage, text="Change Amount : ", font=('Helvetica 12'));
+    ChangeAmountLabel=Label(NewOrdersecondaryPage, text="Change Amount : ", font=('Helvetica 12'));
     ChangeAmountLabel.pack();
-    ChangeAmountLabel.place(x=720,y=490);
+    ChangeAmountLabel.place(x=100,y=490);
 
     #############################Amount Event over######################
 
@@ -1069,19 +1118,19 @@ def PopUpForNewOrder():
             NewOrderTree_P2.set(row, '2', value)
 
 
-    dropDownInjectionT_M = ttk.OptionMenu(NewOrderMainPage, status, "00:00", *TimeList, command=setInjectionTime);
+    dropDownInjectionT_M = ttk.OptionMenu(NewOrdersecondaryPage, status, "00:00", *TimeList, command=setInjectionTime);
     dropDownInjectionT_M.pack();
-    dropDownInjectionT_M.place(x=900, y=460);
+    dropDownInjectionT_M.place(x=300, y=460);
     #Change injecion time manual label
-    ChangeTImeIjectionLabel=Label(NewOrderMainPage, text="Change Time-Injection : ", font=('Helvetica 12'));
+    ChangeTImeIjectionLabel=Label(NewOrdersecondaryPage, text="Change Time-Injection : ", font=('Helvetica 12'));
     ChangeTImeIjectionLabel.pack();
-    ChangeTImeIjectionLabel.place(x=720,y=460);
+    ChangeTImeIjectionLabel.place(x=100,y=460);
 
 
 
     #Create ADD row button+icon
-# defining a function that will
-# print them on the screen
+    # defining a function that will
+    # print them on the screen
     #rowTree = StringVar();
     def addRowFunc():
         #global idCounter;
@@ -1095,22 +1144,18 @@ def PopUpForNewOrder():
         #for i,j in zip(range(IntAmount),range(BeginigHour,IntAmount)):
         rawSelectedToDelete=NewOrderTree_P2.selection();
         for rawselected in rawSelectedToDelete:
-         NewOrderTree_P2.delete(rawselected);
+            NewOrderTree_P2.delete(rawselected);
         ListofVal[4]=ListofVal[4]-1;#current amount= current amount-1
     #amountVar.set("");
 
-
-
-
-    ####################Buttons for new order-manual page##########################
-    # Remove button (Icon) - List
+    #Remove button (Icon) - List-ORders page number 2
     global imgDelete2;
-    deleteIcon2 = Image.open("./‏‏deleteIcon.png");
-    resizedDeleteIcon2 = deleteIcon2.resize((25,25), Image.ANTIALIAS);
-    imgDelete2 = ImageTk.PhotoImage(resizedDeleteIcon2);
-    deleteButton2=Button(NewOrderMainPage, image=imgDelete2, borderwidth=0,command=removeRawFunc);
+    # deleteIcon2 = Image.open("./‏‏deleteIcon.png");
+    # resizedDeleteIcon2 = deleteIcon2.resize((25,25), Image.ANTIALIAS);
+    # imgDelete2 = ImageTk.PhotoImage(resizedDeleteIcon2);
+    deleteButton2=Button(NewOrdersecondaryPage, text="remove",bg="white",font=('Helvetica 14'), borderwidth=0,command=removeRawFunc);
     deleteButton2.pack();
-    deleteButton2.place(x=1000, y=98);
+    deleteButton2.place(x=410, y=95);
 
     #remove/delete record from db
     # def deleteCyclotronfun():
@@ -1118,22 +1163,224 @@ def PopUpForNewOrder():
     #     cyclo_tabel.delete_record(query)
 
 
+
+    ####################Buttons for new order-manual page##########################
+
+
     global addROWImg;
-    AddrowLabel=Label(NewOrderMainPage, text="Add row",bg="white", font=('Helvetica 14'));
+    AddrowLabel=Label(NewOrdersecondaryPage, text="Add row",bg="white", font=('Helvetica 14'));
     AddrowLabel.pack();
-    AddrowLabel.place(x=910,y=98);
+    AddrowLabel.place(x=270,y=98);
     #Add row image+button
-    AddrowIcon = Image.open("./addIcon.png");
-    resized_add_Row = AddrowIcon.resize((25,25), Image.ANTIALIAS);
-    addROWImg = ImageTk.PhotoImage(resized_add_Row);
-    AddRowButton=Button(NewOrderMainPage,image=addROWImg, borderwidth=0,command=addRowFunc);
-    AddRowButton.pack();
-    AddRowButton.place(x=880, y=100);
+    # AddrowIcon = Image.open("./addIcon.png");
+    # resized_add_Row = AddrowIcon.resize((25,25), Image.ANTIALIAS);
+    # addROWImg = ImageTk.PhotoImage(resized_add_Row);
+    # AddRowButton=Button(NewOrdersecondaryPage,image=addROWImg, borderwidth=0,command=addRowFunc);
+    # AddRowButton.pack();
+    # AddRowButton.place(x=880, y=100);
+
+
+
+
+#
+#     NewOrdersecondaryLabel=Label(NewOrderMainPage, text="New Order #2",bg="#F0F3F4", font=('Helvetica 17 bold'), fg='#034672');
+#     NewOrdersecondaryLabel.pack();
+#     NewOrdersecondaryLabel.place(x=900,y=27);
+#
+#
+#     def enterToDB():#Function to insert data into My-SQL Db
+#      # ValuseDic = {
+#      #        'idorders': 4,
+#      #        'Date': '2002-03-92',
+#      #        'injection_time': '11:20:11',
+#      #        'amount': 7,
+#      #        'hospitalID': 7,
+#      #        'batchID': 7,
+#      #        'DecayCorrected': 7 }  ;
+#      cursor = db.cursor(buffered=True);
+#      for i in range(1,ListofVal[4]+1):
+#       ValuseTuple=(i, ChoosenDateForManaulOrder, ListofTimeIntervals[i-1], ListofVal[1], ListofVal[5],ListofVal[7], 0, 0);
+#       #print("order trying to get in DB-Add pressed");
+#       try:
+#        UpdateSQlQuery="INSERT INTO orders (DoseNumber,Date,injection_time,amount,hospitalID,materialID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);";
+#        cursor.execute(UpdateSQlQuery,ValuseTuple);
+#        print("DB updated successfully ");
+#       except Exception as e:
+#        logging.error(traceback.format_exc());
+#        #messagebox.showerror("Error message","Error !");
+#        print("Error-Order was not updated-please check MySQL")
+#
+#
+#
+#      NewOrderMainPage.destroy();#Close import file-manual window
+#      updateOrdersTreeMainPageOutputOnly();#Refresh/Update Main page
+#      OrdersTree.pack();         #open order main page immedaitly
+#     #Commit changes in DB
+#      db.commit()
+#      cursor.close()
+#      #Close connection to DB
+#      #db.close()
+#
+#     #Create ADD button
+#     # global addImg;
+#     # AddFileIcon = Image.open("./Images/AddButton.png");
+#     # resized_add_Icon = AddFileIcon.resize((100,50), Image.ANTIALIAS);
+#     # addImg = ImageTk.PhotoImage(resized_add_Icon);
+#     AddButton=Button(NewOrderMainPage,text="Save Order",command=enterToDB);
+#     AddButton.pack();
+#     AddButton.place(x=850, y=520);
+#
+#     # #Create a Cancel button
+#     # global CancelImg;
+#     # CancelIcon = Image.open("./Images/CancelButton.png");
+#     # resized_Cancel_Icon = CancelIcon.resize((100,50), Image.ANTIALIAS);
+#     # CancelImg = ImageTk.PhotoImage(resized_Cancel_Icon);
+#     CancelButton2=Button(NewOrderMainPage,text="Cancel",command=lambda: [NewOrderMainPage.destroy()]);#close window-not working
+#     CancelButton2.pack();
+#     CancelButton2.place(x=1000, y=520);
+#
+#
+#     #Empty page/table for new order,create New tree for page 2
+#     NewOrderTree_P2 = ttk.Treeview(NewOrderMainPage,yscrollcommand=Cyclotron_scroll.set,height=15);
+#     NewOrderTree_P2['columns']= ("ID","Amount","Injection time")
+#     #NewOrderTree_P2['show'] = 'tree headings';
+#     NewOrderTree_P2.pack();
+#     NewOrderTree_P2.place(x=750,y=130);
+#     #Foramte Columns
+#     NewOrderTree_P2.column("#0",width=0,minwidth=0);
+#     NewOrderTree_P2.column("ID",anchor=W,width=80,minwidth=25);
+#     NewOrderTree_P2.column("Amount",anchor=CENTER,width=120,minwidth=25);
+#     NewOrderTree_P2.column("Injection time",anchor=W,width=120,minwidth=25);
+#
+#     #Define headers/titles in table
+#     NewOrderTree_P2.heading("#0", text="Label",anchor=W);
+#     NewOrderTree_P2.heading("ID", text="ID",anchor=W);
+#     NewOrderTree_P2.heading("Amount", text="Amount",anchor=CENTER);
+#     NewOrderTree_P2.heading("Injection time", text="Injection time",anchor=W);
+#
+#     #############################Amount quantity Event ######################
+#
+#     AmountList = [
+#         "0","1","2","3","4","5"
+#     ]
+#
+#     status = tk.StringVar()
+#     status.set("0")
+#
+#     #Catch event
+#     def treeBatchselect(event):
+#         row = NewOrderTree_P2.focus()
+#         if row:
+#             status.set(NewOrderTree_P2.set(row, 'two'))
+#
+#     NewOrderTree_P2.bind('<<TreeviewSelect>>', treeBatchselect)
+#
+#     def set_batch(value):
+#         row = NewOrderTree_P2.focus()
+#         if row:
+#             NewOrderTree_P2.set(row, '1', value)
+#
+#
+#     dropDownAmountM = ttk.OptionMenu(NewOrderMainPage, status, "0", *AmountList, command=set_batch);
+#     dropDownAmountM.pack();
+#     dropDownAmountM.place(x=900, y=490);
+#     #Change Amount time manual label
+#     ChangeAmountLabel=Label(NewOrderMainPage, text="Change Amount : ", font=('Helvetica 12'));
+#     ChangeAmountLabel.pack();
+#     ChangeAmountLabel.place(x=720,y=490);
+#
+#     #############################Amount Event over######################
+#
+#     # ############################Injection Time event#########################
+#     TimeList = [
+#         "06:00","06:30","07:00","07:30","08:00","08:30","09:00","09:30","10:00",
+#     ]
+#
+#     status = tk.StringVar()
+#     status.set("00:00")
+#
+#     #Catch Injection  event
+#     def InjectionTimeselect(event):
+#         row = NewOrderTree_P2.focus()
+#         if row:
+#             status.set(NewOrderTree_P2.set(row, 'Injection time'))
+#
+#     NewOrderTree_P2.bind('<<TreeviewSelect>>', InjectionTimeselect)
+#
+#     def setInjectionTime(value):
+#         row = NewOrderTree_P2.focus()
+#         if row:
+#             NewOrderTree_P2.set(row, '2', value)
+#
+#
+#     dropDownInjectionT_M = ttk.OptionMenu(NewOrderMainPage, status, "00:00", *TimeList, command=setInjectionTime);
+#     dropDownInjectionT_M.pack();
+#     dropDownInjectionT_M.place(x=900, y=460);
+#     #Change injecion time manual label
+#     ChangeTImeIjectionLabel=Label(NewOrderMainPage, text="Change Time-Injection : ", font=('Helvetica 12'));
+#     ChangeTImeIjectionLabel.pack();
+#     ChangeTImeIjectionLabel.place(x=720,y=460);
+#
+#
+#
+#     #Create ADD row button+icon
+# # defining a function that will
+# # print them on the screen
+#     #rowTree = StringVar();
+#     def addRowFunc():
+#         #global idCounter;
+#         rowTreetoAdd=(ListofVal[0],ListofVal[1],ListofVal[2]);
+#         NewOrderTree_P2.insert("", "end", values=rowTreetoAdd);
+#         ListofVal[0]=ListofVal[0]+1;
+#         ListofVal[4]+=1;#current amount= courrent amount+1
+#
+#     def removeRawFunc():
+#         #rowTree=rowTree.get();
+#         #for i,j in zip(range(IntAmount),range(BeginigHour,IntAmount)):
+#         rawSelectedToDelete=NewOrderTree_P2.selection();
+#         for rawselected in rawSelectedToDelete:
+#          NewOrderTree_P2.delete(rawselected);
+#         ListofVal[4]=ListofVal[4]-1;#current amount= current amount-1
+#     #amountVar.set("");
+#
+#
+#
+#
+#     ####################Buttons for new order-manual page##########################
+#     # Remove button (Icon) - List
+#     global imgDelete2;
+#     deleteIcon2 = Image.open("./‏‏deleteIcon.png");
+#     resizedDeleteIcon2 = deleteIcon2.resize((25,25), Image.ANTIALIAS);
+#     imgDelete2 = ImageTk.PhotoImage(resizedDeleteIcon2);
+#     deleteButton2=Button(NewOrderMainPage, image=imgDelete2, borderwidth=0,command=removeRawFunc);
+#     deleteButton2.pack();
+#     deleteButton2.place(x=1000, y=98);
+#
+#     #remove/delete record from db
+#     # def deleteCyclotronfun():
+#     #     query = "DELETE FROM resourcecyclotron WHERE idresourceCyclotron = %s"
+#     #     cyclo_tabel.delete_record(query)
+#
+#
+#     global addROWImg;
+#     AddrowLabel=Label(NewOrderMainPage, text="Add row",bg="white", font=('Helvetica 14'));
+#     AddrowLabel.pack();
+#     AddrowLabel.place(x=910,y=98);
+#     #Add row image+button
+#     AddrowIcon = Image.open("./addIcon.png");
+#     resized_add_Row = AddrowIcon.resize((25,25), Image.ANTIALIAS);
+#     addROWImg = ImageTk.PhotoImage(resized_add_Row);
+#     AddRowButton=Button(NewOrderMainPage,image=addROWImg, borderwidth=0,command=addRowFunc);
+#     AddRowButton.pack();
+#     AddRowButton.place(x=880, y=100);
 
 
 # ####################end of page number 2 -New order #######################################################################
 
 ##########################Update order from main page########################################
+
+############################################################################################################
+################################Edit Order page###################################################################
 def UpdateOrder(event):
     curItem = OrdersTree.focus();
     DataOfRowSelectedDic=OrdersTree.item(curItem);
@@ -1212,7 +1459,7 @@ def UpdateOrder(event):
 
     #get order detail from DB by hospitalID and Date
     cursor = db.cursor();
-    SearchSpecOrderQueryByDoubleclick=f'SELECT idorders,amount,Injection_time FROM orders where idhospital="{hospitalId}" AND Date="{DateSelected}"';
+    SearchSpecOrderQueryByDoubleclick=f'SELECT idorders,amount,Injection_time FROM orders where hospitalID="{hospitalId}" AND Date="{DateSelected}"';
     cursor.execute(SearchSpecOrderQueryByDoubleclick);
     OrderDatatoSpecificOrder = cursor.fetchall();
     print(f"order selected: {OrderDatatoSpecificOrder}");
@@ -1304,7 +1551,7 @@ def UpdateOrder(event):
         #     #ValuseTuple=("11:20:11", ListofVal[1], ListofVal[5], 0, 0);# ListofVal[5]=HospitalID,ListofVal[1]=Individual amount
         #     #print("trying to update DB");
         #     try:
-        #         UpdateSQlQuery=f"UPDATE  orders SET injection_time='{ListOfInjectionTime}',amount='{record[1]}',batchID='{0}',DecayCorrected='{0}'  WHERE idhospital = '{hospitalId}' AND Date='{ChoosenDateForManaulOrder}';";
+        #         UpdateSQlQuery=f"UPDATE  orders SET injection_time='{ListOfInjectionTime}',amount='{record[1]}',batchID='{0}',DecayCorrected='{0}'  WHERE hospitalID = '{hospitalId}' AND Date='{ChoosenDateForManaulOrder}';";
         #         cursor.execute(UpdateSQlQuery);
         #         print("DB updated successfully ");
         #     except Exception as e:
@@ -1318,7 +1565,7 @@ def UpdateOrder(event):
             #ValuseTuple=("11:20:11", ListofVal[1], ListofVal[5], 0, 0);# ListofVal[5]=HospitalID,ListofVal[1]=Individual amount
             #print("trying to update DB");
             try:
-             UpdateSQlQuery=f"UPDATE  orders SET injection_time='{ListOfInjectionTime[i-1]}',amount='{ListofVal[1]}',batchID='{0}',DecayCorrected='{0}'  WHERE idhospital = '{hospitalId}' AND Date='{ChoosenDateForManaulOrder}';";
+             UpdateSQlQuery=f"UPDATE  orders SET injection_time='{ListOfInjectionTime[i-1]}',amount='{ListofVal[1]}',batchID='{0}',DecayCorrected='{0}'  WHERE hospitalID = '{hospitalId}' AND Date='{ChoosenDateForManaulOrder}';";
              cursor.execute(UpdateSQlQuery);
              print("DB updated successfully ");
             except Exception as e:

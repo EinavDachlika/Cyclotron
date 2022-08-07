@@ -53,69 +53,84 @@ except Error as e:
 #create tables
 #Create table of hospitals
 dbCursor.execute("CREATE TABLE IF NOT EXISTS hospital ("
-                 "idhospital int(255) NOT NULL"
+                 "idhospital int(255) NOT NULL AUTO_INCREMENT"
                  ",Name varchar(45) NOT NULL"
-                 ",Fixed_activity_level float"
-                 ",Transport_time float,"
-                 "deleted BOOLEAN,"
-                 "PRIMARY KEY(idhospital))");
+                 ",Fixed_activity_level float NOT NULL"
+                 ",Transport_time float NOT NULL"
+                 ",hospitalcol varchar(45) NOT NULL"
+                 ",deleted BOOLEAN DEFAULT FALSE"
+                 ",PRIMARY KEY(idhospital))");
 
 #Create table of resourcecyclotron
 dbCursor.execute("CREATE TABLE IF NOT EXISTS resourcecyclotron ("
-                 "idresourceCyclotron int(255)"
-                 ",version varchar(45)"
-                 ",capacity int(255)"
-                 ",constant_efficiency int(255),"
-                 "description varchar(45),"
-                 "deleted BOOLEAN)");
+                 "idresourceCyclotron int(255) NOT NULL AUTO_INCREMENT"
+                 ",version varchar(45) not null"
+                 ",capacity int(255) not null"
+                 ",constant_efficiency int(255) not null,"
+                 "description varchar(45) DEFAULT null,"
+                 "deleted BOOLEAN DEFAULT FALSE,"
+                 "PRIMARY KEY(idresourceCyclotron))");
 
 #Create table of resourcemoule
 dbCursor.execute("CREATE TABLE IF NOT EXISTS resourcemodule ("
-                 "idresourcemodule int(255)"
-                 ",version varchar(45)"
-                 ",capacity int(255),"
-                 "description varchar(45),"
-                 "deleted BOOLEAN)");
+                 "idresourcemodule int(255) NOT NULL AUTO_INCREMENT"
+                 ",version varchar(45) not null"
+                 ",capacity int(255) default null,"
+                 "description varchar(45) not null,"
+                 "deleted BOOLEAN DEFAULT FALSE,"
+                 "PRIMARY KEY(idresourcemodule))");
+#Create table of materials
+dbCursor.execute("CREATE TABLE IF NOT EXISTS material("
+                 "idmaterial int(255) NOT NULL AUTO_INCREMENT,"
+                 "materialName varchar(45) not null,"
+                 "PRIMARY KEY(idmaterial))");
 
 #Create table of workplan
 dbCursor.execute("CREATE TABLE IF NOT EXISTS workplan ("
-                 "idworkplan int(255)"
-                 ",Date date"
-                 ",Cyclotron_activation_time time,"
-                 "materialID int(255))");
-
-#Create table of orders
-dbCursor.execute("CREATE TABLE IF NOT EXISTS orders ("
-                 "idorders int(255)"
-                 ",Date date"
-                 ",Injection_time time"
-                 ",amount int(255)"
-                 ",idhospital int(255),"
-                 "materialID int(255)"
-                 ",batchID int(255)"
-                 ",DecayCorrected float)");
+                 "idworkplan int(255) not null"
+                 ",Date date not null"
+                 ",Cyclotron_activation_time time DEFAULT NULL,"
+                 "materialID int(255),"
+                 "PRIMARY KEY(idworkplan),"
+                 "FOREIGN KEY (materialID) REFERENCES material(idmaterial))");
 
 #Create table of batches
 dbCursor.execute("CREATE TABLE IF NOT EXISTS batch("
-                 "idbatch int(255)"
+                 "idbatch int(255) "
                  ",Total_eos_date date"
                  ",Time_leaves_Hadassah_time date,"
                  "Production_site varchar(45),"
                  "batchcol int(255),"
+                 "resourcecyclotronID int(255) DEFAULT NULL,"
                  "resourcemoduleID int(255),"
-                 "resourcecyclotronID int(255),"
-                 "workplanID int(255),"
-                 "TargetCurrentLB int(255),"
-                 "DecayCorrected_TTA int(255),"
-                 "EOS_activity int(255),"
-                 "SynthesisTime int(255),"
-                 "Radioactivity_to_cyclotron int(255))");
+                 "workplanID int(255) DEFAULT NULL,"
+                 "TargetCurrentLB int(255) DEFAULT NULL,"
+                 "DecayCorrected_TTA int(255) DEFAULT NULL,"
+                 "EOS_activity int(255) DEFAULT NULL,"
+                 "SynthesisTime int(255) DEFAULT NULL,"
+                 "Radioactivity_to_cyclotron int(255),"
+                 "PRIMARY KEY(idbatch) ,"
+                 "FOREIGN KEY (resourcecyclotronID) REFERENCES resourcecyclotron(idresourceCyclotron),"
+                 "FOREIGN KEY (resourcemoduleID) REFERENCES resourcemodule(idresourcemodule),"
+                 "FOREIGN KEY (workplanID) REFERENCES workplan(idworkplan))");
 
-#Create table of materials
-dbCursor.execute("CREATE TABLE IF NOT EXISTS material("
-                 "materialID int(255),"
-                 "materialName varchar(45),"
-                 "PRIMARY KEY(materialID))");
+
+#Create table of orders
+dbCursor.execute("CREATE TABLE IF NOT EXISTS orders ("
+                 "idorders int(255) NOT NULL AUTO_INCREMENT,"
+                 "DoseNumber int(255) NOT NULL,"
+                 "hospitalID int(255) NOT NULL,"
+                 "materialID int(255) NOT NULL"
+                 ",batchID int(255) "
+                 ",Date date NOT NULL"
+                 ",Injection_time time NOT NULL"
+                 ",amount int(255) NOT NULL"
+                 ",DecayCorrected float DEFAULT NULL,"
+                 "PRIMARY KEY(idorders),"
+                 "FOREIGN KEY (hospitalID) REFERENCES hospital(idhospital),"
+                 "FOREIGN KEY (materialID) REFERENCES material(idmaterial),"
+                 "FOREIGN KEY (batchID) REFERENCES batch(idbatch))");
+
 
 
 ######################Hospital page##########################################
@@ -170,10 +185,10 @@ hospitals_in_db = cursor.fetchall();
 
 #Insert data of Hospitals into My-SQl DB
 #The INSERT IGNORE statement will cause MySQL to do nothing when the insertion throws an error. If there’s no error, then a new row will be added to the table.
-cursor.execute("INSERT IGNORE INTO hospital (idhospital,Name,Fixed_activity_level,Transport_time,deleted) VALUES (1,'Belinson',9.2,15.0,true),(2,'Ichilov',10.0,20.0,false),(3,'Assuta TA',10.9,30.0,true),(4,'Sheb',10.5,35.0,true),(5,'Ziv',11.0,25.0,true),(6,'Assuta Ashdod',13.1,60.0,false),(7,'Assaf Harofeh',10.6,65.0,false),(8,'Augusta Victoria',9.6,50.0,false),(9,'Hila Pharma',9.6,50.0,false),(10,'Hadassah',9.5,0.0,false);")
+cursor.execute("INSERT IGNORE INTO hospital (idhospital,Name,Fixed_activity_level,Transport_time) VALUES (1,'Belinson',9.2,15.0),(2,'Ichilov',10.0,20.0),(3,'Assuta TA',10.9,30.0),(4,'Sheb',10.5,35.0),(5,'Ziv',11.0,25.0),(6,'Assuta Ashdod',13.1,60.0),(7,'Assaf Harofeh',10.6,65.0),(8,'Augusta Victoria',9.6,50.0),(9,'Hila Pharma',9.6,50.0),(10,'Hadassah',9.5,0.0);")
 
 #Insert 2 material to the DB,material table
-cursor.execute("INSERT IGNORE INTO material (materialID,materialName) VALUES (1,'FDG'),(2,'FDOPA');")
+cursor.execute("INSERT IGNORE INTO material (idmaterial,materialName) VALUES (1,'FDG'),(2,'FDOPA');")
 #cleanup DB
 db.commit();
 # cursor.close();
