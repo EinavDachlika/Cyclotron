@@ -276,7 +276,7 @@ searchEntry.bind("<KeyRelease>",SearchComponent)#catch any key pressed and relea
 #
 # Absorb materials list data from db
 cursor = db.cursor();
-cursor.execute("SELECT * FROM material");
+cursor.execute("SELECT idmaterial,materialName FROM material");
 Material_in_db = cursor.fetchall();
 print(Material_in_db);
 AllListOption=("All");
@@ -543,7 +543,7 @@ def importFileFunc():
     # Absorb materials list data from db
     #################Absorb materials list DB#########################
     cursor = db.cursor();
-    cursor.execute("SELECT * FROM material");
+    cursor.execute("SELECT idmaterial,materialName FROM material");
     Material_in_db = cursor.fetchall();
     print(Material_in_db);
 
@@ -557,6 +557,7 @@ def importFileFunc():
     def MaterialsSelectedeImportFile(MaterialSelectedEvent):
         """Function for create Material Drop-Down menu -absorb data from DB"""
         ChoosenMaterialNewOrder=MaterialsSelectedImportFile.get();
+        print(ChoosenMaterialNewOrder);
         print(ChoosenMaterialNewOrder);
         ChoosenMaterial2=ChoosenMaterialNewOrder;
         temp_Var_=list(ChoosenMaterial2);
@@ -782,7 +783,7 @@ def PopUpForNewOrder():
 
     # Absorb materials list data from db
     cursor = db.cursor();
-    cursor.execute("SELECT * FROM material");
+    cursor.execute("SELECT idmaterial,materialName FROM material");
     Material_in_db1 = cursor.fetchall();
     print(Material_in_db1);
 
@@ -833,7 +834,10 @@ def PopUpForNewOrder():
         for rawselected in NewOrderTree_P2.get_children():
             NewOrderTree_P2.delete(rawselected);
 
-        #Get event values
+        def destroy_widget(widget):
+            widget.destroy()
+
+        #Get event values-events
         Time_Intervals=TimerangeLabelEntry.get();
         IntAmount=AmountOfDosesLabelEntry.get();
         Minutes_Var=MinutesCLockSelected.get();
@@ -846,6 +850,7 @@ def PopUpForNewOrder():
             DateInputCheckMsg=Label(NewOrderMainPage, text="Please choose date of order",fg="red", font=('Helvetica 12'));
             DateInputCheckMsg.pack();
             DateInputCheckMsg.place(x=20,y=260);
+            root.after(5000, destroy_widget, DateInputCheckMsg) ##Clear label after 5 secondes
         else:
             print(ChoosenDateForManaulOrder);
 
@@ -855,6 +860,7 @@ def PopUpForNewOrder():
          HospitalInputMsg=Label(NewOrderMainPage, text="Please choose hospital",fg="red", font=('Helvetica 12'));
          HospitalInputMsg.pack();
          HospitalInputMsg.place(x=20,y=140);
+         root.after(5000, destroy_widget, HospitalInputMsg);#Clear label after 5 secondes
         else:
          print(hospitalId);
 
@@ -869,6 +875,7 @@ def PopUpForNewOrder():
             TImeIntervalMsg=Label(NewOrderMainPage, text="Please fill in Time Intervals",fg="red", font=('Helvetica 12'));
             TImeIntervalMsg.pack();
             TImeIntervalMsg.place(x=400,y=270);
+            root.after(5000, destroy_widget, TImeIntervalMsg);#Clear label after 5 secondes
         else:
             print(Time_Intervals);
 
@@ -876,6 +883,7 @@ def PopUpForNewOrder():
             BegTImeMsg=Label(NewOrderMainPage, text="Please fill in Beginning Time ",fg="red", font=('Helvetica 12'));
             BegTImeMsg.pack();
             BegTImeMsg.place(x=20,y=370);
+            root.after(5000, destroy_widget, BegTImeMsg);#Clear label after 5 secondes
         else:
             print(Minutes_Var,Hours_Var);
 
@@ -885,7 +893,8 @@ def PopUpForNewOrder():
              AmountOfrowsMsg1=Label(NewOrderMainPage, text="Amount of rows can accept only integer numbers ",fg="red", font=('Helvetica 12'));
              AmountOfrowsMsg1.pack();
              AmountOfrowsMsg1.place(x=400,y=165);
-         # else:
+             root.after(5000, destroy_widget, AmountOfrowsMsg1);#Clear label after 5 secondes
+        # else:
          #    NaNFlag=False;
 
         try:
@@ -894,6 +903,7 @@ def PopUpForNewOrder():
             AmountOfrowsMsg2=Label(NewOrderMainPage, text="Please fill in Amount-Of-Rows for order ",fg="red", font=('Helvetica 12'));
             AmountOfrowsMsg2.pack();
             AmountOfrowsMsg2.place(x=400,y=140);
+            root.after(5000, destroy_widget, AmountOfrowsMsg2);#Clear label after 5 secondes
         else:
             print(IntAmount);
 

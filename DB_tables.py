@@ -65,7 +65,7 @@ dbCursor.execute("CREATE TABLE IF NOT EXISTS resourcemodule ("
 dbCursor.execute("CREATE TABLE IF NOT EXISTS material("
                  "idmaterial int(255) NOT NULL AUTO_INCREMENT,"
                  "materialName varchar(45) not null,"
-                 "deleted BOOLEAN ,"
+                 "deleted BOOLEAN DEFAULT FALSE,"
                  "PRIMARY KEY(idmaterial))");
 
 #Create table of workplan
