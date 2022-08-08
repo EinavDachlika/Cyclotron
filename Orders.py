@@ -480,9 +480,9 @@ def importFileFunc():
                     print(f'InjectionTIme numner {i}: {InjectionTImeListFromdoc[i-1]}');
 # ##############################################################
 
-        FileImportedLabel1=Label(ImportFilePage, text="FIle imported successfully",fg="red", font=('Helvetica 12'));
-        FileImportedLabel1.pack();
-        FileImportedLabel1.place(x=450,y=180);
+        # FileImportedLabel1=Label(ImportFilePage, text="FIle imported successfully",fg="red", font=('Helvetica 12'));
+        # FileImportedLabel1.pack();
+        # FileImportedLabel1.place(x=450,y=180);
 
         FileImportedLabel2=Label(ImportFilePage, text=filename, font=('Helvetica 12'),fg="red");
         FileImportedLabel2.pack();
@@ -552,7 +552,7 @@ def importFileFunc():
     #matrial label
     MaterialListLabel = Label(ImportFilePage, text="Material",bg='white');
     MaterialListLabel.pack();
-    MaterialListLabel.place(x=20, y=280);
+    MaterialListLabel.place(x=20, y=300);
 
     def MaterialsSelectedeImportFile(MaterialSelectedEvent):
         """Function for create Material Drop-Down menu -absorb data from DB"""
@@ -570,27 +570,68 @@ def importFileFunc():
 
     MaterialsSelectedImportFile.bind("<<ComboboxSelected>>",MaterialsSelectedeImportFile)
     MaterialsSelectedImportFile.pack();
-    MaterialsSelectedImportFile.place(x=18, y=310);
+    MaterialsSelectedImportFile.place(x=18, y=330);
 
 
-    def SaveToDB():                            # Function to save order into DB from Import file
-     cursor = db.cursor(buffered=True);
-     for i in range(1,len(AmountListFromDoc)):
-        ValuseTuple=(i,TempList[1],InjectionTImeListFromdoc[i],AmountListFromDoc[i], TempList[0],TempList[2],0,0);
+    def SaveToDB():
+        # Function to save order into DB from Import file
+
+        ######################################################################################################
+        def destroy_widget(widget):
+            widget.destroy()
+
+        # #message box if not try to click next if inputs are empty-Input check
+        # try:
+        #     TempList[1];
+        # except NameError:
+        #     DateInputCheckMsg=Label(ImportFilePage, text="Please choose date of order",fg="red", font=('Helvetica 12'));
+        #     DateInputCheckMsg.pack();
+        #     DateInputCheckMsg.place(x=20,y=260);
+        #     root.after(5000, destroy_widget, DateInputCheckMsg) ##Clear label after 5 secondes
+        # else:
+        #     print(TempList[1]);
+        #
+        # try:
+        #     TempList[0]
+        # except NameError:
+        #     HospitalInputMsg=Label(ImportFilePage, text="Please choose hospital",fg="red", font=('Helvetica 12'));
+        #     HospitalInputMsg.pack();
+        #     HospitalInputMsg.place(x=20,y=140);
+        #     root.after(5000, destroy_widget, HospitalInputMsg);#Clear label after 5 secondes
+        # else:
+        #     print(TempList[0]);
+
+            #################################################################################################
+
+        cursor = db.cursor(buffered=True);
         print("order trying to get in DB-Add pressed");
+
         try:
-            cursor.execute("INSERT INTO orders (DoseNumber,Date,injection_time,amount,hospitalID,materialID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);
+           for i in range(1,len(AmountListFromDoc)):
+            ValuseTuple=(i,TempList[1],InjectionTImeListFromdoc[i],AmountListFromDoc[i], TempList[0],TempList[2],0,0);
+
+           cursor.execute("INSERT INTO orders (DoseNumber,Date,injection_time,amount,hospitalID,materialID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);
+           updateOrdersTreeMainPageOutputOnly();##update orders tree main page
+        except (mysql.connector.errors.DatabaseError,UnboundLocalError):
+            DateInputCheckMsg=Label(ImportFilePage, text="Please choose date of order",fg="red", font=('Helvetica 12'));
+            DateInputCheckMsg.pack();
+            DateInputCheckMsg.place(x=20,y=270);
+            root.after(5000, destroy_widget, DateInputCheckMsg); ##Clear label after 5 secondes
+
+            HospitalInputMsg=Label(ImportFilePage, text="Please choose hospital",fg="red", font=('Helvetica 12'));
+            HospitalInputMsg.pack();
+            HospitalInputMsg.place(x=20,y=130);
+            root.after(5000, destroy_widget, HospitalInputMsg);#Clear label after 5 secondes
         except Exception as e:
             logging.error(traceback.format_exc());
             #messagebox.showerror("Error message","Error !");
             print("Error");
 
 
-     ImportFilePage.destroy();##Close import file window
-     updateOrdersTreeMainPageOutputOnly();##update orders tree main page
-     #Commit changes in DB and close connection
-     db.commit()
-     cursor.close()
+        #ImportFilePage.destroy();##Close import file window
+        #Commit changes in DB and close connection
+        db.commit()
+        cursor.close()
 
 
 #Create a save button
@@ -661,7 +702,6 @@ def importFileFunc():
     # for i in range(len(page_stuff)):
     #  OrdersTree.insert('', 'end',values=i)
     #OrdersTree.insert(parent='', index=0, text='', values=(TempList[0],TempList[1]));
-
 
     # def my_upd(*args): # triggered when value of string varaible changes
     #     l1.config(text=sel.get()); # read and display date
@@ -792,7 +832,7 @@ def PopUpForNewOrder():
     #matrial label
     MaterialListLabel1 = Label(NewOrderMainPage, text="Material",bg='white');
     MaterialListLabel1.pack();
-    MaterialListLabel1.place(x=400, y=300);
+    MaterialListLabel1.place(x=400, y=310);
 
 
     def MaterialsSelectedeNewOrder(MaterialSelectedEvent):
