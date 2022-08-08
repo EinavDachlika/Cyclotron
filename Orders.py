@@ -943,8 +943,7 @@ def PopUpForNewOrder():
         ListofVal[2]=int(Hours_Var);
         ListofVal[3]=int(Minutes_Var);
         TimeInjectionVar=f'{ListofVal[2]}:{ListofVal[3]}';
-        #print(TimeInjectionVar);
-        #print(type(TimeInjectionVar));#string time
+        print(TimeInjectionVar);
         ListofVal[4]=IntAmount;
         ListofVal[5]=hospitalId;
         ListofVal[6]=int(Time_Intervals);
@@ -1384,19 +1383,22 @@ def UpdateOrder(event):
     OrderDatatoSpecificOrder = cursor.fetchall();
     print(f"order selected: {OrderDatatoSpecificOrder}");
     ListOfInjectionTime=[];
+    ListOfAmount=[];
     #output orders main data from DB to the orders tree
     for record in OrderDatatoSpecificOrder:
         EditTree.insert(parent='', index='end',values=(record[0],record[1],record[2]));#record[0]=Id,record[1]=amount,record[2]=injection time
-        ListOfInjectionTime.append(record[2])
+        ListOfInjectionTime.append(record[2]);
+        ListOfAmount.append(record[1]);
     #EditTree.pack();
-    print(ListOfInjectionTime)
+    print(ListOfInjectionTime);
+    print(ListOfAmount);
     # declaring string variable for storing amount
     amountVar=AmountOfDosesSelected;
     # declaring string variable for storing time interval
     TimeIntervals="30";
     # declaring string variable for storing time
-    HoursVar = "1";
-    MinutesVar = "1";
+    # HoursVar = "1";
+    # MinutesVar = "1";
     global OrderID,DosesSelectedEvent,idCounter;
     #global DosesSelectedEvent;
     OrderID=0;
@@ -1408,16 +1410,16 @@ def UpdateOrder(event):
 
     #Get Time varibles avent,hous and minutes
     Time_Intervals=TimeIntervals;
-    Minutes_Var=MinutesVar;
-    Hours_Var=HoursVar;
+    # Minutes_Var=MinutesVar;
+    # Hours_Var=HoursVar;
     #get amount event variable
     #message box if not try to click next if inputs are empty
     amount=amountVar;
     IntAmount=(int(amount));
     ListofVal[0]=idCounter=1;
     ListofVal[1]=(IntAmount / IntAmount);
-    ListofVal[2]=int(Hours_Var);
-    ListofVal[3]=int(Minutes_Var);
+    # ListofVal[2]=int(Hours_Var);
+    # ListofVal[3]=int(Minutes_Var);
     ListofVal[4]=IntAmount;
     ListofVal[5]=hospitalId;
     ListofVal[6]=int(Time_Intervals);
@@ -1471,29 +1473,32 @@ def UpdateOrder(event):
 
     def enterToDB_UpdateOrder():
         #Function to insert data into My-SQL Db
-        global DosesSelectedEvent;
-        #ListofVal[1]=DosesSelectedEvent;
-        #injection_time="05:05:05"#Just for test
-        #ChoosenDateForManaulOrder="2022-07-20";#test
-        cursor = db.cursor(buffered=True);
-
-        for i in range(1,ListofVal[4]+1):
-            #ValuseTuple=("11:20:11", ListofVal[1], ListofVal[5], 0, 0);# ListofVal[5]=HospitalID,ListofVal[1]=Individual amount
-            #print("trying to update DB");
-            try:
-             UpdateSQlQuery=f"UPDATE  orders SET injection_time='{ListOfInjectionTime[i-1]}',amount='{ListofVal[1]}',batchID='{0}',DecayCorrected='{0}'  WHERE hospitalID = '{hospitalId}' AND Date='{ChoosenDateForManaulOrder}';";
-             cursor.execute(UpdateSQlQuery);
-             print("DB updated successfully ");
-            except Exception as e:
-             logging.error(traceback.format_exc())
-             print("Error-Order was not updated-please check MySQL")
-
         EditPage.destroy();#Close import file-manual window
         updateOrdersTreeMainPageOutputOnly();#Refresh/Update Main page
         OrdersTree.pack();         #open order main page immedaitly
-        #Commit changes in DB
-        db.commit()
-        cursor.close()
+        # global DosesSelectedEvent;
+        # #ListofVal[1]=DosesSelectedEvent;
+        # #injection_time="05:05:05"#Just for test
+        # #ChoosenDateForManaulOrder="2022-07-20";#test
+        # cursor = db.cursor(buffered=True);
+        #
+        # for i in range(1,ListofVal[4]+1):
+        #     #ValuseTuple=("11:20:11", ListofVal[1], ListofVal[5], 0, 0);# ListofVal[5]=HospitalID,ListofVal[1]=Individual amount
+        #     #print("trying to update DB");
+        #     try:
+        #      UpdateSQlQuery=f"UPDATE  orders SET injection_time='{ListOfInjectionTime[i-1]}',amount='{ListOfAmount[i-1]}',batchID='{0}',DecayCorrected='{0}'  WHERE hospitalID = '{hospitalId}' AND Date='{ChoosenDateForManaulOrder}';";
+        #      cursor.execute(UpdateSQlQuery);
+        #      print("DB updated successfully ");
+        #     except Exception as e:
+        #      logging.error(traceback.format_exc())
+        #      print("Error-Order was not updated-please check MySQL")
+        #
+        # EditPage.destroy();#Close import file-manual window
+        # updateOrdersTreeMainPageOutputOnly();#Refresh/Update Main page
+        # OrdersTree.pack();         #open order main page immedaitly
+        # #Commit changes in DB
+        # db.commit()
+        # cursor.close()
         #Close connection to DB
         #db.close()
 
@@ -1528,18 +1533,38 @@ def UpdateOrder(event):
     #Catch event
     def treeAmountSelect(event):
         row = EditTree.focus();
-        #print(row)
+        dataofchoosnenRowListEditTree=row;
+        print(dataofchoosnenRowListEditTree);
+        DataOfRowSelectedDicEditTree=EditTree.item(dataofchoosnenRowListEditTree);
+        DataOfRowSelectedList=DataOfRowSelectedDicEditTree['values'];
+        print(DataOfRowSelectedList);
+        IidSelected=DataOfRowSelectedList[0];
+        AmountSelected=DataOfRowSelectedList[1];
+        InjectionTimeSelected=DataOfRowSelectedList[2];
+
+    #print(row)
         if row:
             status.set(EditTree.set(row, 'Amount'));
 
     EditTree.bind('<<TreeviewSelect>>', treeAmountSelect);
 
     def set_amount(AmountValue):
-        global DosesSelectedEvent;
-        DosesSelectedEvent=AmountValue;
-        #print(DosesSelectedEvent)
+        #global DosesSelectedEvent;
+        print(AmountValue);
+        #DosesSelectedEvent=AmountValue;
         row = EditTree.focus();
+
         if row:
+            try:
+                cursor = db.cursor(buffered=True);
+                UpdateSQlQuery=f"UPDATE  orders SET injection_time='{InjectionTimeSelected}',amount='{AmountValue}',batchID='{0}',DecayCorrected='{0}'  WHERE idorders = '{IidSelected}';";
+                cursor.execute(UpdateSQlQuery);
+                print("DB updated successfully ");
+                db.commit();
+                cursor.close();
+            except Exception as e:
+                logging.error(traceback.format_exc())
+                print("Error-Order was not updated-please check MySQL")
             EditTree.set(row, '1', AmountValue);
 
 
@@ -1561,43 +1586,51 @@ def UpdateOrder(event):
         "17:00","17:30","18:00","18:30","19:00","19:30","20:00"
     ]
 
-    status = tk.StringVar()
-    status.set("00:00")
+    Timeselected = tk.StringVar()
+    Timeselected.set("00:00")
     #print(status);
     #Catch Injection  event
     def InjectionTimeselect(event):
+        global IidSelected,AmountSelected,InjectionTimeSelected,DosesSelectedEvent;
         row = EditTree.focus();
+
         dataofchoosnenRowListEditTree=row;
-        #print(dataofchooserow);
+        print(dataofchoosnenRowListEditTree);
         DataOfRowSelectedDicEditTree=EditTree.item(dataofchoosnenRowListEditTree);
         DataOfRowSelectedList=DataOfRowSelectedDicEditTree['values'];
+        print(DataOfRowSelectedList);
         IidSelected=DataOfRowSelectedList[0];
         AmountSelected=DataOfRowSelectedList[1];
         InjectionTimeSelected=DataOfRowSelectedList[2];
-        # print(IidSelected,AmountSelected,InjectionTimeSelected);
-        # print(DataOfRowSelectedList);
-        # try:
-        #     UpdateSQlQuery=f"UPDATE  orders SET injection_time='{InjectionTimeSelected}',amount='{AmountSelected}',batchID='{0}',DecayCorrected='{0}'  WHERE idorders = '{IidSelected}';";
-        #     cursor.execute(UpdateSQlQuery);
-        #     print("DB updated successfully ");
-        # except Exception as e:
-        #     logging.error(traceback.format_exc())
-        #     print("Error-Order was not updated-please check MySQL")
-
 
         if row:
-            status.set(EditTree.set(row, 'Injection time'));
+            Timeselected.set(EditTree.set(row, 'Injection time'));
 
     EditTree.bind('<<TreeviewSelect>>', InjectionTimeselect)
 
-    def setInjectionTime(value):
-        #print(value)
+    def setInjectionTime(CurValueForTime):
+        global IidSelected,AmountSelected,InjectionTimeSelected,DosesSelectedEvent;
+        print(CurValueForTime);
         row = EditTree.focus()
+        # dataofchoosnenRowListEditTree=row;
+        # #print(dataofchoosnenRowListEditTree);
+        # DataOfRowSelectedDicEditTree=EditTree.item(dataofchoosnenRowListEditTree);
+        # DataOfRowSelectedList=DataOfRowSelectedDicEditTree['values'];
+        # print(DataOfRowSelectedList);
         if row:
-            EditTree.set(row, '2', value)
+            EditTree.set(row, '2', CurValueForTime)
+            try:
+                cursor = db.cursor(buffered=True);
+                UpdateSQlQuery=f"UPDATE  orders SET injection_time='{CurValueForTime}',amount='{AmountSelected}',batchID='{0}',DecayCorrected='{0}'  WHERE idorders = '{IidSelected}';";
+                cursor.execute(UpdateSQlQuery);
+                print("DB updated successfully ");
+                db.commit();
+                cursor.close();
+            except Exception as e:
+                logging.error(traceback.format_exc())
+                print("Error-Order was not updated-please check MySQL")
 
-
-    dropDownInjectionT_M = ttk.OptionMenu(EditPage, status, "00:00", *TimeList, command=setInjectionTime);
+    dropDownInjectionT_M = ttk.OptionMenu(EditPage, Timeselected, "00:00", *TimeList, command=setInjectionTime);
     dropDownInjectionT_M.pack();
     dropDownInjectionT_M.place(x=200, y=460);
     #Change injecion time manual label
