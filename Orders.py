@@ -136,8 +136,10 @@ OrdersTree["columns"]=("1","2","3");
 OrdersTree.pack(side=LEFT, padx=100, pady=110)
 
 #Order main page scrollbar-vertical
-OrderMainPagescroll = Scrollbar(ordersFrame, orient="vertical",command = OrdersTree.yview);
-OrderMainPagescroll.pack(side=LEFT);
+OrderMainPagescroll = Scrollbar(ordersFrame, orient="vertical", command=OrdersTree.yview);
+# OrderMainPagescroll.pack(side=RIGHT,fill=Y);
+OrderMainPagescroll.place(x=705, y=110, height=330)
+
 OrdersTree.configure(yscrollcommand = OrderMainPagescroll.set);
 
 
@@ -200,6 +202,7 @@ updateOrdersTreeMainPageOutputOnly();
 
 def SearchOutpout(data):
     """Function for updating List of mian tree order main-output for searching component """
+
     clear_tree();
     # # Absorb Orders list data from db
     cursor = db.cursor();
@@ -211,8 +214,8 @@ def SearchOutpout(data):
     #convert list of tuples into list
     # y = [item1 for t1 in SumOFAmount1 for item1 in t1];
     # print(y);
-    #print(SumOFAmount1);
-    countertemp=0
+    print(SumOFAmount1);
+    countertemp=0;
     for record in SumOFAmount1:
         print(record)
         OrdersTree.insert(parent='', index='end', text='',values=(data[countertemp],record[1],record[2]));   #record[0]=hospital name,record[1]=Injection time,record[2]=Amount of doses
@@ -268,6 +271,14 @@ def SearchComponent(event):
       SearchOutpout(dataList);#update past list in the new searched list
 
 searchEntry.bind("<KeyRelease>",SearchComponent)#catch any key pressed and released from keyboard- event
+
+#Clear search button on-click in the input widget
+# define an event handler
+def handleEvent(event):
+    searchEntry.delete(0, END);
+
+# bind the click of the Entry to the handler
+searchEntry.bind("<ButtonRelease>", handleEvent)
 
 
 #######Filter by material-drop down##################################################
@@ -577,31 +588,9 @@ def importFileFunc():
         # Function to save order into DB from Import file
 
         ######################################################################################################
-        def destroy_widget(widget):
-            widget.destroy()
+        def delete_label(label):#Function for Clear label
+            label.destroy()
 
-        # #message box if not try to click next if inputs are empty-Input check
-        # try:
-        #     TempList[1];
-        # except NameError:
-        #     DateInputCheckMsg=Label(ImportFilePage, text="Please choose date of order",fg="red", font=('Helvetica 12'));
-        #     DateInputCheckMsg.pack();
-        #     DateInputCheckMsg.place(x=20,y=260);
-        #     root.after(5000, destroy_widget, DateInputCheckMsg) ##Clear label after 5 secondes
-        # else:
-        #     print(TempList[1]);
-        #
-        # try:
-        #     TempList[0]
-        # except NameError:
-        #     HospitalInputMsg=Label(ImportFilePage, text="Please choose hospital",fg="red", font=('Helvetica 12'));
-        #     HospitalInputMsg.pack();
-        #     HospitalInputMsg.place(x=20,y=140);
-        #     root.after(5000, destroy_widget, HospitalInputMsg);#Clear label after 5 secondes
-        # else:
-        #     print(TempList[0]);
-
-            #################################################################################################
 
         cursor = db.cursor(buffered=True);
         print("order trying to get in DB-Add pressed");
@@ -609,19 +598,19 @@ def importFileFunc():
         try:
            for i in range(1,len(AmountListFromDoc)):
             ValuseTuple=(i,TempList[1],InjectionTImeListFromdoc[i],AmountListFromDoc[i], TempList[0],TempList[2],0,0);
+            cursor.execute("INSERT INTO orders (DoseNumber,Date,injection_time,amount,hospitalID,materialID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);
 
-           cursor.execute("INSERT INTO orders (DoseNumber,Date,injection_time,amount,hospitalID,materialID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);
            updateOrdersTreeMainPageOutputOnly();##update orders tree main page
         except (mysql.connector.errors.DatabaseError,UnboundLocalError):
             DateInputCheckMsg=Label(ImportFilePage, text="Please choose date of order",fg="red", font=('Helvetica 12'));
             DateInputCheckMsg.pack();
             DateInputCheckMsg.place(x=20,y=270);
-            root.after(5000, destroy_widget, DateInputCheckMsg); ##Clear label after 5 secondes
+            root.after(5000, delete_label, DateInputCheckMsg); ##Clear label after 5 secondes
 
             HospitalInputMsg=Label(ImportFilePage, text="Please choose hospital",fg="red", font=('Helvetica 12'));
             HospitalInputMsg.pack();
             HospitalInputMsg.place(x=20,y=130);
-            root.after(5000, destroy_widget, HospitalInputMsg);#Clear label after 5 secondes
+            root.after(5000, delete_label, HospitalInputMsg);#Clear label after 5 secondes
         except Exception as e:
             logging.error(traceback.format_exc());
             #messagebox.showerror("Error message","Error !");
@@ -1165,14 +1154,14 @@ def PopUpForNewOrder():
     NewOrderTree_P2.pack();
     NewOrderTree_P2.place(x=170,y=130);
 
-    #Order main page scrollbar-vertical
-    NewOrderTree_P2_Scroollbar = Scrollbar(NewOrdersecondaryPage, orient="vertical",command = NewOrderTree_P2.yview);
-    NewOrderTree_P2_Scroollbar.pack(side="right");
+    #New order page 2 page/tree scrollbar -vertical
+    NewOrderTree_P2_Scroollbar = Scrollbar(NewOrdersecondaryPage, orient="vertical", command=NewOrderTree_P2.yview);
+    NewOrderTree_P2_Scroollbar.place(x=495, y=130, height=330)
     NewOrderTree_P2.configure(yscrollcommand = NewOrderTree_P2_Scroollbar.set);
 
     # Defining number of columns
     NewOrderTree_P2['columns']= ("ID","Amount","Injection time");
-#Foramte Columns
+    #Foramte Columns
     NewOrderTree_P2.column("#0",width=0,minwidth=0);
     NewOrderTree_P2.column("ID",anchor=W,width=80,minwidth=25);
     NewOrderTree_P2.column("Amount",anchor=CENTER,width=120,minwidth=25);
@@ -1219,7 +1208,9 @@ def PopUpForNewOrder():
 
     # ############################Injection Time event#########################
     TimeList = [
-        "06:00","06:30","07:00","07:30","08:00","08:30","09:00","09:30","10:00",
+        "06:00","06:30","07:00","07:30","08:00","08:30","09:00","09:30","10:00","10:30","11:00",
+        "11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30",
+        "17:00","17:30","18:00","18:30","19:00","19:30","20:00"
     ]
 
     status = tk.StringVar()
@@ -1368,10 +1359,11 @@ def UpdateOrder(event):
     EditTree.pack();
     EditTree.place(x=170,y=130);
 
-    #Order main page scrollbar-vertical
-    EditOrderPageScroll = Scrollbar(EditPage, orient="vertical",command = EditTree.yview);
-    EditOrderPageScroll.pack(side=RIGHT);
+        #Edit page/tree scrollbar -vertical
+    EditOrderPageScroll = Scrollbar(EditPage, orient="vertical", command=EditTree.yview);
+    EditOrderPageScroll.place(x=495, y=130, height=330)
     EditTree.configure(yscrollcommand = EditOrderPageScroll.set);
+
 
 #Foramte Columns
     EditTree.column("#0",width=0,minwidth=0);
@@ -1466,6 +1458,16 @@ def UpdateOrder(event):
     NewOrdersecondaryLabel.pack();
     NewOrdersecondaryLabel.place(x=270,y=27);
 
+    # def updateSpecRawInOrder(dataOfRowChoosen):
+    #     curItem = EditTree.focus();
+    #     DataOfRowSelectedDic1=EditTree.item(curItem);
+    #     DataOfRowSelectedList=DataOfRowSelectedDic1['values'];
+    #     print(DataOfRowSelectedList);
+    #     # HospitalSelected=DataOfRowSelectedList[0];
+    #     # DateSelected=DataOfRowSelectedList[1];
+    #     # AmountOfDosesSelected=DataOfRowSelectedList[2];
+    # EditTree.bind('<<TreeviewSelect>>', updateSpecRawInOrder)
+    #
 
     def enterToDB_UpdateOrder():
         #Function to insert data into My-SQL Db
@@ -1474,20 +1476,6 @@ def UpdateOrder(event):
         #injection_time="05:05:05"#Just for test
         #ChoosenDateForManaulOrder="2022-07-20";#test
         cursor = db.cursor(buffered=True);
-
-        # for record in OrderDatatoSpecificOrder:
-        #     #ValuseTuple=("11:20:11", ListofVal[1], ListofVal[5], 0, 0);# ListofVal[5]=HospitalID,ListofVal[1]=Individual amount
-        #     #print("trying to update DB");
-        #     try:
-        #         UpdateSQlQuery=f"UPDATE  orders SET injection_time='{ListOfInjectionTime}',amount='{record[1]}',batchID='{0}',DecayCorrected='{0}'  WHERE hospitalID = '{hospitalId}' AND Date='{ChoosenDateForManaulOrder}';";
-        #         cursor.execute(UpdateSQlQuery);
-        #         print("DB updated successfully ");
-        #     except Exception as e:
-        #         logging.error(traceback.format_exc())
-        #         print("Error-Order was not updated-please check MySQL")
-
-                #EditTree.insert(parent='', index='end',values=(record[0],record[1],record[2]));#record[0]=Id,record[1]=amount,record[2]=injection time
-
 
         for i in range(1,ListofVal[4]+1):
             #ValuseTuple=("11:20:11", ListofVal[1], ListofVal[5], 0, 0);# ListofVal[5]=HospitalID,ListofVal[1]=Individual amount
@@ -1540,6 +1528,7 @@ def UpdateOrder(event):
     #Catch event
     def treeAmountSelect(event):
         row = EditTree.focus();
+        #print(row)
         if row:
             status.set(EditTree.set(row, 'Amount'));
 
@@ -1577,14 +1566,32 @@ def UpdateOrder(event):
     #print(status);
     #Catch Injection  event
     def InjectionTimeselect(event):
-        row = EditTree.focus()
+        row = EditTree.focus();
+        dataofchoosnenRowListEditTree=row;
+        #print(dataofchooserow);
+        DataOfRowSelectedDicEditTree=EditTree.item(dataofchoosnenRowListEditTree);
+        DataOfRowSelectedList=DataOfRowSelectedDicEditTree['values'];
+        IidSelected=DataOfRowSelectedList[0];
+        AmountSelected=DataOfRowSelectedList[1];
+        InjectionTimeSelected=DataOfRowSelectedList[2];
+        # print(IidSelected,AmountSelected,InjectionTimeSelected);
+        # print(DataOfRowSelectedList);
+        # try:
+        #     UpdateSQlQuery=f"UPDATE  orders SET injection_time='{InjectionTimeSelected}',amount='{AmountSelected}',batchID='{0}',DecayCorrected='{0}'  WHERE idorders = '{IidSelected}';";
+        #     cursor.execute(UpdateSQlQuery);
+        #     print("DB updated successfully ");
+        # except Exception as e:
+        #     logging.error(traceback.format_exc())
+        #     print("Error-Order was not updated-please check MySQL")
+
+
         if row:
             status.set(EditTree.set(row, 'Injection time'));
 
     EditTree.bind('<<TreeviewSelect>>', InjectionTimeselect)
 
     def setInjectionTime(value):
-        print(value)
+        #print(value)
         row = EditTree.focus()
         if row:
             EditTree.set(row, '2', value)
