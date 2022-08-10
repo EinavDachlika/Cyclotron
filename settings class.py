@@ -5,12 +5,15 @@ import datetime
 from PIL import Image, ImageTk, ImageFont
 import mysql.connector
 from mysql.connector import Error
-from datetime import datetime , date
+from datetime import datetime , date, timedelta
 from tkcalendar import Calendar, DateEntry
 from openpyxl import *
 from openpyxl.styles import *
 from pathlib import Path
+import math
+from numpy import log as ln
 import webbrowser
+from operator import itemgetter
 
 # from importlib import reload
 
@@ -255,6 +258,287 @@ def warning_message(text):
 
 def YES_NO_message(title_tab, text):
     return messagebox.askyesno(title_tab,text)
+
+#algorithm functions
+lamda = ln(2) / 109.6
+max_activity_batch=7300
+
+
+def sortByTout(hospital):
+    return hospital["tout_required"]
+
+def sortByTeos(hospital):
+    return hospital["eos_req"]
+
+def change_eos_for_tout(hospital_data, diff):
+    Subtract_from_eos = timedelta(minutes=diff)
+    last_eos = hospital_data[0]["eos_req"]
+    update_eos = last_eos - Subtract_from_eos
+    hospital_data[0]["eos_req"] = update_eos
+
+    recursion_for_tout(hospital_data)
+
+def recursion_for_tout(hospital_data,hospitals_output):
+    min_to_add = 0
+    add_to_tout = timedelta(minutes=min_to_add)
+    first_tout = hospital_data[0]["tout_required"]
+    # print('hospital_data(recursion_for_tout): ',hospital_data)
+    for h in hospital_data:
+        if h["delivery_order"] == 2:  # secound is will be after QC1 - needed 5 min more
+            min_to_add += 5
+            add_to_tout = timedelta(minutes=min_to_add)
+
+        Tout_actually = first_tout + add_to_tout
+        if Tout_actually > h["tout_required"]:
+            if  h["delivery_order"]>1:
+                h["delivery_order"]=h["delivery_order"]-1
+
+                recursion_for_tout(hospital_data)
+            else: #change eos req
+                diff = Tout_actually - h["tout_required"]
+                change_eos_for_tout(hospital_data, diff)
+
+
+        h["Tout_actually"] = Tout_actually
+        min_to_add += 5
+        add_to_tout = timedelta(minutes=min_to_add)
+
+        hospital_record = next(hospital for hospital in hospitals_output if hospital["Name"] == h['hospital_name'] and hospital['Batch'] == h['batch'] )
+        hospital_record['delivery_order'] = h["delivery_order"]
+
+def main_algorithm_calculation(batches,hospitals_output,batches_general_data):
+    for b in batches: #calculate T1,Tout, Tcal,Teos, delivery_order, activity
+        if not len(b)==0:
+            index = batches.index(b)
+
+            hospitals=[]
+
+            hospital_data =[]
+            for order in b:
+                hospital_name=order['Name']
+                if hospital_name not in hospitals: # order[1] = hospital name in order
+                    hospitals.append(hospital_name)
+
+                    #add hospital record to hospitals_output list
+                    try:
+                        hospital = next(h for h in hospitals_output if h["Name"] == order["Name"] and h["Batch"]==index+1)
+                    except:
+                        hospitals_output.append({"Name":order["Name"],"Activity":0,'Batch':index+1 })
+
+                    if index != 1:  #condition for choosing Transport_time (min/max) - according to number of batch
+                        tout_temp = order['injection_time'] - timedelta(minutes=(order['Transport_time_max'])) #T1-Transport_time
+                        hospital_data.append({'hospital_name':hospital_name,'batch':index+1, "injection_time": order['injection_time'], "Transport_time": order['Transport_time_max'], "tout_required": tout_temp})
+
+                    else:
+                        tout_temp = order['injection_time'] - timedelta(minutes=(order['Transport_time_min'])) #T1-Transport_time
+                        hospital_data.append({'hospital_name':hospital_name,'batch':index+1, "injection_time": order['injection_time'], "Transport_time": order['Transport_time_min'], "tout_required": tout_temp})
+
+            hospital_data.sort( key=sortByTout) #sort hospital_data by tout_temp
+
+            #insert Tout
+            Tout_key = "Tout"
+            i = len(hospital_data[0]) - 1  # last index in the list (Tout_req)
+            t_out_final = hospital_data[0]["tout_required"]  # first tout_temp
+            batches_general_data[index][Tout_key] = t_out_final
+
+            Hospital_delivery_order=1
+            interval_5 = 15
+            minutes_for_eos_cal = timedelta(minutes=interval_5)
+
+            for h in hospital_data:
+                #delivery_order
+                h["delivery_order"] = Hospital_delivery_order
+                Hospital_delivery_order+=1
+
+                eos_req = h["tout_required"] - minutes_for_eos_cal  # tout - intervals consider the order
+                h["eos_req"] = (eos_req)
+                interval_5 += 5
+                minutes_for_eos_cal = timedelta(minutes=interval_5)
+                # hospital_data.sort(key=sortBy)  # sort hospital_data by tout_eos
+
+            hospital_data.sort(key=sortByTeos)  # sort hospital_data by tout_eos
+            recursion_for_tout(hospital_data,hospitals_output)
+
+
+            # insert Teos - new module
+            Teos_key = "Teos"
+            t_eos_final = hospital_data[0]["eos_req"] #first index in the list is the shortest time of eos (because it's sorted)
+            batches_general_data[index][Teos_key] = t_eos_final
+
+
+            #insert Tcal - new module
+            Tcal_key = "Tcal"
+            minutes_for_Tcal_cal = timedelta(minutes=30)
+            t_cal = t_out_final + minutes_for_Tcal_cal
+            batches_general_data[index][Tcal_key] = t_cal
+
+
+            # bottles_b = len(hospitals) + 2
+            # bottels_key = "bottles_mum"
+            # batches_general_data[index][bottels_key] = bottles_b
+
+            batches_general_data[index]["Activity"] = 0  # define the key
+            for order in b:
+                # insert (A) Activity_Tcal - Activity for Tcal time
+                A_Tcal_key = "Activity_Tcal"
+                injection_time= order["injection_time"]
+                T_cal = batches_general_data[index]["Tcal"]
+                A=order["Fixed_activity_level"]
+
+                diff = (injection_time-T_cal).total_seconds() /60  #convert to minutes and then to float
+                A_Tcal = math.ceil(A * math.pow((math.e),diff*lamda))  # math.ceil is round up
+
+
+                if batches_general_data[index]["Activity"] + A_Tcal >= max_activity_batch:
+                    batches[index+1].append(order)
+                    main_algorithm_calculation(batches,hospitals_output,batches_general_data)
+
+                else:
+                    # try:
+                    #     hospital = next(h for h in hospitals_output if h["Name"] == order["Name"] and h["Batch"]==index+1)
+                    # except:
+                    #     hospitals_output.append({"Name":order["Name"],"Activity":0,'Batch':index+1 })
+                    hospital = next(h for h in hospitals_output if h["Name"] == order["Name"] and h["Batch"] == index + 1)
+                    order[A_Tcal_key] = A_Tcal
+                    order['diff_Tcal_injectionT'] = diff
+                    hospital["Activity"] +=A_Tcal # Hagai - calculate for each bath and hospital separately??
+
+                    batches_general_data[index]["Activity"] += A_Tcal
+
+def export_WP_Excel( selected_material, selected_date, all_batches_output, hospitals_output, batches_general_data):
+    FilePath = "FDG format.xlsx"
+
+    wb = load_workbook(FilePath)
+
+    sheet = wb.active
+    sheet = wb['work plan']
+
+    hospitals = []
+    row_index = 8
+
+    for order in all_batches_output:
+        if order['Name'] not in hospitals:
+            hospitals.append(order['Name'])
+            grey = "c0c0c0"
+            col_start = 4
+            col_end = 11
+
+            sheet.cell(row=row_index, column=col_start).fill = PatternFill(start_color=grey, end_color=grey,
+                                                                           fill_type="solid")  # bg of buffer cell
+
+            merge_buffer = sheet.merge_cells(start_row=row_index, start_column=col_start, end_row=row_index,
+                                             end_column=col_end)
+
+            #hospital name in the first line
+            col_s=12
+            col_e=14
+            sheet.cell(row=row_index, column=col_s).fill = PatternFill(start_color=grey, end_color=grey,
+                                                                           fill_type="solid")  # bg of buffer cell
+            sheet.cell(row=row_index, column=col_s).value =  order['Name']
+            sheet.merge_cells(start_row=row_index, start_column=col_s,
+                              end_row=row_index, end_column=col_e)
+
+            #hospital name on the left side
+            col_index = 3
+            row_index += 1
+            hospital_orders = [row for row in all_batches_output if row['Name'] == order['Name']]
+
+            end_row_to_merge = row_index + len(hospital_orders) - 1
+
+            hospital_name_cell = sheet.cell(row=row_index, column=col_index)
+            hospital_name_cell.value = order['Name'] # insert hoapital name to the first col
+            merge_hospital_name_cells = sheet.merge_cells(start_row=row_index, start_column=col_index,
+                                                          end_row=end_row_to_merge, end_column=col_index)
+            #sum activity of hospital for each batch
+            hospital_output_data = [h for h in hospitals_output if h["Name"] == order["Name"] ]
+            for h_b in hospital_output_data:
+                if h_b["Batch"]==1:
+                    sheet.cell(row=row_index, column=12).value = h_b['Activity']
+                    sheet.cell(row=row_index, column=12).font = Font(size=60,bold=True)
+                elif h_b["Batch"]==2:
+                    sheet.cell(row=row_index, column=13).value = h_b['Activity']
+                    sheet.cell(row=row_index, column=13).font = Font(size=60,bold=True)
+                else:
+                    sheet.cell(row=row_index, column=14).value = h_b['Activity']
+                    sheet.cell(row=row_index, column=14).font = Font(size=60,bold=True)
+
+            for row in hospital_orders:
+                DosemCi = row['Fixed_activity_level']
+                batch_num=row['batch']
+                sheet.cell(row=row_index, column=4).value = row['DoseNumber']  # serial number
+                sheet.cell(row=row_index, column=5).value = batch_num
+                sheet.cell(row=row_index, column=6).value = DosemCi
+                sheet.cell(row=row_index, column=7).value = batches_general_data[batch_num-1]['Teos']
+                sheet.cell(row=row_index, column=8).value = batches_general_data[batch_num-1]['Tcal']
+                sheet.cell(row=row_index, column=9).value = str(row['injection_time'])  # injection time
+                sheet.cell(row=row_index, column=10).value = row['diff_Tcal_injectionT']
+                sheet.cell(row=row_index, column=11).value = row['Activity_Tcal']
+
+                row_index += 1
+
+    batch_number = 0
+    for b in batches_general_data:
+        batch_number+=1
+        if not len(b)==0:
+            if batch_number==1:
+                col_num = 12
+            elif batch_number==2:
+                col_num = 13
+            else:
+                col_num = 14
+
+            sheet.cell(row=1, column=col_num).value = b['Tout']
+            # sheet.cell(row=3, column=col_num).value =  #number of hospitals
+            sheet.cell(row=4, column=col_num).value = b['Tcal']
+            sheet.cell(row=5, column=col_num).value = b['Teos']
+            sheet.cell(row=7, column=col_num).value = b['Activity']
+
+    sheet2 = wb['more info']
+    row_num=2
+    b=0
+    for hb in hospitals_output:
+        if hb['Batch']==1:
+            col_num = 1
+            if not b==1:
+                row_num=2
+                b=1
+        elif hb['Batch']==2:
+            col_num = 3
+            if not b==2:
+                row_num=2
+                b=2
+        else:
+            col_num = 5
+            if not b==3:
+                row_num=2
+                b=3
+        sheet2.cell(row=row_num, column=col_num).value =hb['delivery_order']
+        sheet2.cell(row=row_num, column=col_num+1).value = hb['Name']
+        row_num+=1
+
+    downloads_path = str(Path.home() / "Downloads") + '/'
+
+    wb_name = downloads_path + selected_material + 'workplan' + selected_date + '.xls'
+    wb.save(wb_name)
+    webbrowser.open(downloads_path)
+
+def final_sort_by_hospital(batches):
+    for b in batches:
+        if not len(b)==0:
+            b.sort(key=itemgetter('Name'))
+    return batches
+
+def flat_list(batches):
+    flat_list = []
+    batch_num=0
+    for b in batches:
+        batch_num+=1
+        if not len(b)==0:
+            for order in b:
+                order['batch'] = batch_num
+                flat_list.append(order)
+    return flat_list
+#end algorithm functions
 
 
 class Popup(Toplevel):
@@ -544,63 +828,63 @@ class Popup(Toplevel):
 
             self.destroy()
 
-    def export_WP_To_Excel(self,selected_date, selected_material, data):
-        # ordersQuery = """SELECT h.Name,h.Fixed_activity_level , o.injection_time,o.amount, m.materialName, o.Date
-        #                             FROM hospital h INNER JOIN orders o ON  h.idhospital=o.hospitalID INNER JOIN material m ON m.idmaterial=o.materialID
-        #                             where Date = '""" + selected_date + """' and m.materialName= '""" + selected_material + "' ORDER BY hospitalID, injection_time "
-        #
-        # cursor.execute(ordersQuery)
-        # data = cursor.fetchall()
-
-        FilePath = "FDG format.xlsx"
-
-        wb = load_workbook(FilePath)
-
-        sheet = wb.active
-        sheet = wb['work plan']
-
-        hospitals = []
-        row_index = 9
-        for order in data:
-            if order[0] not in hospitals:
-                grey = "c0c0c0"
-                col_start = 4
-                col_end = 16
-
-                sheet.cell(row=row_index, column=col_start).fill = PatternFill(start_color=grey, end_color=grey,
-                                                                               fill_type="solid")  # bg of buffer cell
-
-                merge_buffer = sheet.merge_cells(start_row=row_index, start_column=col_start, end_row=row_index,
-                                                 end_column=col_end)
-
-                i = 1
-                col_index = 3
-                row_index += 1
-                hospital_orders = [row[1:] for row in data if row[0] == order[0]]
-                end_row_to_merge = row_index + len(hospital_orders) - 1
-                hospital_name_cell = sheet.cell(row=row_index, column=col_index)
-                hospital_name_cell.value = order[0]  # insert hoapital name to the first col
-                merge_hospital_name_cells = sheet.merge_cells(start_row=row_index, start_column=col_index,
-                                                              end_row=end_row_to_merge, end_column=col_index)
-                hospitals.append(order[0])
-
-                for row in hospital_orders:
-                    DosemCi = row[0] * row[2]
-                    # sheet.cell(row=row_index, column=4).value = i  # serial number
-                    # sheet.cell(row=row_index, column=6).value = DosemCi
-                    # sheet.cell(row=row_index, column=11).value = str(row[1])  # injection time
-
-                    sheet.cell(row=row_index, column=4).value = i  # serial number
-                    sheet.cell(row=row_index, column=6).value = DosemCi
-                    sheet.cell(row=row_index, column=9).value = str(row[1])  # injection time
-                    i += 1
-                    row_index += 1
-                    downloads_path = str(Path.home() / "Downloads")
-        downloads_path = str(Path.home() / "Downloads") +'/'
-
-        wb_name = downloads_path+selected_material+ 'workplan'+ selected_date +'.xls'
-        wb.save(wb_name)
-        webbrowser.open(downloads_path)
+    # def export_WP_To_Excel(self,selected_date, selected_material, data):
+    #     # ordersQuery = """SELECT h.Name,h.Fixed_activity_level , o.injection_time,o.amount, m.materialName, o.Date
+    #     #                             FROM hospital h INNER JOIN orders o ON  h.idhospital=o.hospitalID INNER JOIN material m ON m.idmaterial=o.materialID
+    #     #                             where Date = '""" + selected_date + """' and m.materialName= '""" + selected_material + "' ORDER BY hospitalID, injection_time "
+    #     #
+    #     # cursor.execute(ordersQuery)
+    #     # data = cursor.fetchall()
+    #
+    #     FilePath = "FDG format.xlsx"
+    #
+    #     wb = load_workbook(FilePath)
+    #
+    #     sheet = wb.active
+    #     sheet = wb['work plan']
+    #
+    #     hospitals = []
+    #     row_index = 9
+    #     for order in data:
+    #         if order[0] not in hospitals:
+    #             grey = "c0c0c0"
+    #             col_start = 4
+    #             col_end = 16
+    #
+    #             sheet.cell(row=row_index, column=col_start).fill = PatternFill(start_color=grey, end_color=grey,
+    #                                                                            fill_type="solid")  # bg of buffer cell
+    #
+    #             merge_buffer = sheet.merge_cells(start_row=row_index, start_column=col_start, end_row=row_index,
+    #                                              end_column=col_end)
+    #
+    #             i = 1
+    #             col_index = 3
+    #             row_index += 1
+    #             hospital_orders = [row[1:] for row in data if row[0] == order[0]]
+    #             end_row_to_merge = row_index + len(hospital_orders) - 1
+    #             hospital_name_cell = sheet.cell(row=row_index, column=col_index)
+    #             hospital_name_cell.value = order[0]  # insert hoapital name to the first col
+    #             merge_hospital_name_cells = sheet.merge_cells(start_row=row_index, start_column=col_index,
+    #                                                           end_row=end_row_to_merge, end_column=col_index)
+    #             hospitals.append(order[0])
+    #
+    #             for row in hospital_orders:
+    #                 DosemCi = row[0] * row[2]
+    #                 # sheet.cell(row=row_index, column=4).value = i  # serial number
+    #                 # sheet.cell(row=row_index, column=6).value = DosemCi
+    #                 # sheet.cell(row=row_index, column=11).value = str(row[1])  # injection time
+    #
+    #                 sheet.cell(row=row_index, column=4).value = i  # serial number
+    #                 sheet.cell(row=row_index, column=6).value = DosemCi
+    #                 sheet.cell(row=row_index, column=9).value = str(row[1])  # injection time
+    #                 i += 1
+    #                 row_index += 1
+    #                 downloads_path = str(Path.home() / "Downloads")
+    #     downloads_path = str(Path.home() / "Downloads") +'/'
+    #
+    #     wb_name = downloads_path+selected_material+ 'workplan'+ selected_date +'.xls'
+    #     wb.save(wb_name)
+    #     webbrowser.open(downloads_path)
 
 
     def legal_wp(self,selected_material,selected_date,error_labels_list, data):
@@ -689,39 +973,104 @@ class Popup(Toplevel):
             cancel_button.place(x=save_button.winfo_reqwidth() + save_button_position_x + 10, y=save_button_position_y)
 
 
-    def create_wp_popup(self, rec_var_list,selected_date, selected_material, data, error_labels_list,OptionMenu):
-        #validation - selected recourcrs
-        legal = True
 
-        i=0
-        for rec in rec_var_list:
-            error_labels_list[i]['text'] =""
-            selected_rec = rec.get()
-            # if selected_rec[:8] == "Select a":
-            #     error_labels_list[i]
-            #     error_labels_list[i]['text'] = "Please select a resource"
-            #     legal = False
-            i+=1
+    def create_wp_popup(self,  selected_date, selected_material):
+        # def create_wp_popup(self, rec_var_list,selected_date, selected_material, data, error_labels_list,OptionMenu):
 
-        if not legal :
-            error_message('Please select a resources')
-            self.lift()
+        # #validation - selected recourcrs
+        # legal = True
+        #
+        # i=0
+        # for rec in rec_var_list:
+        #     error_labels_list[i]['text'] =""
+        #     selected_rec = rec.get()
+        #     # if selected_rec[:8] == "Select a":
+        #     #     error_labels_list[i]
+        #     #     error_labels_list[i]['text'] = "Please select a resource"
+        #     #     legal = False
+        #     i+=1
+        #
+        # if not legal :
+        #     error_message('Please select a resources')
+        #     self.lift()
+        #
+        # else:
+        #     selected_cyclotron =rec_var_list[0].get()
+        #     #excel
+        #     excelIcon = Image.open("excelIcon.png")
+        #     resizedExcelIcon = excelIcon.resize((40, 40), Image.ANTIALIAS)
+        #     imgExcel = ImageTk.PhotoImage(resizedExcelIcon)
+        #     ExcelButton = Button(self, image=imgExcel, borderwidth=0,
+        #                          command=lambda: self.export_WP_To_Excel(selected_date, selected_material, data))
+        #     # ExcelButton.pack(side=LEFT)
+        #     ExcelButton.place(x=70, y=90)
+        #
+        #     Label(self, text='Export to Excel File', font=('Helvetica 12'), fg='grey').place(
+        #         x=60 - ExcelButton.winfo_reqwidth() / 2, y=90 + ExcelButton.winfo_reqheight())
+        # root.mainloop()
 
-        else:
-            selected_cyclotron =rec_var_list[0].get()
-            #excel
-            excelIcon = Image.open("excelIcon.png")
-            resizedExcelIcon = excelIcon.resize((40, 40), Image.ANTIALIAS)
-            imgExcel = ImageTk.PhotoImage(resizedExcelIcon)
-            ExcelButton = Button(self, image=imgExcel, borderwidth=0,
-                                 command=lambda: self.export_WP_To_Excel(selected_date, selected_material, data))
-            # ExcelButton.pack(side=LEFT)
-            ExcelButton.place(x=70, y=90)
+        # algorithm
+        query = """SELECT h.Name,o.DoseNumber,h.Fixed_activity_level*o.amount as Fixed_activity_level, o.injection_time,o.amount,h.Transport_time_min,h.Transport_time_max
+                FROM hospital h INNER JOIN orders o ON  h.idhospital=o.hospitalID INNER JOIN material m ON m.idmaterial=o.materialID
+                where Date = '""" + str(selected_date) + """ ' and m.materialName= '""" +str(selected_material)+ """' ORDER BY injection_time """
+        # print(query)
+        # query = "SELECT Date FROM orders "
+        # cursor = db.cursor (db.cursors.DictCursor)
 
-            Label(self, text='Export to Excel File', font=('Helvetica 12'), fg='grey').place(
-                x=60 - ExcelButton.winfo_reqwidth() / 2, y=90 + ExcelButton.winfo_reqheight())
+        cursor = db.cursor(dictionary=True)
+        cursor.execute(query)
+        data = cursor.fetchall()
 
-            root.mainloop()
+        print('date: ', data)
+
+        batch1 = []
+        batch2 = []
+        batch3 = []
+        batch3_exist = True
+
+        for order in data:
+            order_time = datetime.strptime(str(order["injection_time"]), '%H:%M:%S').time()
+            if order_time < datetime.strptime('15:00:00', '%H:%M:%S').time():  # batch 1
+                batch1.append(order)
+
+            elif order_time < datetime.strptime('21:00:00', '%H:%M:%S').time():  # batch 2
+                batch2.append(order)
+            else:  # batch 3
+                batch3.append(order)
+
+        dict_batch1_general = {}
+        dict_batch2_general = {}
+        dict_batch3_general = {}
+        batches_general_data = [dict_batch1_general, dict_batch2_general, dict_batch3_general]
+        batches = [batch1, batch2, batch3]
+
+
+        hospitals_output = []  # for output
+        main_algorithm_calculation(batches, hospitals_output, batches_general_data)
+        hospitals_output.sort(key=lambda hb:(hb['Batch'],hb['delivery_order']))
+        print("batches: ",batches)
+        print("hospitals_output: ",hospitals_output)
+        print("batches_general_data: ",batches_general_data)
+        all_batches_output = flat_list(batches)
+        all_batches_output.sort(key=itemgetter('Name'))
+
+        # print(all_batches_output)
+
+        #excel
+        excelIcon = Image.open("excelIcon.png")
+        resizedExcelIcon = excelIcon.resize((40, 40), Image.ANTIALIAS)
+        imgExcel = ImageTk.PhotoImage(resizedExcelIcon)
+        # ExcelButton = Button(self, image=imgExcel, borderwidth=0,
+        #                      command=lambda: self.export_WP_To_Excel(selected_date, selected_material, data))
+        ExcelButton = Button(self, image=imgExcel, borderwidth=0,
+                             command=lambda: export_WP_Excel(selected_material,selected_date,all_batches_output,hospitals_output,batches_general_data))
+        # ExcelButton.pack(side=LEFT)
+        ExcelButton.place(x=70, y=90)
+
+        Label(self, text='Export to Excel File', font=('Helvetica 12'), fg='grey').place(
+            x=60 - ExcelButton.winfo_reqwidth() / 2, y=90 + ExcelButton.winfo_reqheight())
+
+        root.mainloop()
 
 
     def wp_validation_plus(self,material_var,cal,error_labels_list):
@@ -748,7 +1097,9 @@ class Popup(Toplevel):
             select_rec = Popup()
             title = 'Work Plan - ' + selected_material + ' ' + selected_date
             select_rec.open_pop(title, popup_size)
-            select_rec.select_resources(selected_date, selected_material, data)
+            # select_rec.select_resources(selected_date, selected_material, data)
+
+            select_rec.create_wp_popup(selected_date, selected_material)
 
 
     def add_wp_popup(self):
