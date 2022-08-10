@@ -844,22 +844,23 @@ def PopUpForNewOrder():
 
 
     def MaterialsSelectedeNewOrder(MaterialSelectedEvent):
+        global ChoosenMaretrialIDNewOrderManual;
         """Function for create Material Drop-Down menu -absorb data from DB"""
         ChoosenMaterialNewOrder=MaterialsSelectedNeworder.get();
         print(ChoosenMaterialNewOrder);
         temp_Var_=list(ChoosenMaterialNewOrder);
-        ListofVal[7]=ChoosenMaretrialIDNewOrderManual=int(temp_Var_[0])
-        #print(ListofVal[7])
+        ListofVal[7]=ChoosenMaretrialIDNewOrderManual=int(temp_Var_[0]);
+        print(ListofVal[7]);
 
 
     MaterialsSelectedNeworder = ttk.Combobox(NewOrderMainPage,state="readonly",value=Material_in_db1,width=9);
     MaterialsSelectedNeworder.current(0);
 
-    MaterialsSelectedNeworder.bind("<<ComboboxSelected>>",MaterialsSelectedeNewOrder)
+    MaterialsSelectedNeworder.bind("<<ComboboxSelected>>",MaterialsSelectedeNewOrder);
+
     MaterialsSelectedNeworder.pack();
     MaterialsSelectedNeworder.place(x=400, y=330);
-
-    global OrderID,idCounter,amount;
+    global OrderID,idCounter,amount,ChoosenMaretrialIDNewOrderManual;
     OrderID=0;
     # declaring string variable for storing time interval
     TimeIntervals=tk.StringVar(NewOrderMainPage);
@@ -870,8 +871,9 @@ def PopUpForNewOrder():
 
     # declaring string variable for storing amount
     ListofVal=["","","","","","","",""];
+
     ListofTimeIntervals=[];
-    #Get Time varibles avent,hous and minutes
+
 
     def submitToNextPage():
         global amount;
@@ -893,6 +895,34 @@ def PopUpForNewOrder():
         Hours_Var=HoursClockedSelected.get();
 
         #message box if not try to click next if inputs are empty-Input check
+        #Check input material
+        # try:
+        #     ChoosenMaretrialIDNewOrderManual;
+        # except NameError:
+        #     MatrerialInputCheckMsg=Label(NewOrderMainPage, text="Please choose Material ",fg="red", font=('Helvetica 12'));
+        #     MatrerialInputCheckMsg.pack();
+        #     MatrerialInputCheckMsg.place(x=400,y=360);
+        #     root.after(5000, destroy_widget, MatrerialInputCheckMsg) ##Clear label after 5 secondes
+        # else:
+        #     print(ChoosenMaretrialIDNewOrderManual);
+        try:
+            if ChoosenMaretrialIDNewOrderManual in globals():
+                MaterialInputCheckMsg=Label(NewOrderMainPage, text="Please  choose Material ",fg="red", font=('Helvetica 12'));
+                MaterialInputCheckMsg.pack();
+                MaterialInputCheckMsg.place(x=400,y=360);
+                print("bla bla")
+                root.after(5000, destroy_widget, MaterialInputCheckMsg);#Clear label after 5 secondes
+            else:
+                print(ChoosenMaretrialIDNewOrderManual);
+
+        except NameError:
+            MatrerialInputCheckMsg=Label(NewOrderMainPage, text="Please choose Material ",fg="red", font=('Helvetica 12'));
+            MatrerialInputCheckMsg.pack();
+            MatrerialInputCheckMsg.place(x=400,y=360);
+            root.after(5000, destroy_widget, MatrerialInputCheckMsg) ##Clear label after 5 secondes
+        else:
+            print(ChoosenMaretrialIDNewOrderManual);
+
         try:
             ChoosenDateForManaulOrder;
         except NameError:
@@ -967,6 +997,7 @@ def PopUpForNewOrder():
         ListofVal[4]=IntAmount;
         ListofVal[5]=hospitalId;
         ListofVal[6]=int(Time_Intervals);
+
 
 
         for record in range(int(IntAmount)):
@@ -1119,7 +1150,11 @@ def PopUpForNewOrder():
 
 
     def enterToDB():#Function to insert data into My-SQL Db
-        MsgBox = tk.messagebox.askquestion ('Info message','Do you wish to proceed? every changed will be saved in the DB',icon = 'warning')
+        # ordersFrame.forget();
+        # toolbar.forget();
+        #ordersFrame.wm_state('iconic');#minimize orders main page
+
+        MsgBox = messagebox.askquestion ('Info message','Do you wish to proceed? every changed will be saved in the DB',icon = 'warning')
         if MsgBox == 'yes':
             # ValuseDic = {
             #        'idorders': 4,
@@ -1130,7 +1165,15 @@ def PopUpForNewOrder():
             #        'batchID': 7,
             #        'DecayCorrected': 7 }  ;
 
-            NewOrderTree_P2.state(('!disabled',));#Enable tree items
+            #Check if all input was enterd
+            if (ListofVal[7]!='') and (ListofVal[6]!='') and (ListofVal[5]!='') and (ListofVal[4]!='') and (ListofVal[3]!='') and (ListofVal[2]!='') and (ListofVal[1]!='') and (ListofVal[0]!=''):
+                NewOrderTree_P2.state(('!disabled',));#Enable tree items
+            else:
+                NewOrderTree_P2.state(('disabled',));#Disable tree items
+                messagebox.showerror("Error message","Error ! one of the records not filled,please fill order again");
+                root.destroy();#close New order page 2
+                PopUpForNewOrder();#return to New order page
+
 
             if (Stage1forNewOrderBut['state'] == NORMAL):
                 SaveOrderbutton['state'] = NORMAL;
@@ -1149,7 +1192,7 @@ def PopUpForNewOrder():
                     print("DB updated successfully ");
                 except Exception as e:
                     logging.error(traceback.format_exc());
-                    #messagebox.showerror("Error message","Error !");
+                    messagebox.showerror("Error message","Error !");
                     print("Error-Order was not updated-please check MySQL")
 
             #destroyNewOrderFunc();
@@ -1159,7 +1202,7 @@ def PopUpForNewOrder():
             #Close connection to DB
             #db.close()
         else:
-            tk.messagebox.showinfo('Return','You will now return to the application screen');
+            messagebox.showinfo('Return','You will now return to the application screen');
             NewOrdersecondaryPage.destroy();#close New order page 2
             PopUpForNewOrder();#return to New order page
 
