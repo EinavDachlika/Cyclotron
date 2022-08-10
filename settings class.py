@@ -282,6 +282,7 @@ def recursion_for_tout(hospital_data,hospitals_output):
     min_to_add = 0
     add_to_tout = timedelta(minutes=min_to_add)
     first_tout = hospital_data[0]["tout_required"]
+    # print('hospital_data(recursion_for_tout): ',hospital_data)
     for h in hospital_data:
         if h["delivery_order"] == 2:  # secound is will be after QC1 - needed 5 min more
             min_to_add += 5
@@ -291,6 +292,7 @@ def recursion_for_tout(hospital_data,hospitals_output):
         if Tout_actually > h["tout_required"]:
             if  h["delivery_order"]>1:
                 h["delivery_order"]=h["delivery_order"]-1
+
                 recursion_for_tout(hospital_data)
             else: #change eos req
                 diff = Tout_actually - h["tout_required"]
@@ -301,7 +303,7 @@ def recursion_for_tout(hospital_data,hospitals_output):
         min_to_add += 5
         add_to_tout = timedelta(minutes=min_to_add)
 
-        hospital_record = next(hospital for hospital in hospitals_output if hospital["Name"] == h['hospital_name'])
+        hospital_record = next(hospital for hospital in hospitals_output if hospital["Name"] == h['hospital_name'] and hospital['Batch'] == h['batch'] )
         hospital_record['delivery_order'] = h["delivery_order"]
 
 def main_algorithm_calculation(batches,hospitals_output,batches_general_data):
@@ -325,11 +327,11 @@ def main_algorithm_calculation(batches,hospitals_output,batches_general_data):
 
                     if index != 1:  #condition for choosing Transport_time (min/max) - according to number of batch
                         tout_temp = order['injection_time'] - timedelta(minutes=(order['Transport_time_max'])) #T1-Transport_time
-                        hospital_data.append({'hospital_name':hospital_name, "injection_time": order['injection_time'], "Transport_time": order['Transport_time_max'], "tout_required": tout_temp})
+                        hospital_data.append({'hospital_name':hospital_name,'batch':index+1, "injection_time": order['injection_time'], "Transport_time": order['Transport_time_max'], "tout_required": tout_temp})
 
                     else:
                         tout_temp = order['injection_time'] - timedelta(minutes=(order['Transport_time_min'])) #T1-Transport_time
-                        hospital_data.append({'hospital_name':hospital_name, "injection_time": order['injection_time'], "Transport_time": order['Transport_time_min'], "tout_required": tout_temp})
+                        hospital_data.append({'hospital_name':hospital_name,'batch':index+1, "injection_time": order['injection_time'], "Transport_time": order['Transport_time_min'], "tout_required": tout_temp})
 
             hospital_data.sort( key=sortByTout) #sort hospital_data by tout_temp
 
@@ -389,7 +391,7 @@ def main_algorithm_calculation(batches,hospitals_output,batches_general_data):
 
                 if batches_general_data[index]["Activity"] + A_Tcal >= max_activity_batch:
                     batches[index+1].append(order)
-                    main_algorithm_calculation()
+                    main_algorithm_calculation(batches,hospitals_output,batches_general_data)
 
                 else:
                     # try:
@@ -436,8 +438,7 @@ def export_WP_Excel( selected_material, selected_date, all_batches_output, hospi
             sheet.merge_cells(start_row=row_index, start_column=col_s,
                               end_row=row_index, end_column=col_e)
 
-
-
+            #hospital name on the left side
             col_index = 3
             row_index += 1
             hospital_orders = [row for row in all_batches_output if row['Name'] == order['Name']]
@@ -448,6 +449,18 @@ def export_WP_Excel( selected_material, selected_date, all_batches_output, hospi
             hospital_name_cell.value = order['Name'] # insert hoapital name to the first col
             merge_hospital_name_cells = sheet.merge_cells(start_row=row_index, start_column=col_index,
                                                           end_row=end_row_to_merge, end_column=col_index)
+            #sum activity of hospital for each batch
+            hospital_output_data = [h for h in hospitals_output if h["Name"] == order["Name"] ]
+            for h_b in hospital_output_data:
+                if h_b["Batch"]==1:
+                    sheet.cell(row=row_index, column=12).value = h_b['Activity']
+                    sheet.cell(row=row_index, column=12).font = Font(size=60,bold=True)
+                elif h_b["Batch"]==2:
+                    sheet.cell(row=row_index, column=13).value = h_b['Activity']
+                    sheet.cell(row=row_index, column=13).font = Font(size=60,bold=True)
+                else:
+                    sheet.cell(row=row_index, column=14).value = h_b['Activity']
+                    sheet.cell(row=row_index, column=14).font = Font(size=60,bold=True)
 
             for row in hospital_orders:
                 DosemCi = row['Fixed_activity_level']
@@ -462,10 +475,10 @@ def export_WP_Excel( selected_material, selected_date, all_batches_output, hospi
                 sheet.cell(row=row_index, column=11).value = row['Activity_Tcal']
 
                 row_index += 1
+
     batch_number = 0
     for b in batches_general_data:
         batch_number+=1
-
         if not len(b)==0:
             if batch_number==1:
                 col_num = 12
@@ -480,8 +493,28 @@ def export_WP_Excel( selected_material, selected_date, all_batches_output, hospi
             sheet.cell(row=5, column=col_num).value = b['Teos']
             sheet.cell(row=7, column=col_num).value = b['Activity']
 
-
-
+    sheet2 = wb['more info']
+    row_num=2
+    b=0
+    for hb in hospitals_output:
+        if hb['Batch']==1:
+            col_num = 1
+            if not b==1:
+                row_num=2
+                b=1
+        elif hb['Batch']==2:
+            col_num = 3
+            if not b==2:
+                row_num=2
+                b=2
+        else:
+            col_num = 5
+            if not b==3:
+                row_num=2
+                b=3
+        sheet2.cell(row=row_num, column=col_num).value =hb['delivery_order']
+        sheet2.cell(row=row_num, column=col_num+1).value = hb['Name']
+        row_num+=1
 
     downloads_path = str(Path.home() / "Downloads") + '/'
 
@@ -1014,18 +1047,14 @@ class Popup(Toplevel):
 
         hospitals_output = []  # for output
         main_algorithm_calculation(batches, hospitals_output, batches_general_data)
+        hospitals_output.sort(key=lambda hb:(hb['Batch'],hb['delivery_order']))
         print("batches: ",batches)
         print("hospitals_output: ",hospitals_output)
         print("batches_general_data: ",batches_general_data)
         all_batches_output = flat_list(batches)
         all_batches_output.sort(key=itemgetter('Name'))
 
-        print(all_batches_output)
-        # for i in all_data:
-        #     print(i['Name'],' ', i['injection_time'])
-        # sorted_batches = final_sort_by_hospital(batches)
-        #
-        # print("sorted_batches: ", sorted_batches)
+        # print(all_batches_output)
 
         #excel
         excelIcon = Image.open("excelIcon.png")
