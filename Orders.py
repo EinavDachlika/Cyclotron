@@ -733,6 +733,11 @@ def importFileFunc():
 # edit_button.place(x=450, y=50)
 # edit_button.pack(side=LEFT, padx=PlaceLable_X+100, pady=PlaceLable_Y+50)
 
+#clear/delete Edit page tree-all records
+# def disabledTree():
+#     #"""Initialization-clear/Delete all the records"""
+#     for child in NewOrderTree_P2.winfo_children():
+#         child.configure(state='disable')
 
 ############################new order page###################################################
 
@@ -872,13 +877,14 @@ def PopUpForNewOrder():
         global amount;
         global hospitalId;
         global OrderID;
-
+        #disabledTree();
         #Initialization-clear/Delete all the records
         for rawselected in NewOrderTree_P2.get_children():
             NewOrderTree_P2.delete(rawselected);
 
         def destroy_widget(widget):
             widget.destroy()
+
 
         #Get event values-events
         Time_Intervals=TimerangeLabelEntry.get();
@@ -977,6 +983,7 @@ def PopUpForNewOrder():
         HoursVar.set("");
         print(ListofTimeIntervals);
 
+        NewOrderTree_P2.state(('disabled',));#Disabled/gray-out new order tree
         #swap function for viewing New order page,frame 2,after pressing "next" """
         NewOrderMainPage.forget();
         NewOrdersecondaryPage.pack(fill='both',expand=1);
@@ -1112,41 +1119,50 @@ def PopUpForNewOrder():
 
 
     def enterToDB():#Function to insert data into My-SQL Db
-        # ValuseDic = {
-        #        'idorders': 4,
-        #        'Date': '2002-03-92',
-        #        'injection_time': '11:20:11',
-        #        'amount': 7,
-        #        'hospitalID': 7,
-        #        'batchID': 7,
-        #        'DecayCorrected': 7 }  ;
+        MsgBox = tk.messagebox.askquestion ('Info message','Do you wish to proceed? every changed will be saved in the DB',icon = 'warning')
+        if MsgBox == 'yes':
+            # ValuseDic = {
+            #        'idorders': 4,
+            #        'Date': '2002-03-92',
+            #        'injection_time': '11:20:11',
+            #        'amount': 7,
+            #        'hospitalID': 7,
+            #        'batchID': 7,
+            #        'DecayCorrected': 7 }  ;
 
-        if (Stage1forNewOrderBut['state'] == NORMAL):
-            SaveOrderbutton['state'] = NORMAL;
-            CancelButtonPagenumber2NewORder['state']=DISABLED;
-            Stage1forNewOrderBut['state']=DISABLED;
+            NewOrderTree_P2.state(('!disabled',));#Enable tree items
+
+            if (Stage1forNewOrderBut['state'] == NORMAL):
+                SaveOrderbutton['state'] = NORMAL;
+                CancelButtonPagenumber2NewORder['state']=DISABLED;
+                Stage1forNewOrderBut['state']=DISABLED;
+            else:
+                SaveOrderbutton['state'] = DISABLED;
+
+            cursor = db.cursor(buffered=True);
+            for i in range(1,ListofVal[4]+1):
+                ValuseTuple=(i, ChoosenDateForManaulOrder, ListofTimeIntervals[i-1], ListofVal[1], ListofVal[5],ListofVal[7], 0, 0);
+                #print("order trying to get in DB-Add pressed");
+                try:
+                    UpdateSQlQuery="INSERT INTO orders (DoseNumber,Date,injection_time,amount,hospitalID,materialID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);";
+                    cursor.execute(UpdateSQlQuery,ValuseTuple);
+                    print("DB updated successfully ");
+                except Exception as e:
+                    logging.error(traceback.format_exc());
+                    #messagebox.showerror("Error message","Error !");
+                    print("Error-Order was not updated-please check MySQL")
+
+            #destroyNewOrderFunc();
+            #Commit changes in DB
+            db.commit()
+            cursor.close()
+            #Close connection to DB
+            #db.close()
         else:
-            SaveOrderbutton['state'] = DISABLED;
+            tk.messagebox.showinfo('Return','You will now return to the application screen');
+            NewOrdersecondaryPage.destroy();#close New order page 2
+            PopUpForNewOrder();#return to New order page
 
-        cursor = db.cursor(buffered=True);
-        for i in range(1,ListofVal[4]+1):
-            ValuseTuple=(i, ChoosenDateForManaulOrder, ListofTimeIntervals[i-1], ListofVal[1], ListofVal[5],ListofVal[7], 0, 0);
-            #print("order trying to get in DB-Add pressed");
-            try:
-                UpdateSQlQuery="INSERT INTO orders (DoseNumber,Date,injection_time,amount,hospitalID,materialID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);";
-                cursor.execute(UpdateSQlQuery,ValuseTuple);
-                print("DB updated successfully ");
-            except Exception as e:
-                logging.error(traceback.format_exc());
-                #messagebox.showerror("Error message","Error !");
-                print("Error-Order was not updated-please check MySQL")
-
-        #destroyNewOrderFunc();
-        #Commit changes in DB
-        db.commit()
-        cursor.close()
-        #Close connection to DB
-        #db.close()
 
 
 
