@@ -76,7 +76,7 @@ toolbarbgcolor = "white"
 toolbar = Frame(root, bg=toolbarbgcolor)
 toolbar.grid(sticky='nesw')
 
-# add logo - toolbar
+# logo - toolbar
 LogoImagePath = Image.open("LogoImage.png")
 LogoImageResize = LogoImagePath.resize((120, 57),Image.ANTIALIAS)
 LogoImage = ImageTk.PhotoImage(LogoImageResize)
@@ -89,6 +89,10 @@ workPlanButton.pack(side=LEFT,padx=10,pady=3)
 
 # Orders button - toolbar
 ordersButton = Button (toolbar, text="Orders", font='Helvetica 11')
+ordersButton.pack(side=LEFT,padx=10,pady=3)
+
+# Batches button - toolbar
+ordersButton = Button (toolbar, text="Batches", font='Helvetica 11')
 ordersButton.pack(side=LEFT,padx=10,pady=3)
 
 
@@ -157,7 +161,8 @@ toolbar.grid_columnconfigure(1, weight=1)
 dict_input_column = { 'hospital':('Name', 'Fixed_activity_level', 'Transport_time_min', 'Transport_time_max') ,
                        'resourcecyclotron':('version', 'capacity', 'constant_efficiency', 'description') ,
                       'resourcemodule': ('version', 'capacity', 'description' ) ,
-                      'material':('materialName')}
+                      'material':('materialName'),
+                      'batch': ('TargetCurrentLB','DecayCorrected_TTA' , 'EOS_activity')}
 
 #Einav
 query_index_col = """select 
@@ -408,7 +413,6 @@ class Popup(Toplevel):
 
 
     def save_cancel_button(self, save_title,on_click_save_fun, *args):
-
         save_button = Button(self, text=save_title,
                                command=lambda: on_click_save_fun(*args))
 
@@ -458,10 +462,26 @@ class Popup(Toplevel):
 
         # grab record values
 
-        # temp_label.config(text=selected)
+        # prevented 'Date', 'Batch Number','Material' show as entry box
+        if args[len(args) - 1] == 'batch' :
+            label_text = valueList [2] + '  -  Batch Number: '+ valueList[1] + '  -  '+ valueList[0]
+            p_label = Label(self, text=label_text, font=('Helvetica 14 bold underline'))
+            p_label.grid(row=row_num, column=1)
+            p_label.place(x=p_last_label_x, y=p_last_label_y)
+            valueList=valueList[3:]
+            p_last_label_y += 18*3
+            p_last_label_x+=10
+
+
+
+
         entries = []
         error_labels_list=[]
         for lab in labels:
+            # if args[len(args)-1] == 'batch' and lab[0] in  ('Date', 'Batch Number','Material'):
+            #     p_last_label_y += 18
+            #     continue
+
             p_label = Label(self, text=lab[0])
             p_label.grid(row=row_num, column=1)
             p_label.place(x=p_last_label_x, y=p_last_label_y)
@@ -483,7 +503,7 @@ class Popup(Toplevel):
                 font = ("Courier", 9)
                 p_label_units.config(font=("Courier", 9))
                 p_label_units_x = p_last_label_x + p_label.winfo_reqwidth()
-                p_label_units.place(x=p_label_units_x, y=p_last_label_y + 7)
+                p_label_units.place(x=p_label_units_x, y=p_last_label_y + 5)
 
             # p_last_label_y += entry_box.winfo_reqheight() + 35 + p_label.winfo_reqheight()
             # row_num += 1
@@ -492,7 +512,7 @@ class Popup(Toplevel):
 
             # error labels
             error_label = Label(self, text='', font=('Courier', 8), fg='red')
-            error_label.place(x=p_last_label_x + 1, y=p_last_label_y)
+            error_label.place(x=p_last_label_x + 1, y=p_last_label_y+6)
             error_labels_list.append(error_label)
             row_num += 1
 
@@ -769,7 +789,7 @@ class Popup(Toplevel):
 
             # error labels
             error_label = Label(self, text='', font=('Courier', 8), fg='red')
-            error_label.place(x=p_last_label_x + 1, y=p_last_label_y)
+            error_label.place(x=p_last_label_x + 1, y=p_last_label_y+1)
             error_labels_list.append(error_label)
             row_num += 1
 
@@ -833,13 +853,13 @@ class Popup(Toplevel):
                 font = ("Courier", 9)
                 p_label_units.config(font=("Courier", 9))
                 p_label_units_x = p_last_label_x + p_label.winfo_reqwidth()
-                p_label_units.place(x=p_label_units_x, y=p_last_label_y + 7)
+                p_label_units.place(x=p_label_units_x, y=p_last_label_y + 5)
 
             p_last_label_y += entry_box.winfo_reqheight()  + p_label.winfo_reqheight()
 
             #error labels
             error_label = Label(self, text='', font=('Courier',8),fg='red' )
-            error_label.place(x=p_last_label_x+1, y=p_last_label_y)
+            error_label.place(x=p_last_label_x+1, y=p_last_label_y+6)
             error_labels_list.append(error_label)
             row_num += 1
 
@@ -1423,7 +1443,7 @@ WorkPlanFrame.pack(fill=X)
 
 ##################### Work Plan #####################
 # Work Plan Details label
-WorkPlanLabel = Label(WorkPlanFrame, text = 'Work Plan', font=sub_label_font,fg=label_color)
+WorkPlanLabel = Label(WorkPlanFrame, text = 'Work Plans', font=sub_label_font,fg=label_color)
 Lable_place_x=80
 Lable_place_y=60
 
@@ -1504,9 +1524,82 @@ addWPButton.place(x=table_place_x+160, y=table_place_y+14)
 # deleteWPButton.pack(side=LEFT)
 # deleteWPButton.place(x=table_place_x + 500, y=table_place_y + 15)
 
+################### batches #################
+#################### batch Page #####################
+#batch frame
+batchFrame = Frame(root)
+# h = Scrollbar(batchFrame, orient='horizontal')
+batchFrame.pack(fill=X)
+
+# batch Details label
+BatchLabel = Label(batchFrame, text = 'Batches', font=sub_label_font,fg=label_color)
+Lable_place_x=80
+Lable_place_y=60
+
+BatchLabel.pack(side=LEFT)
+BatchLabel.place(x=Lable_place_x,y=Lable_place_y)
+
+#batches table
+scroll_width=20
+tab_side=LEFT
+x=650
+y= 160
+frame=batchFrame
+list_height=30
+c = 80
+
+lable_place_x = 80
+lable_place_y=70
+
+columns_name_list=('  Date  ', 'Batch Number','Material','TargetCurrentLB ', 'DecayCorrected_TTA (mci)', 'EOS_activity')
+
+batch_query="""SELECT  b.idbatch , wp.Date ,b.batchNumber, m.materialName, b.TargetCurrentLB ,b.DecayCorrected_TTA, b.EOS_activity 
+                FROM batch b 
+                JOIN workplan wp ON wp.idworkplan = b.workplanID 
+                JOIN material m ON m.idmaterial = wp.materialID"""
+
+batch_tabel=table(frame,scroll_width,list_height,tab_side,x,y,lable_place_x,
+                     lable_place_y)
+batch_tabel.create_fully_tabel( columns_name_list, batch_query)
+
+batchFrame.pack(fill='both',expand=1)
+
+###batch functions###
+def editBatchfun():
+    selected_rec = batch_tabel.selected()
+    selected_non = batch_tabel.selected_is_non(selected_rec)
+    if not selected_non:
+        editBatchPopup = Popup()
+        # popup_size = "800x450"
+        popup_size = "900x550"
+        editBatchPopup.open_pop('Edit Batch Details',popup_size)
+        table_name= 'batch'
+        query = "UPDATE batch SET TargetCurrentLB = %s ,DecayCorrected_TTA= %s, EOS_activity=%s  WHERE idbatch = %s"
+
+        pk = selected_rec[6]
+
+        labels = (('TargetCurrentLB', ''), ('DecayCorrected_TTA', '(mci/h)'),  ('EOS_activity', ''))
+        save_title = "Save Changes"
+
+        # def edit_popup(self, labels, valueList, save_title, *args, table_name):
+        editBatchPopup.edit_popup(labels, selected_rec, save_title, query, pk, batch_tabel,table_name)
+
+#batch buttons
+
+#Create a button in the main Window to edit  record (open the popup) - hospital
+batchEditIcon = Image.open("editIcon.jpg")
+resizedBatchEditIcon = batchEditIcon.resize((20, 20), Image.ANTIALIAS)
+imgEditBatch = ImageTk.PhotoImage(resizedBatchEditIcon)
+editBatchButton = Button(batchFrame, image=imgEditBatch, borderwidth=0, command= lambda :editBatchfun())
+
+editBatchButton.pack(side= LEFT)
+editBatchButton.place(x=lable_place_x + batch_tabel.winfo_reqwidth() - 50, y=lable_place_y+15)
+
 
 cycloSettingsFrame.forget()
 moduleSettingsFrame.forget()
 hospitalFrame.forget()
+WorkPlanFrame.forget()
+batchFrame.forget()
 
 root.mainloop()

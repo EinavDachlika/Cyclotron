@@ -233,10 +233,10 @@ date= date(2022,8,2)
 
 #algorithm
 
-query = """SELECT h.Name,h.Fixed_activity_level , o.injection_time,o.amount, m.materialName,h.Transport_time_min,h.Transport_time_max
+query = """SELECT h.Name,h.Fixed_activity_level*o.amount as Fixed_activity_level, o.injection_time,o.amount, m.materialName,h.Transport_time_min,h.Transport_time_max
         FROM hospital h INNER JOIN orders o ON  h.idhospital=o.hospitalID INNER JOIN material m ON m.idmaterial=o.materialID
         where Date = '""" + str(date)+""" ' and o.materialID=1
-        ORDER BY hospitalID, injection_time """
+        ORDER BY injection_time """
 # print(query)
 # query = "SELECT Date FROM orders "
 # cursor = db.cursor (db.cursors.DictCursor)
@@ -245,7 +245,7 @@ cursor = db.cursor(dictionary=True)
 cursor.execute(query)
 data = cursor.fetchall()
 
-print(data)
+print('date: ', data)
 
 lamda =  ln(2)/109.6
 
@@ -254,6 +254,7 @@ batch1 = []
 batch2 = []
 batch3 = []
 batch3_exist=True
+
 
 for order in data:
     order_time = datetime.strptime(str(order["injection_time"]), '%H:%M:%S').time()
@@ -272,13 +273,13 @@ dict_batch3_general = {}
 batches_general_data = [dict_batch1_general, dict_batch2_general, dict_batch3_general]
 batches =[batch1, batch2, batch3]
 
-max_activity_batch = 7000
+max_activity_batch = 7300
 
-hospital_activity_output = [] #for output
-# len_batches = len(batches)
+hospitals_output = [] #for output
+
 # hospital_activity = [{}]
 
-
+# len_batches = len(batches)
 # #save empty batches index for removing
 # for i  in range(0,len_batches):
 #     if len(batches[i])==0:
@@ -290,155 +291,208 @@ hospital_activity_output = [] #for output
 #     batches.remove(batches[index-i])
 #     del batches_general_data[index-i]
 #     i += 1  # removing batch change the index
+
 def sortBy(hospital):
     i = len(hospital) - 1 #last last item in the list
     return hospital[i]
 
-for b in batches: #calculate T1,Tout, Tcal,Teos
-    if not len(b)==0:
-        index = batches.index(b)
+def sortByTout(hospital):
+    return hospital["tout_required"]
 
-        # T1 - first injection time in batch
-        t1_b = b[0]["injection_time"] #first injection time
-        T1_key = "T1"
-        batches_general_data[index][T1_key] = t1_b
+def sortByTeos(hospital):
+    return hospital["eos_req"]
 
-        hospitals=[]
-        firts_injectionT_for_hospital = []
-        hospital_data =[]
-        # number of bottles in a batch
-        for order in b:
-            hospital_name=order['Name']
-            if hospital_name not in hospitals: # order[1] = hospital name in order
-                hospitals.append(hospital_name)
-                hospital_activity_output.append({'Name':hospital_name,"Activity":0,'Batch':index+1})
+def change_eos_for_tout(hospital_data, diff):
+    Subtract_from_eos = timedelta(minutes=diff)
+    last_eos = hospital_data[0]["eos_req"]
+    update_eos = last_eos - Subtract_from_eos
+    hospital_data[0]["eos_req"] = update_eos
 
-                if index != 1:  #condition for choosing Transport_time (min/max) - according to number of batch
-                    tout_temp = order['injection_time'] - timedelta(minutes=(order['Transport_time_max']))
-                    hospital_data.append([hospital_name, order['injection_time'], order['Transport_time_max'], tout_temp])
-                else:
-                    tout_temp = order['injection_time'] - timedelta(minutes=(order['Transport_time_min']))
-                    hospital_data.append([hospital_name, order['injection_time'], order['Transport_time_min'], tout_temp])
+    recursion_for_tout(hospital_data)
 
-        hospital_data.sort( key=sortBy)
-        #insert Tout
-        Tout_key = "Tout"
-        i = len(hospital_data[0]) - 1   #last index in the list (Tout_req)
-        t_out_final = hospital_data[0][i]   # first tout_temp
-        batches_general_data[index][Tout_key] = t_out_final
+def recursion_for_tout(hospital_data,hospitals_output):
+    min_to_add = 0
+    add_to_tout = timedelta(minutes=min_to_add)
+    first_tout = hospital_data[0]["tout_required"]
+    for h in hospital_data:
+        if h["delivery_order"] == 2:  # secound is will be after QC1 - needed 5 min more
+            min_to_add += 5
+            add_to_tout = timedelta(minutes=min_to_add)
 
-        #insert Tcal - new module
-        Tcal_key = "Tcal"
-        minutes_for_Tcal_cal = timedelta(minutes=30)
-        t_cal = t_out_final + minutes_for_Tcal_cal
-        batches_general_data[index][Tcal_key] = t_cal
+        Tout_actually = first_tout + add_to_tout
+        if Tout_actually > h["tout_required"]:
+            if  h["delivery_order"]>1:
+                h["delivery_order"]=h["delivery_order"]-1
+                recursion_for_tout(hospital_data)
+            else: #change eos req
+                diff = Tout_actually - h["tout_required"]
+                change_eos_for_tout(hospital_data, diff)
 
+        h["Tout_actually"] = Tout_actually
+        min_to_add += 5
+        add_to_tout = timedelta(minutes=min_to_add)
 
-        interval_5 = 5
-        minutes_for_eos_cal = timedelta(minutes=interval_5)
-        for h in hospital_data:
-            eos_req = h[3] - minutes_for_eos_cal
-            h.append(eos_req)
-            interval_5+=5
+        hospital_record = next(hospital for hospital in hospitals_output if hospital["Name"] == h['hospital_name'])
+        hospital_record['delivery_order'] = h["delivery_order"]
+
+    # return hospital_data
+def main_algorithm_calculation():
+
+    for b in batches: #calculate T1,Tout, Tcal,Teos, delivery_order, activity
+        if not len(b)==0:
+            index = batches.index(b)
+
+            hospitals=[]
+
+            hospital_data =[]
+            for order in b:
+                hospital_name=order['Name']
+                if hospital_name not in hospitals: # order[1] = hospital name in order
+                    hospitals.append(hospital_name)
+
+                    #add hospital record to hospitals_output list
+                    try:
+                        hospital = next(h for h in hospitals_output if h["Name"] == order["Name"] and h["Batch"]==index+1)
+                    except:
+                        hospitals_output.append({"Name":order["Name"],"Activity":0,'Batch':index+1 })
+
+                    if index != 1:  #condition for choosing Transport_time (min/max) - according to number of batch
+                        tout_temp = order['injection_time'] - timedelta(minutes=(order['Transport_time_max'])) #T1-Transport_time
+                        hospital_data.append({'hospital_name':hospital_name, "injection_time": order['injection_time'], "Transport_time": order['Transport_time_max'], "tout_required": tout_temp})
+
+                    else:
+                        tout_temp = order['injection_time'] - timedelta(minutes=(order['Transport_time_min'])) #T1-Transport_time
+                        hospital_data.append({'hospital_name':hospital_name, "injection_time": order['injection_time'], "Transport_time": order['Transport_time_min'], "tout_required": tout_temp})
+
+            hospital_data.sort( key=sortByTout) #sort hospital_data by tout_temp
+
+            #insert Tout
+            Tout_key = "Tout"
+            i = len(hospital_data[0]) - 1  # last index in the list (Tout_req)
+            t_out_final = hospital_data[0]["tout_required"]  # first tout_temp
+            batches_general_data[index][Tout_key] = t_out_final
+
+            Hospital_delivery_order=1
+            interval_5 = 15
             minutes_for_eos_cal = timedelta(minutes=interval_5)
-            hospital_data.sort(key=sortBy )
 
-        # insert Teos - new module
-        Teos_key = "Teos"
-        i = len(hospital_data[0]) - 1   #last index in the list (eos_req)
-        t_eos_final = hospital_data[0][i]
-        batches_general_data[index][Teos_key] = t_eos_final
+            for h in hospital_data:
+                #delivery_order
+                h["delivery_order"] = Hospital_delivery_order
+                Hospital_delivery_order+=1
 
+                eos_req = h["tout_required"] - minutes_for_eos_cal  # tout - intervals consider the order
+                h["eos_req"] = (eos_req)
+                interval_5 += 5
+                minutes_for_eos_cal = timedelta(minutes=interval_5)
+                # hospital_data.sort(key=sortBy)  # sort hospital_data by tout_eos
 
-        # bottles_b = len(hospitals) + 2
-        # bottels_key = "bottles_mum"
-        # batches_general_data[index][bottels_key] = bottles_b
-
-
-for b in batches:
-    if len(b)!= 0 :
-        index = batches.index(b)
-
-        batches_general_data[index]["Activity"]=0  #define the key
-        for order in b:
-            # insert (A) Activity_Tcal - Activity for Tcal time
-            A_Tcal_key = "Activity_Tcal"
-            injection_time= order["injection_time"]
-            T_cal = batches_general_data[index]["Tcal"]
-            A=order["Fixed_activity_level"]
-
-            diff = (injection_time-T_cal).total_seconds() /60  #convert to minutes and then to float
-            A_Tcal = math.ceil(A * math.pow((math.e),diff*lamda))  # math.ceil is round up
-            order[A_Tcal_key] = A_Tcal
+            hospital_data.sort(key=sortByTeos)  # sort hospital_data by tout_eos
+            recursion_for_tout(hospital_data,hospitals_output)
 
 
-            if batches_general_data[index]["Activity"] + A_Tcal >= max_activity_batch:
-                batches[index+1].append(order)
-
-            else:
-                try:
-                    hospital = next(h for h in hospital_activity_output if h["Name"] == order["Name"] and h["Batch"]==index+1)
-                except:
-                    hospital_activity_output.append({"Name":order["Name"],"Activity":0,'Batch':index+1 })
-
-                hospital["Activity"] +=A_Tcal # Hagai - calculate for each bath and hospital separately??
-
-                batches_general_data[index]["Activity"] += A_Tcal
-#modules
-modules = [1]
-
-for m in modules:
-    previous_module_data_query="""SELECT ROUND(avg(b.EOS_activity/b.DecayCorrected_TTA)*100,0) as Yield_EOB FROM batch b  
-                                where b.resourcemoduleID= """ + str(m) + " ORDER BY b.idbatch LIMIT 7"
-    cursor = db.cursor()
-    cursor.execute(previous_module_data_query)
-    previous_module_data = cursor.fetchall()
-
-#cyclotron
-cyclotron = 2
-previous_cyclotron_data_query="""SELECT b.TargetCurrentLB , rc.constant_efficiency
-                                FROM batch b JOIN workplan w
-                                ON b.workplanID=w.idworkplan
-                                JOIN resourcecyclotron rc 
-                                ON rc.idresourceCyclotron = b.resourcecyclotronID
-                                where b.resourcecyclotronID= """ + str(cyclotron) + " ORDER BY w.Date LIMIT 1 "
-cursor = db.cursor(dictionary=True)
-cursor.execute(previous_cyclotron_data_query)
-previous_cyclotron_data = cursor.fetchall()
-
-for b in batches_general_data:
-    i=batches_general_data.index(b)
-
-    try:
-        #calculation Activity for batch considering previous modules yields
-        A =round((b["Activity"] * 100) / (previous_module_data[i][0]))
-        b["Activity_considering_yields"] = A
-        # Activity with 5% Confidence percentage
-        A_plus_5 = round(A *1.05)
-        b["Activity_Confidence_percentage"] = A_plus_5
+            # insert Teos - new module
+            Teos_key = "Teos"
+            t_eos_final = hospital_data[0]["eos_req"] #first index in the list is the shortest time of eos (because it's sorted)
+            batches_general_data[index][Teos_key] = t_eos_final
 
 
-        # calculation t
-        K = previous_cyclotron_data_query[0]["constant_efficiency"]
-        I = previous_cyclotron_data_query[0]["TargetCurrentLB"]
-        t = round(  -1 / lamda * ln(1 -A_plus_5/(K*I))  )
-        b["Start_of_exposure_time"] = t
-
-    except:
-        continue
+            #insert Tcal - new module
+            Tcal_key = "Tcal"
+            minutes_for_Tcal_cal = timedelta(minutes=30)
+            t_cal = t_out_final + minutes_for_Tcal_cal
+            batches_general_data[index][Tcal_key] = t_cal
 
 
+            # bottles_b = len(hospitals) + 2
+            # bottels_key = "bottles_mum"
+            # batches_general_data[index][bottels_key] = bottles_b
 
+            batches_general_data[index]["Activity"] = 0  # define the key
+            for order in b:
+                # insert (A) Activity_Tcal - Activity for Tcal time
+                A_Tcal_key = "Activity_Tcal"
+                injection_time= order["injection_time"]
+                T_cal = batches_general_data[index]["Tcal"]
+                A=order["Fixed_activity_level"]
+
+                diff = (injection_time-T_cal).total_seconds() /60  #convert to minutes and then to float
+                A_Tcal = math.ceil(A * math.pow((math.e),diff*lamda))  # math.ceil is round up
+                order[A_Tcal_key] = A_Tcal
+
+
+                if batches_general_data[index]["Activity"] + A_Tcal >= max_activity_batch:
+                    batches[index+1].append(order)
+                    main_algorithm_calculation()
+
+                else:
+                    # try:
+                    #     hospital = next(h for h in hospitals_output if h["Name"] == order["Name"] and h["Batch"]==index+1)
+                    # except:
+                    #     hospitals_output.append({"Name":order["Name"],"Activity":0,'Batch':index+1 })
+                    hospital = next(h for h in hospitals_output if h["Name"] == order["Name"] and h["Batch"] == index + 1)
+                    hospital["Activity"] +=A_Tcal # Hagai - calculate for each bath and hospital separately??
+
+                    batches_general_data[index]["Activity"] += A_Tcal
+
+main_algorithm_calculation()
+
+
+# #modules
+# modules = [1]
+#
+# for m in modules:
+#     previous_module_data_query="""SELECT ROUND(avg(b.EOS_activity/b.DecayCorrected_TTA)*100,0) as Yield_EOB FROM batch b
+#                                 where b.resourcemoduleID= """ + str(m) + " ORDER BY b.idbatch LIMIT 7"
+#     cursor = db.cursor()
+#     cursor.execute(previous_module_data_query)
+#     previous_module_data = cursor.fetchall()
+#
+# #cyclotron
+# cyclotron = 2
+# previous_cyclotron_data_query="""SELECT b.TargetCurrentLB , rc.constant_efficiency
+#                                 FROM batch b JOIN workplan w
+#                                 ON b.workplanID=w.idworkplan
+#                                 JOIN resourcecyclotron rc
+#                                 ON rc.idresourceCyclotron = b.resourcecyclotronID
+#                                 where b.resourcecyclotronID= """ + str(cyclotron) + " ORDER BY w.Date LIMIT 1 "
+# cursor = db.cursor(dictionary=True)
 # cursor.execute(previous_cyclotron_data_query)
 # previous_cyclotron_data = cursor.fetchall()
+#
+# for b in batches_general_data:
+#     i=batches_general_data.index(b)
+#
+#     try:
+#         #calculation Activity for batch considering previous modules yields
+#         A =round((b["Activity"] * 100) / (previous_module_data[i][0]))
+#         b["Activity_considering_yields"] = A
+#         # Activity with 5% Confidence percentage
+#         A_plus_5 = round(A *1.05)
+#         b["Activity_Confidence_percentage"] = A_plus_5
+#
+#
+#         # calculation t
+#         K = previous_cyclotron_data_query[0]["constant_efficiency"]
+#         I = previous_cyclotron_data_query[0]["TargetCurrentLB"]
+#         t = round(  -1 / lamda * ln(1 -A_plus_5/(K*I))  )
+#         b["Start_of_exposure_time"] = t
+#
+#     except:
+#         continue
+#
+#
+#
+# # cursor.execute(previous_cyclotron_data_query)
+# # previous_cyclotron_data = cursor.fetchall()
+#
+#
+#
+# print(previous_cyclotron_data)
 
-
-
-print(previous_cyclotron_data)
-
-print("hospital_activity_output ",hospital_activity_output)
+print("hospitals_output: ",hospitals_output)
 print("batches ", batches)
-print("batches_general_data ",batches_general_data)
+print("batches_general_data: ",batches_general_data)
 
 
 # root.mainloop()
