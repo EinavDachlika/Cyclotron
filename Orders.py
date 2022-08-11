@@ -175,7 +175,7 @@ def updateOrdersTreeMainPageOutputOnly():
 
     #Show output to Order main page tree-id,date,sum of doses
     #cursor.execute("SELECT hospitalID,Date,SUM(amount) FROM orders GROUP BY Date,hospitalID;");
-    cursor.execute("SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID GROUP BY orders.Date,orders.hospitalID;");
+    cursor.execute("SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID WHERE orders.deleted=0 GROUP BY orders.Date,orders.hospitalID;");
     SumOFAmount1 = cursor.fetchall();
     print(SumOFAmount1);
     #convert list of tuples into list
@@ -209,7 +209,7 @@ def SearchOutpout(data):
 
     #Show output to Order main page tree-id,date,sum of doses
     #cursor.execute("SELECT hospitalID,Date,SUM(amount) FROM orders GROUP BY Date,hospitalID;");
-    cursor.execute("SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID GROUP BY orders.Date,orders.hospitalID;");
+    cursor.execute(f'SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID WHERE orders.deleted={0} GROUP BY orders.Date,orders.hospitalID;');
     SumOFAmount1 = cursor.fetchall();
     #convert list of tuples into list
     # y = [item1 for t1 in SumOFAmount1 for item1 in t1];
@@ -298,11 +298,11 @@ def updateOrdersTreeByMaterialFiltering(materialSelData):
     # # Absorb Orders list data from db
     cursor = db.cursor();
     if materialSelData=='A':
-    #Show output to Order main page tree-id,date,sum of doses filtering by Material ID
-     cursor.execute(f"SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders  INNER JOIN hospital ON hospital.idhospital = orders.hospitalID  GROUP BY orders.Date,orders.hospitalID ;");
+    #Show output to Order main page tree-id,date,sum of doses
+     cursor.execute(f"SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders  INNER JOIN hospital ON hospital.idhospital = orders.hospitalID WHERE orders.deleted=0 GROUP BY orders.Date,orders.hospitalID ;");
     else:
     #Show output to Order main page tree-id,date,sum of doses filtering by Material ID
-     cursor.execute(f"SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders  INNER JOIN hospital ON hospital.idhospital = orders.hospitalID WHERE materialID={materialSelData} GROUP BY orders.Date,orders.hospitalID ;");
+     cursor.execute(f"SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders  INNER JOIN hospital ON hospital.idhospital = orders.hospitalID WHERE materialID={materialSelData} AND orders.deleted=0   GROUP BY orders.Date,orders.hospitalID ;");
 
     filteringRowsFromDB = cursor.fetchall();
     print(filteringRowsFromDB);
@@ -334,16 +334,58 @@ MaterialsDropDownFilteringMainPage.bind("<<ComboboxSelected>>",MaterialsSelected
 MaterialsDropDownFilteringMainPage.pack();
 MaterialsDropDownFilteringMainPage.place(x=370, y=70);
 
-
 ############################################################################
-def deleteOrderfunc():
-    """Function for removing order from DB"""
-    rawSelectedToDelete=OrdersTree.selection();
-    for rawselected in rawSelectedToDelete:
-        OrdersTree.delete(rawselected);
-    # query = "DELETE FROM orders WHERE idhospital = %s"
 
-# Remove button (Icon) - List
+# Absorb hosital list data from db
+# cursor = db.cursor();
+# cursor.execute("SELECT idhospital,Name FROM hospital");
+# hospitals_in_db = cursor.fetchall();
+# HospitalListForDeleteOrder = hospitals_in_db;
+# print(HospitalListForDeleteOrder);
+
+
+OrderselectedEvent = tk.StringVar();
+def deleteOrderEvent(event):
+
+        """Function for removing order from DB"""
+        global IidSelected,DateSelected,InjectionTimeSelected,IDofHospitalSelected2;
+        row = OrdersTree.focus();
+
+        dataofchoosnenRowListEditTree=row;
+        #print(dataofchoosnenRowListEditTree);
+        DataOfRowSelectedDicEditTree=OrdersTree.item(dataofchoosnenRowListEditTree);
+        DataOfRowSelectedList=DataOfRowSelectedDicEditTree['values'];
+        print("Record/Order selected: ",DataOfRowSelectedList);
+        hospitalSelected=DataOfRowSelectedList[0];
+        DateSelected=DataOfRowSelectedList[1];
+        InjectionTimeSelected=DataOfRowSelectedList[2];
+
+        #search hospital by name from hospital table db and get the ID as output
+        cursor = db.cursor();
+        cursor.execute(f'SELECT CAST(idhospital AS SIGNED) FROM hospital WHERE Name="{hospitalSelected}"');
+        IDofHospitalSelected1 = cursor.fetchall();
+        TempID=[i[0] for i in IDofHospitalSelected1];#find index number in a list of tuple
+        IDofHospitalSelected2=int(TempID[0]);
+        print(f'{IDofHospitalSelected2} : {hospitalSelected}');
+
+def deleteOrderfunc():
+        rawSelectedToDelete=OrdersTree.selection();#selected item:I001,I002,I003....
+        RecoredDeletedFlug=1;
+        try:
+            cursor = db.cursor(buffered=True);
+            for rawselected in rawSelectedToDelete:
+                OrdersTree.delete(rawselected);
+                UpdateSQlQuery=f"UPDATE  orders SET deleted='{RecoredDeletedFlug}' WHERE  hospitalID= '{IDofHospitalSelected2}' AND Date= '{DateSelected}';";
+                cursor.execute(UpdateSQlQuery);
+                print("DB updated successfully-Record add to deleted column ");
+                db.commit();
+                cursor.close();
+        except Exception as e:
+            logging.error(traceback.format_exc())
+            print("Error-Order was not updated-please check MySQL")
+
+        #          messagebox.showinfo(title="Info message", message="You cant edit more then 1 record at the time");
+# Remove button (Icon) -Delete Order
 global imgDelete;
 deleteIcon = Image.open("./‏‏deleteIcon.png")
 resizedDeleteIcon = deleteIcon.resize((20,20), Image.ANTIALIAS)
@@ -351,6 +393,9 @@ imgDelete = ImageTk.PhotoImage(resizedDeleteIcon)
 deleteButton=Button(ordersFrame, image=imgDelete, borderwidth=0,command=deleteOrderfunc)
 deleteButton.pack()
 deleteButton.place(x=560, y=65)
+
+OrdersTree.bind('<<TreeviewSelect>>', deleteOrderEvent);
+
 
 
 ###############################################Import File page##################################
@@ -1748,16 +1793,6 @@ def UpdateOrder(event):
         # print(DataOfRowSelectedList);
         if row:
             EditTree.set(row, '2', CurValueForTime)
-            # try:
-            #     cursor = db.cursor(buffered=True);
-            #     UpdateSQlQuery=f"UPDATE  orders SET injection_time='{CurValueForTime}',amount='{AmountSelected}',batchID='{0}',DecayCorrected='{0}'  WHERE idorders = '{IidSelected}';";
-            #     cursor.execute(UpdateSQlQuery);
-            #     print("DB updated successfully ");
-            #     db.commit();
-            #     cursor.close();
-            # except Exception as e:
-            #     logging.error(traceback.format_exc())
-            #     print("Error-Order was not updated-please check MySQL")
 
     dropDownInjectionT_M = ttk.OptionMenu(EditPage, Timeselected, "00:00", *TimeList, command=setInjectionTime);
     dropDownInjectionT_M.pack();
