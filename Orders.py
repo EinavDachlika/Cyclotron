@@ -60,11 +60,12 @@ except Error as e:
 
 #############################################
 #
-Hack_Disabled_ChildSqlForeignKeys="SET FOREIGN_KEY_CHECKS=0;"
+Hack_Disabled_ChildSqlForeignKeys="SET FOREIGN_KEY_CHECKS=1;"
+
 cursor = db.cursor();
 cursor.execute(Hack_Disabled_ChildSqlForeignKeys);
-# db.commit();
-# cursor.close();
+db.commit();
+cursor.close();
 
 ################################################################
 toolbarbgcolor = "white"
@@ -374,9 +375,11 @@ def deleteOrderfunc():
         try:
             cursor = db.cursor(buffered=True);
             for rawselected in rawSelectedToDelete:
+                #UpdateSQlQuery=f"UPDATE  orders SET deleted='{RecoredDeletedFlug}' WHERE  hospitalID= '{IDofHospitalSelected2}' AND Date= '{DateSelected}';";
+                DeleteQuery = f"DELETE FROM orders WHERE hospitalID= '{IDofHospitalSelected2}' AND Date= '{DateSelected}';";
+                #     cyclo_tabel.delete_record(query)
+                cursor.execute(DeleteQuery);
                 OrdersTree.delete(rawselected);
-                UpdateSQlQuery=f"UPDATE  orders SET deleted='{RecoredDeletedFlug}' WHERE  hospitalID= '{IDofHospitalSelected2}' AND Date= '{DateSelected}';";
-                cursor.execute(UpdateSQlQuery);
                 print("DB updated successfully-Record add to deleted column ");
                 db.commit();
                 cursor.close();
@@ -384,7 +387,6 @@ def deleteOrderfunc():
             logging.error(traceback.format_exc())
             print("Error-Order was not updated-please check MySQL")
 
-        #          messagebox.showinfo(title="Info message", message="You cant edit more then 1 record at the time");
 # Remove button (Icon) -Delete Order
 global imgDelete;
 deleteIcon = Image.open("./‏‏deleteIcon.png")
@@ -644,11 +646,12 @@ def importFileFunc():
 
         try:
            for i in range(1,len(AmountListFromDoc)):
-            ValuseTuple=(i,TempList[1],InjectionTImeListFromdoc[i],AmountListFromDoc[i], TempList[0],TempList[2],0,0);
-            cursor.execute("INSERT INTO orders (DoseNumber,Date,injection_time,amount,hospitalID,materialID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);
+            ValuseTuple=(i,TempList[1],InjectionTImeListFromdoc[i],AmountListFromDoc[i], TempList[0],TempList[2],0);#BatchId=null
+            cursor.execute("INSERT INTO orders (DoseNumber,Date,injection_time,amount,hospitalID,materialID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);#BatchId=null
 
            updateOrdersTreeMainPageOutputOnly();##update orders tree main page
         except (mysql.connector.errors.DatabaseError,UnboundLocalError):
+            logging.error(traceback.format_exc());
             DateInputCheckMsg=Label(ImportFilePage, text="Please choose date of order",fg="red", font=('Helvetica 12'));
             DateInputCheckMsg.pack();
             DateInputCheckMsg.place(x=20,y=270);
@@ -664,7 +667,7 @@ def importFileFunc():
             print("Error");
 
 
-        #ImportFilePage.destroy();##Close import file window
+        ImportFilePage.destroy();##Close import file window
         #Commit changes in DB and close connection
         db.commit()
         cursor.close()
@@ -1229,10 +1232,10 @@ def PopUpForNewOrder():
 
             cursor = db.cursor(buffered=True);
             for i in range(1,ListofVal[4]+1):
-                ValuseTuple=(i, ChoosenDateForManaulOrder, ListofTimeIntervals[i-1], ListofVal[1], ListofVal[5],ListofVal[7], 0, 0);
+                ValuseTuple=(i, ChoosenDateForManaulOrder, ListofTimeIntervals[i-1], ListofVal[1], ListofVal[5],ListofVal[7],0);#BatchId=null
                 #print("order trying to get in DB-Add pressed");
                 try:
-                    UpdateSQlQuery="INSERT INTO orders (DoseNumber,Date,injection_time,amount,hospitalID,materialID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);";
+                    UpdateSQlQuery="INSERT INTO orders (DoseNumber,Date,injection_time,amount,hospitalID,materialID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);";#BatchId=null
                     cursor.execute(UpdateSQlQuery,ValuseTuple);
                     print("DB updated successfully ");
                 except Exception as e:
@@ -1331,9 +1334,9 @@ def PopUpForNewOrder():
         if row:
             try:
                 cursor = db.cursor(buffered=True);
-                UpdateSQlQuery=f"UPDATE  orders SET injection_time='{InjectionTimeSelected}',amount='{CurAmountvalue}',batchID='{0}',DecayCorrected='{0}'  WHERE DoseNumber = '{IidSelected}' AND hospitalID= '{ListofVal[5]}' AND Date= '{ChoosenDateForManaulOrder}';";
+                UpdateSQlQuery=f"UPDATE  orders SET injection_time='{InjectionTimeSelected}',amount='{CurAmountvalue}'  WHERE DoseNumber = '{IidSelected}' AND hospitalID= '{ListofVal[5]}' AND Date= '{ChoosenDateForManaulOrder}';";
                 cursor.execute(UpdateSQlQuery);
-                print("DB updated successfully ");
+                print("DB updated(Amount) successfully ");
                 db.commit();
                 cursor.close();
             except Exception as e:
@@ -1386,9 +1389,9 @@ def PopUpForNewOrder():
         if row:
             try:
                 cursor = db.cursor(buffered=True);
-                UpdateSQlQuery=f"UPDATE  orders SET injection_time='{CurTimevalueEditNewOrderP}',amount='{AmountSelected}',batchID='{0}',DecayCorrected='{0}'  WHERE DoseNumber = '{IidSelected}' AND hospitalID= '{ListofVal[5]}' AND Date= '{ChoosenDateForManaulOrder}';";
+                UpdateSQlQuery=f"UPDATE  orders SET injection_time='{CurTimevalueEditNewOrderP}',amount='{AmountSelected}'  WHERE DoseNumber = '{IidSelected}' AND hospitalID= '{ListofVal[5]}' AND Date= '{ChoosenDateForManaulOrder}';";
                 cursor.execute(UpdateSQlQuery);
-                print("DB updated successfully ");
+                print("DB updated(Injection_Time) successfully ");
                 db.commit();
                 cursor.close();
             except Exception as e:
@@ -1712,7 +1715,8 @@ def UpdateOrder(event):
     def set_amount(AmountValue):
         #global DosesSelectedEvent;
         print(AmountValue);
-        TempListForUpdateOrderValues[1]=AmountValue;
+        TempListForUpdateOrderValues[1]=int(AmountValue);
+        #print(TempListForUpdateOrderValues[1]);
         #DosesSelectedEvent=AmountValue;
         row = EditTree.focus();
 
@@ -1768,13 +1772,15 @@ def UpdateOrder(event):
         dropDownAmountM.configure(state="normal ");
 
         dataofchoosnenRowListEditTree=row;
-        print(dataofchoosnenRowListEditTree);
+        #print("Row selected",dataofchoosnenRowListEditTree);
         DataOfRowSelectedDicEditTree=EditTree.item(dataofchoosnenRowListEditTree);
         DataOfRowSelectedList=DataOfRowSelectedDicEditTree['values'];
-        print(DataOfRowSelectedList);
+        print("Row/Values selected",DataOfRowSelectedList);
         IidSelected=DataOfRowSelectedList[0];
         AmountSelected=DataOfRowSelectedList[1];
+        TempListForUpdateOrderValues[1]=AmountSelected;#insert current amount selected to the list-Defualt
         InjectionTimeSelected=DataOfRowSelectedList[2];
+        TempListForUpdateOrderValues[0]=InjectionTimeSelected;#insert current time_injection selected to the list-Defualt
 
         if row:
             Timeselected.set(EditTree.set(row, 'Injection time'));
@@ -1785,7 +1791,8 @@ def UpdateOrder(event):
         global IidSelected,AmountSelected,InjectionTimeSelected,DosesSelectedEvent;
         print(CurValueForTime);
         TempListForUpdateOrderValues[0]=CurValueForTime;
-        row = EditTree.focus()
+        #print(f'Injection time selected:{TempListForUpdateOrderValues[0]}');
+        row = EditTree.focus();
         # dataofchoosnenRowListEditTree=row;
         # #print(dataofchoosnenRowListEditTree);
         # DataOfRowSelectedDicEditTree=EditTree.item(dataofchoosnenRowListEditTree);
@@ -1810,17 +1817,18 @@ def UpdateOrder(event):
         #Disable  Injection-time and amount dropdown menues
         dropDownInjectionT_M.configure(state="disabled")
         dropDownAmountM.configure(state="disabled")
-
+        #print(TempListForUpdateOrderValues[0]);
 
         try:
             cursor = db.cursor(buffered=True);
-            UpdateSQlQuery=f"UPDATE  orders SET injection_time='{TempListForUpdateOrderValues[0]}',amount='{TempListForUpdateOrderValues[1]}',batchID='{0}',DecayCorrected='{0}'  WHERE idorders = '{IidSelected}';";
+            UpdateSQlQuery=f"UPDATE  orders SET injection_time='{TempListForUpdateOrderValues[0]}',amount='{TempListForUpdateOrderValues[1]}' WHERE idorders = '{IidSelected}';";
             cursor.execute(UpdateSQlQuery);
             print("DB updated successfully ");
             db.commit();
             cursor.close();
         except Exception as e:
             logging.error(traceback.format_exc())
+            messagebox.showerror("Error message","Error !");
             print("Error-Order was not updated-please check MySQL")
 
 
