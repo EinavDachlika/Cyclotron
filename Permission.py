@@ -5,7 +5,6 @@ import tkinter as tk
 from functools import partial
 import sys
 
-
 def validateLogin(username, password):
 
 #Catch capital letters
@@ -50,11 +49,11 @@ def validateLogin(username, password):
         print("Wrong password or username");
 
 
-def command2():
-    topPermissionScreen.destroy();
-    root.destroy();
-    sys.exit;
-    #window
+# def command2():
+#     topPermissionScreen.destroy();
+#     root.destroy();
+#     sys.exit;
+#     #window
 
 root = tk.Tk();
 #root.title('Main screen');
