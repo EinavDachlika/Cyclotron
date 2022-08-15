@@ -1,23 +1,51 @@
 from tkinter import *
 from tkinter import ttk,messagebox
+from PIL import ImageTk,Image
 import tkinter as tk
 from functools import partial
 import sys
 
+
 def validateLogin(username, password):
-    print("username entered :", username.get())
-    print("password entered :", password.get())
-    return
 
-def command1():
+#Catch capital letters
+    UsersTyped = username.get();
+    UserNameList=[];
+    for char in UsersTyped:
+        k = char.islower()
+        if k == True:
+            UserNameList.append(char);
+        else:
+            UserNameList.append(char.lower());
 
-    print("username entered :", usernameEntry.get());
-    print("password entered :", passwordEntry.get() );
 
-    if ((usernameEntry.get()== 'admin') and (passwordEntry.get() == 'sheri')):
-        print("Login successful");
+    UserString=''.join(str(element) for element in UserNameList);
+
+#Catch capital letters
+    PassTyped=password.get();
+    PasswordList=[];
+    for char in PassTyped:
+        k = char.islower()
+        if k == True:
+            PasswordList.append(char);
+        else:
+            PasswordList.append(char.lower());
+
+    PasswordString=''.join(str(element) for element in PasswordList);
+
+    print("username entered :", UserString);
+    print("password entered :", PasswordString);
+
+    if ((UserString == 'admin') and (PasswordString == 'sheri')):
+        print("Login successful-Admin");
         root.deiconify();
         topPermissionScreen.destroy();
+
+    elif ((UserString == 'user') and (PasswordString == 'user')):
+        print("Login successful-User");
+        root.deiconify();
+        topPermissionScreen.destroy();
+
     else:
         print("Wrong password or username");
 
@@ -39,6 +67,12 @@ topPermissionScreen=Frame();
 # topPermissionScreen.geometry('400x150');
 topPermissionScreen.configure(bg='white');
 
+
+bg=ImageTk.PhotoImage(file="./LogoImage.png");
+Photocanvas= Canvas(topPermissionScreen,width=323,height=250);
+Photocanvas.create_image(0,0,image=bg,anchor="nw");
+Photocanvas.create_text((160,200),text="Sheri Orders System",font=('Halvetica',21))
+
 #username label and text entry box
 usernameLabel = Label(topPermissionScreen, text="User Name",font=('Halvetica',10));
 username = StringVar();
@@ -52,15 +86,17 @@ passwordEntry = Entry(topPermissionScreen, textvariable=password, show='*');
 validateLogin = partial(validateLogin, username, password);
 
 #login button
-loginButton = Button(topPermissionScreen, text="Login", command=command1);
+loginButton = Button(topPermissionScreen, text="Login", command=validateLogin);
 
 def LoginButton(event):
-    command1();
+    validateLogin();
 
 passwordEntry.bind('<Return>',LoginButton);
 
 CopyrightLabel=Label(topPermissionScreen,text='Copyright to Sheri L.t.d 2022',font=('Arial',8));
 
+Photocanvas.pack();
+#TitleLabel.pack;
 usernameLabel.pack();
 usernameEntry.pack();
 passwordLabel.pack();

@@ -267,7 +267,7 @@ def SearchComponent(event):
       else:
           dataList=[];
           for item in ListofCurrnetHospitalOrderMainPage:
-              if typed.lower() in item.lower():#catch capital and lower case
+              if typed.lower() in item.lower():           #catch capital and lower case
                   dataList.append(item);
                   print(dataList);
 
