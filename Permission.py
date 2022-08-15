@@ -9,16 +9,17 @@ def validateLogin(username, password):
     print("password entered :", password.get())
     return
 
-def command1(event):
+def command1():
 
     print("username entered :", usernameEntry.get());
     print("password entered :", passwordEntry.get() );
 
     if ((usernameEntry.get()== 'admin') and (passwordEntry.get() == 'sheri')):
-        root.deiconify()
-        topPermissionScreen.detroy()
+        print("Login successful");
+        root.deiconify();
+        topPermissionScreen.destroy();
     else:
-        print("Wrong passsword or username");
+        print("Wrong password or username");
 
 
 def command2():
@@ -51,9 +52,13 @@ passwordEntry = Entry(topPermissionScreen, textvariable=password, show='*');
 validateLogin = partial(validateLogin, username, password);
 
 #login button
-loginButton = Button(topPermissionScreen, text="Login", command=validateLogin);
+loginButton = Button(topPermissionScreen, text="Login", command=command1);
 
-passwordEntry.bind('<Return>',command1);
+def LoginButton(event):
+    command1();
+
+passwordEntry.bind('<Return>',LoginButton);
+
 CopyrightLabel=Label(topPermissionScreen,text='Copyright to Sheri L.t.d 2022',font=('Arial',8));
 
 usernameLabel.pack();
