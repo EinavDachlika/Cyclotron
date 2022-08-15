@@ -3,7 +3,23 @@ from tkinter import ttk,messagebox
 from PIL import ImageTk,Image
 import tkinter as tk
 from functools import partial
-import sys
+import sys,importlib
+def importAdmin():
+    spec = importlib.util.spec_from_file_location("module.name", "D:/PythonProjects/Cyclotron/‏‏settingsTest.py")
+    foo = importlib.util.module_from_spec(spec)
+    sys.modules["module.name"] = foo
+    spec.loader.exec_module(foo)
+    foo.hospital_page()
+
+def importUser():
+    spec = importlib.util.spec_from_file_location("module.name", "D:/PythonProjects/Cyclotron/settingsTest1.py")
+    foo = importlib.util.module_from_spec(spec)
+    sys.modules["module.name"] = foo
+    spec.loader.exec_module(foo)
+    foo.hospital_page()
+
+
+
 
 def validateLogin(username, password):
 
@@ -37,11 +53,13 @@ def validateLogin(username, password):
 
     if ((UserString == 'admin') and (PasswordString == 'sheri')):
         print("Login successful-Admin");
+        importAdmin();#call to admin pages function
         root.deiconify();
         topPermissionScreen.destroy();
 
     elif ((UserString == 'user') and (PasswordString == 'user')):
         print("Login successful-User");
+        importUser()
         root.deiconify();
         topPermissionScreen.destroy();
 

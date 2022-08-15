@@ -153,11 +153,11 @@ deleteButton.place(x=470, y=55)
 
 def hospital_page():
     """ this function is swap function for hospital frame/page"""
-    settingButton.config(bg='#F0F0F0');
+    #settingButton.config(bg='#F0F0F0');
     ordersButton.config(bg='#F0F0F0');
     hospitalsButton.config(bg='gray');
     hospitalFrame.pack(fill='both',expand=1);
-    SettingsFrame.forget();
+    #SettingsFrame.forget();
     ordersFrame.forget();
 
 ##################Orders page############################################
@@ -304,12 +304,12 @@ deleteButton.place(x=470, y=55)
 
 def Orders_page():
     """ this function is swap function for Orders frame/page"""
-    settingButton.config(bg='#F0F0F0');  ##F0F0F0 is default color(gray)
+    #settingButton.config(bg='#F0F0F0');  ##F0F0F0 is default color(gray)
     hospitalsButton.config(bg='#F0F0F0');
     ordersButton.config(bg="gray");
     ordersFrame.pack(fill='both',expand=1);
     hospitalFrame.forget();
-    SettingsFrame.forget();
+    #SettingsFrame.forget();
 
 
 
@@ -346,12 +346,13 @@ reportsButton.pack(side=LEFT, padx=10, pady=3)
 #########################################################################
 def setting_page():
     """ this function is swap function for viewing setting frame/page"""
-    hospitalsButton.config(bg='#F0F0F0')
-    ordersButton.config(bg='#F0F0F0');
-    settingButton.config(bg="gray");
-    SettingsFrame.pack(fill='both',expand=1);
-    hospitalFrame.forget();
-    ordersFrame.forget();
+    pass;
+    # hospitalsButton.config(bg='#F0F0F0')
+    # ordersButton.config(bg='#F0F0F0');
+    # settingButton.config(bg="gray");
+    # SettingsFrame.pack(fill='both',expand=1);
+    # hospitalFrame.forget();
+    # ordersFrame.forget();
 
 # settings Icon - toolbar
 
@@ -370,7 +371,7 @@ toolbar.grid_columnconfigure(1, weight=1)
 
 SettingsFrame = Frame(root)
 #h = Scrollbar(SettingsFrame, orient='horizontal')
-SettingsFrame.pack(fill='both',expand=1)
+#SettingsFrame.pack(fill='both',expand=1)
 
 # feed label
 feedLabel = Label(SettingsFrame, text='Settings', font=('Helvetica', 26, 'bold'), fg='#034672')
@@ -810,5 +811,5 @@ def update_record():
 # #     Efficiency_entry.delete(0, END)
 
 
-SettingsFrame.pack(fill='both',expand=1)
+hospitalFrame.pack(fill='both',expand=1)
 root.mainloop()
