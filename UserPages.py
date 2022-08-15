@@ -1,5 +1,5 @@
 from tkinter import *
-from tkinter import ttk
+from tkinter import ttk,messagebox
 from PIL import Image, ImageTk
 import mysql.connector
 from mysql.connector import Error
@@ -346,7 +346,8 @@ reportsButton.pack(side=LEFT, padx=10, pady=3)
 #########################################################################
 def setting_page():
     """ this function is swap function for viewing setting frame/page"""
-    pass;
+    messagebox.showinfo('Info message','User not allowed to change settings');
+
     # hospitalsButton.config(bg='#F0F0F0')
     # ordersButton.config(bg='#F0F0F0');
     # settingButton.config(bg="gray");

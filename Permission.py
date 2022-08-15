@@ -5,24 +5,25 @@ import tkinter as tk
 from functools import partial
 import sys,importlib
 def importAdmin():
-    spec = importlib.util.spec_from_file_location("module.name", "D:/PythonProjects/Cyclotron/‏‏settingsTest.py")
+    spec = importlib.util.spec_from_file_location("module.name", "D:\PythonProjects\Cyclotron\‏‏AdminPages.py")
     foo = importlib.util.module_from_spec(spec)
     sys.modules["module.name"] = foo
     spec.loader.exec_module(foo)
     foo.hospital_page()
 
 def importUser():
-    spec = importlib.util.spec_from_file_location("module.name", "D:/PythonProjects/Cyclotron/settingsTest1.py")
+    spec = importlib.util.spec_from_file_location("module.name", "D:/PythonProjects/Cyclotron/UserPages.py")
     foo = importlib.util.module_from_spec(spec)
     sys.modules["module.name"] = foo
     spec.loader.exec_module(foo)
     foo.hospital_page()
 
+def destroy_widget(widget):
+    widget.destroy()
 
 
 
 def validateLogin(username, password):
-
 #Catch capital letters
     UsersTyped = username.get();
     UserNameList=[];
@@ -53,17 +54,25 @@ def validateLogin(username, password):
 
     if ((UserString == 'admin') and (PasswordString == 'sheri')):
         print("Login successful-Admin");
+        root.destroy();
         importAdmin();#call to admin pages function
-        root.deiconify();
-        topPermissionScreen.destroy();
+        #root.deiconify();
 
     elif ((UserString == 'user') and (PasswordString == 'user')):
         print("Login successful-User");
+        root.destroy();
         importUser()
-        root.deiconify();
-        topPermissionScreen.destroy();
+        #root.deiconify();
 
     else:
+        CheckInputCheckMsg1=Label(topPermissionScreen, text="Wrong user or password",fg="red",bg="white",font=('Helvetica 9'));
+        CheckInputCheckMsg1.pack();
+        CheckInputCheckMsg1.place(x=90,y=340);
+        root.after(5000, destroy_widget, CheckInputCheckMsg1) ##Clear label after 5 secondes
+        CheckInputCheckMsg2=Label(topPermissionScreen, text="Wrong user or password",fg="red",bg="white",font=('Helvetica 9'));
+        CheckInputCheckMsg2.pack();
+        CheckInputCheckMsg2.place(x=90,y=437);
+        root.after(5000, destroy_widget, CheckInputCheckMsg2) ##Clear label after 5 secondes
         print("Wrong password or username");
 
 
@@ -92,6 +101,7 @@ Photocanvas.create_text((160,200),text="Sheri Orders System",font=('Halvetica',2
 
 #username label and text entry box
 usernameLabel = Label(topPermissionScreen, text="User Name",font=('Halvetica',10));
+usernameLabel.place(x=160,y=150)
 username = StringVar();
 usernameEntry = Entry(topPermissionScreen, textvariable=username);
 
@@ -105,6 +115,9 @@ validateLogin = partial(validateLogin, username, password);
 #login button
 loginButton = Button(topPermissionScreen, text="Login", command=validateLogin);
 
+CancelButton=Button(topPermissionScreen,text="Cancel",command=lambda: [root.destroy()]);
+CancelButton.place(x=255,y=461);
+
 def LoginButton(event):
     validateLogin();
 
@@ -114,11 +127,12 @@ CopyrightLabel=Label(topPermissionScreen,text='Copyright to Sheri L.t.d 2022',fo
 
 Photocanvas.pack();
 #TitleLabel.pack;
-usernameLabel.pack();
+usernameLabel.pack(padx=20,pady=20);
 usernameEntry.pack();
-passwordLabel.pack();
+passwordLabel.pack(padx=20,pady=30);
 passwordEntry.pack();
-loginButton.pack();
+loginButton.pack(padx=10,pady=25);
+#CancelButton.pack();
 CopyrightLabel.pack();
 topPermissionScreen.pack();
 
