@@ -112,9 +112,9 @@ dbCursor.execute("CREATE TABLE IF NOT EXISTS orders ("
                  ",DecayCorrected float DEFAULT NULL,"
                  "deleted BOOLEAN DEFAULT FALSE,"
                  "PRIMARY KEY(idorders),"
-                 "FOREIGN KEY (hospitalID) REFERENCES hospital(idhospital) ON UPDATE CASCADE ON DELETE RESTRICT ,"
-                 "FOREIGN KEY (materialID) REFERENCES material(idmaterial)  ON UPDATE CASCADE ON DELETE RESTRICT,"
-                 "FOREIGN KEY (batchID) REFERENCES batch(idbatch)  ON UPDATE CASCADE ON DELETE RESTRICT);");
+                 "FOREIGN KEY (hospitalID) REFERENCES hospital(idhospital),"
+                 "FOREIGN KEY (materialID) REFERENCES material(idmaterial),"
+                 "FOREIGN KEY (batchID) REFERENCES batch(idbatch));");
 
 cursor = db.cursor();
 

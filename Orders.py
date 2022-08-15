@@ -178,7 +178,9 @@ def updateOrdersTreeMainPageOutputOnly():
     #cursor.execute("SELECT hospitalID,Date,SUM(amount) FROM orders GROUP BY Date,hospitalID;");
     cursor.execute("SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID WHERE orders.deleted=0 GROUP BY orders.Date,orders.hospitalID;");
     SumOFAmount1 = cursor.fetchall();
-    print(SumOFAmount1);
+    #print(SumOFAmount1);
+    for x in SumOFAmount1:
+        print(x);
     #convert list of tuples into list
     # ListofSumOfAmountPerHospital1 = [item1 for t1 in ListofSumOfAmountPerHospital for item1 in t1];
 
@@ -375,10 +377,9 @@ def deleteOrderfunc():
         try:
             cursor = db.cursor(buffered=True);
             for rawselected in rawSelectedToDelete:
-                #UpdateSQlQuery=f"UPDATE  orders SET deleted='{RecoredDeletedFlug}' WHERE  hospitalID= '{IDofHospitalSelected2}' AND Date= '{DateSelected}';";
-                DeleteQuery = f"DELETE FROM orders WHERE hospitalID= '{IDofHospitalSelected2}' AND Date= '{DateSelected}';";
-                #     cyclo_tabel.delete_record(query)
-                cursor.execute(DeleteQuery);
+                UpdateSQlQuery=f"UPDATE  orders SET deleted='{RecoredDeletedFlug}' WHERE  hospitalID= '{IDofHospitalSelected2}' AND Date= '{DateSelected}';";
+                #DeleteQuery = f"DELETE FROM orders WHERE hospitalID= '{IDofHospitalSelected2}' AND Date= '{DateSelected}';";
+                cursor.execute(UpdateSQlQuery);
                 OrdersTree.delete(rawselected);
                 print("DB updated successfully-Record add to deleted column ");
                 db.commit();
@@ -646,8 +647,8 @@ def importFileFunc():
 
         try:
            for i in range(1,len(AmountListFromDoc)):
-            ValuseTuple=(i,TempList[1],InjectionTImeListFromdoc[i],AmountListFromDoc[i], TempList[0],TempList[2],0);#BatchId=null
-            cursor.execute("INSERT INTO orders (DoseNumber,Date,injection_time,amount,hospitalID,materialID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);#BatchId=null
+            ValuseTuple=(i,TempList[1],InjectionTImeListFromdoc[i],AmountListFromDoc[i], TempList[0],TempList[2],0,0);#BatchId=null
+            cursor.execute("INSERT INTO orders (DoseNumber,Date,injection_time,amount,hospitalID,materialID,DecayCorrected,batchID) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);#BatchId=null
 
            updateOrdersTreeMainPageOutputOnly();##update orders tree main page
         except (mysql.connector.errors.DatabaseError,UnboundLocalError):
@@ -809,28 +810,6 @@ def PopUpForNewOrder():
 ########################page number 1,New order page#########################################################
 
 ##
-    # create a horizontal scrollbar by
-    # setting orient to horizontal
-    # h = Scrollbar(NewOrderMainPage, orient = 'horizontal')
-    #
-    # # attach Scrollbar to root window at
-    # # the bootom
-    # h.pack(side = BOTTOM, fill = X)
-    # h.configure(command = h.set);
-    # NewOrderCanvas=Canvas(NewOrderMainPage);
-    # NewOrderCanvas.pack(side=LEFT);
-    #
-    # # create a vertical scrollbar-no need ,to write orient as it is by ,default vertical
-    # NewOrderScroobalYaxix = Scrollbar(NewOrderMainPage,orient=VERTICAL,command=NewOrderCanvas.yview);
-    # # attach Scrollbar to root window on# the side
-    # NewOrderScroobalYaxix.pack(side = RIGHT, fill = Y)
-    #
-    # NewOrderCanvas.configure(yscrollcommand=NewOrderScroobalYaxix.set);
-    # NewOrderCanvas.bind('<Configure>',lambda e: NewOrderCanvas.configure(scrollregion = NewOrderCanvas.bbox("all")));
-    #
-    # SecondFrameForNewOrder=Frame(NewOrderCanvas);
-    # NewOrderCanvas.create_window((0,0),window=SecondFrameForNewOrder,anchor="nw")
-#
 
     NeworderTitleLabel=Label(NewOrderMainPage, text="New Order ",bg="#F0F3F4", font=('Helvetica 17 bold'), fg='#034672');
     NeworderTitleLabel.pack();
@@ -851,9 +830,21 @@ def PopUpForNewOrder():
         """Function for create Hospital Drop-Down menu -absorb data from DB"""
         global hospitalId;
         ChoosenHospitalNewOrder=(HospitalSelectedNewOrder.get());
-        print(ChoosenHospitalNewOrder);
+
+        #loop for find hospital name in the string
+        HospitalNameFromChoosenHospital = "";
+        for index in ChoosenHospitalNewOrder:
+            if index.isdigit():
+             pass;
+            else:
+             HospitalNameFromChoosenHospital = HospitalNameFromChoosenHospital + index;
+
+
+        ChoosenhospitalNameFromDropDown=HospitalNameFromChoosenHospital;
+
+        print(ChoosenhospitalNameFromDropDown);
         #Print to the screen the hospital selected-print to page number 2
-        HospitalLabel2=Label(NewOrdersecondaryPage, text= ChoosenHospitalNewOrder, bg="white", font=('Helvetica 14'));
+        HospitalLabel2=Label(NewOrdersecondaryPage, text= ChoosenhospitalNameFromDropDown, bg="white", font=('Helvetica 14'));
         HospitalLabel2.pack();
         HospitalLabel2.place(x=20,y=80);
 
@@ -867,7 +858,7 @@ def PopUpForNewOrder():
         hospitalId=int(HospitalIDFromChoosenHospital);
 
 
-    HospitalSelectedNewOrder = ttk.Combobox(NewOrderMainPage,state="readonly",value=hospitalsListForNewOrderManual,width=9);
+    HospitalSelectedNewOrder = ttk.Combobox(NewOrderMainPage,state="readonly",value=hospitalsListForNewOrderManual,width=15);
     HospitalSelectedNewOrder.current(0);
 
     HospitalSelectedNewOrder.bind("<<ComboboxSelected>>",HospitalChooseNewOrder);
@@ -1113,9 +1104,9 @@ def PopUpForNewOrder():
         ChoosenDateForManaulOrder=cal.get_date();
         print(ChoosenDateForManaulOrder);
         #copy and past date event to page number 2
-        dateLabel2=Label(NewOrdersecondaryPage, text= ChoosenDateForManaulOrder, bg="white", font=('Helvetica 14'));
+        dateLabel2=Label(NewOrdersecondaryPage, text= ChoosenDateForManaulOrder, bg="white", font=('Helvetica 12'));
         dateLabel2.pack();
-        dateLabel2.place(x=130,y=80);
+        dateLabel2.place(x=20,y=110);
 
     def destroyNewOrderFunc():
         """Function for cancel button"""
@@ -1232,10 +1223,10 @@ def PopUpForNewOrder():
 
             cursor = db.cursor(buffered=True);
             for i in range(1,ListofVal[4]+1):
-                ValuseTuple=(i, ChoosenDateForManaulOrder, ListofTimeIntervals[i-1], ListofVal[1], ListofVal[5],ListofVal[7],0);#BatchId=null
+                ValuseTuple=(i, ChoosenDateForManaulOrder, ListofTimeIntervals[i-1], ListofVal[1], ListofVal[5],ListofVal[7],0,1);#BatchId=null
                 #print("order trying to get in DB-Add pressed");
                 try:
-                    UpdateSQlQuery="INSERT INTO orders (DoseNumber,Date,injection_time,amount,hospitalID,materialID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);";#BatchId=null
+                    UpdateSQlQuery="INSERT INTO orders (DoseNumber,Date,injection_time,amount,hospitalID,materialID,DecayCorrected,batchID) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);";#BatchId=null
                     cursor.execute(UpdateSQlQuery,ValuseTuple);
                     print("DB updated successfully ");
                 except Exception as e:
@@ -1499,6 +1490,7 @@ def UpdateOrder(event):
     cursor = db.cursor();
     cursor.execute(f'SELECT idhospital,Name FROM hospital where Name="{HospitalSelected}"');
     hospitalsListForNewOrderManual = cursor.fetchall();
+
     HospitalListNewOrderPage = hospitalsListForNewOrderManual;
     print(HospitalListNewOrderPage);
 
@@ -1511,31 +1503,21 @@ def UpdateOrder(event):
 
     #NewOrdersecondaryPage = tk.Frame(root);
 
-    # labels
-    #Create hospital Drop-down menu
-     #   """This function is to catch Hopital name event and past/print it to page number 2 """
-
     global hospitalId;
-    HospitalLabel2=Label(EditPage, text=HospitalListNewOrderPage,bg="white", font=('Helvetica 14'));
+    HospitalLabelForEditPage=Label(EditPage, text=HospitalSelected,bg="white", font=('Helvetica 14'));
     x=str(HospitalListNewOrderPage);#string type here
     print(x);
     hospitalLabel = x.split(",",1);
     hospitalNameTemp=hospitalLabel[1];
-    print(hospitalNameTemp);
+    #print(hospitalNameTemp);
     hospitalIDTemp=hospitalLabel[0];
     #print(hospitalIDTemp);
     HospitalID=hospitalIDTemp.split("(");
     hospitalId=int(HospitalID[1]);
 
-    HospitalLabel2.pack();
-    HospitalLabel2.place(x=20,y=80);
+    HospitalLabelForEditPage.pack();
+    HospitalLabelForEditPage.place(x=20,y=80);
 
-    #Drop down menu for chosse hospitals
-
-    # HospitalDropDown = OptionMenu(NewOrderMainPage, CLickOnHospitalDropMenu, *HospitalListNewOrderPage,command=HospitalChoosecallback2);
-    # HospitalDropDown.config(width=12,bg='white');#color of dropdown menu
-    # HospitalDropDown.pack();
-    # HospitalDropDown.place(x=20, y=100);
 
     #Create tree/table for the Edit page
     EditTree = ttk.Treeview(EditPage,height=15,selectmode="browse");#select=browse means can choose only 1 record at the time
@@ -1611,14 +1593,6 @@ def UpdateOrder(event):
     ListofVal[5]=hospitalId;
     ListofVal[6]=int(Time_Intervals);
 
-    #Enter data to the the table
-
-    # for record in range(int(IntAmount)):
-    #     EditTree.insert("", "end",values=( ListofVal[0],ListofVal[1],f'{ListofVal[2]}:{ListofVal[3]}'));
-    #     ListofVal[2]=ListofVal[2]+1;       #Hours jumps/intervals
-    #     ListofVal[3]=ListofVal[6];         #Add minutes intervals
-    #     ListofVal[0]= ListofVal[0]+1;
-
     OrderID+=1;#counterID=counterID+1
     #print(OrderID);
 
@@ -1629,7 +1603,7 @@ def UpdateOrder(event):
     #copy and past date event to page number 2
     dateLabel2=Label(EditPage, text= ChoosenDateForManaulOrder, bg="white", font=('Helvetica 14'));
     dateLabel2.pack();
-    dateLabel2.place(x=140,y=80);
+    dateLabel2.place(x=20,y=110);
 
 
     #
@@ -1647,16 +1621,7 @@ def UpdateOrder(event):
     NewOrdersecondaryLabel.pack();
     NewOrdersecondaryLabel.place(x=270,y=27);
 
-    # def updateSpecRawInOrder(dataOfRowChoosen):
-    #     curItem = EditTree.focus();
-    #     DataOfRowSelectedDic1=EditTree.item(curItem);
-    #     DataOfRowSelectedList=DataOfRowSelectedDic1['values'];
-    #     print(DataOfRowSelectedList);
-    #     # HospitalSelected=DataOfRowSelectedList[0];
-    #     # DateSelected=DataOfRowSelectedList[1];
-    #     # AmountOfDosesSelected=DataOfRowSelectedList[2];
-    # EditTree.bind('<<TreeviewSelect>>', updateSpecRawInOrder)
-    #
+
 
 
     # #Create a Cancel button
