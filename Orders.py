@@ -963,6 +963,27 @@ def PopUpForNewOrder():
         #     root.after(5000, destroy_widget, MatrerialInputCheckMsg) ##Clear label after 5 secondes
         # else:
         #     print(ChoosenMaretrialIDNewOrderManual);
+        #try:
+        cursor = db.cursor();
+        SearchSpecOrderQueryByDoubleclick=f'SELECT idorders,CONCAT(hospitalID,Date) AS AdressPlusHospital FROM orders where hospitalID="{hospitalId}" AND Date="{ChoosenDateForManaulOrder}"';
+        cursor.execute(SearchSpecOrderQueryByDoubleclick);
+        OrderDatatoSpecificOrder = cursor.fetchall();
+
+        db.commit();
+        cursor.close();
+
+        for x in OrderDatatoSpecificOrder:
+            print(f"order selected:{x}");
+
+        if OrderDatatoSpecificOrder:
+            messagebox.showerror("Error message","There is allready order with that date and hospital,cant continue!");
+            raise Exception("There is allready order with that date and hospital,cant continue");
+        # except Exception as e:
+        #     messagebox.showerror("Error message","There is allready order with that date and hospital,cant continue!");
+        #     print(e)
+        # else:
+        #     print("all good");
+
         try:
             if ChoosenMaretrialIDNewOrderManual in globals():
                 MaterialInputCheckMsg=Label(NewOrderMainPage, text="Please  choose Material ",fg="red", font=('Helvetica 12'));
