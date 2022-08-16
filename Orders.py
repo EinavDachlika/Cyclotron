@@ -169,6 +169,7 @@ def ClearEdittree_2():
 ListofCurrnetHospitalOrderMainPage=[];
 
 def updateOrdersTreeMainPageOutputOnly():
+
     clear_tree();
     # # Absorb Orders list data from db
     cursor = db.cursor();
@@ -177,17 +178,26 @@ def updateOrdersTreeMainPageOutputOnly():
     #cursor.execute("SELECT hospitalID,Date,SUM(amount) FROM orders GROUP BY Date,hospitalID;");
     cursor.execute("SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID WHERE orders.deleted=0 GROUP BY orders.Date,orders.hospitalID;");
     SumOFAmount1 = cursor.fetchall();
-    #print(SumOFAmount1);
-    for x in SumOFAmount1:
-        print(x);
+    print(SumOFAmount1);
+    # for x in SumOFAmount1:
+    #     print(x);
     #convert list of tuples into list
     # ListofSumOfAmountPerHospital1 = [item1 for t1 in ListofSumOfAmountPerHospital for item1 in t1];
 
-    # #Remove any duplicates from a List:
+    # #Remove any duplicates from a List:-method 1
     # mylist = list(dict.fromkeys(ListofSumOfAmountPerHospital1))
     # ListOfSumOfAmount = [item1 for t1 in mylist for item1 in t1];
 
-    #         cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,hospitalID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);
+    # remove duplicated from list-method 2
+    # FIxedHospitalList = []
+    # for i in ListofCurrnetHospitalOrderMainPage:
+    #     if i not in FIxedHospitalList:
+    #         FIxedHospitalList.append(i)
+    #
+    # # printing list after removal
+    # print ("The list after removing duplicates : " + str(FIxedHospitalList))
+
+#         cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,hospitalID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);
     #output orders main data from DB to the orders tree
     for record in SumOFAmount1:
         OrdersTree.insert(parent='', index='end', text='',values=(record[0],record[1],record[2]))#record[0]=Idhospital,record[1]=Injection time,record[2]=Amount of doses
@@ -212,13 +222,15 @@ def SearchOutpout(data):
     #Show output to Order main page tree-id,date,sum of doses
     #cursor.execute("SELECT hospitalID,Date,SUM(amount) FROM orders GROUP BY Date,hospitalID;");
     cursor.execute(f'SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID WHERE orders.deleted={0} GROUP BY orders.Date,orders.hospitalID;');
-    SumOFAmount1 = cursor.fetchall();
+    DataAchievedBtSearch = cursor.fetchall();
+    for x in DataAchievedBtSearch:
+        print(x);
     #convert list of tuples into list
     # y = [item1 for t1 in SumOFAmount1 for item1 in t1];
     # print(y);
-    print(SumOFAmount1);
+    #print(DataAchievedBtSearch);
     countertemp=0;
-    for record in SumOFAmount1:
+    for record in DataAchievedBtSearch:
         print(record)
         OrdersTree.insert(parent='', index='end', text='',values=(data[countertemp],record[1],record[2]));   #record[0]=hospital name,record[1]=Injection time,record[2]=Amount of doses
         countertemp=countertemp+1;
@@ -260,6 +272,29 @@ SearchLabelicon.place(x=610, y=135);
 
 def SearchComponent(event):
       """Function for creating search component """
+
+      #get the Orders data from DB list-refresh
+      cursor = db.cursor();
+
+    #Show output to Order main page tree-id,date,sum of doses
+    #cursor.execute("SELECT hospitalID,Date,SUM(amount) FROM orders GROUP BY Date,hospitalID;");
+      cursor.execute("SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID WHERE orders.deleted=0 GROUP BY orders.Date,orders.hospitalID;");
+      SumOFAmount1 = cursor.fetchall();
+      print(SumOFAmount1);
+      ListofCurrnetHospitalOrderMainPage=[];
+      for record in SumOFAmount1:
+         OrdersTree.insert(parent='', index='end', text='',values=(record[0],record[1],record[2]))#record[0]=Idhospital,record[1]=Injection time,record[2]=Amount of doses
+         ListofCurrnetHospitalOrderMainPage.append(record[0]);
+
+    #print(ListofCurrnetHospitalOrderMainPage);
+      root.wm_state('normal');#Open orders main page
+    #OrdersTree.pack();
+
+      db.commit();
+      cursor.close();
+
+
+
       typed = searchEntry.get();
       if typed == '':#if nothing typed in the entry
           dataList = ListofCurrnetHospitalOrderMainPage;#return all of curent list(relevant orders)
@@ -268,7 +303,7 @@ def SearchComponent(event):
           for item in ListofCurrnetHospitalOrderMainPage:
               if typed.lower() in item.lower():           #catch capital and lower case
                   dataList.append(item);
-                  print(dataList);
+                  print("Hospital finded:",dataList);
 
       SearchOutpout(dataList);#update past list in the new searched list
 
@@ -666,7 +701,7 @@ def importFileFunc():
             #messagebox.showerror("Error message","Error !");
             print("Error");
 
-
+        updateOrdersTreeMainPageOutputOnly();
         ImportFilePage.destroy();##Close import file window
         #Commit changes in DB and close connection
         db.commit()
@@ -726,13 +761,6 @@ def importFileFunc():
         ChoosenDateForImport=cal1.get_date();
         TempList[1]=ChoosenDateForImport;
         print( TempList[1]);
-        # if ((counter==0) or (counter==null)):
-        # counter=0;
-        # #Loop throw the tree/table
-        # for recordInrow in range(len(TempList)-1):
-        #  OrdersTree.insert(parent="",index= "end",iid=counter, values=(TempList[0],TempList[1]));
-        #  #OrdersTree.insert(parent=counter,index= "end",iid=counter+2,text=TempList[0]);
-        #  counter=counter+1;
 
     cal1=DateEntry(ImportFilePage,selectmode='day',textvariable=selectedDate);
     cal1.pack(pady = 20);
@@ -764,14 +792,6 @@ def importFileFunc():
 #     iid +=1
 #
 # hospitals_list.pack()
-
-
-
-# def open_popup_hospital():
-#     pass
-#
-# def delete_hospital():
-#     pass
 
 
 ###################Buttons for edit,delete,import file and etc.###################################
@@ -1403,7 +1423,7 @@ def PopUpForNewOrder():
         #Function to insert data into My-SQL Db
        destroyNewOrderFunc();
         # root.destroy();#Close import file-manual window
-        # updateOrdersTreeMainPageOutputOnly();#Refresh/Update Main page
+       updateOrdersTreeMainPageOutputOnly();#Refresh/Update Main page
         # OrdersTree.pack();         #open order main page immedaitly
 
 
@@ -1902,9 +1922,10 @@ importFileButton.place(x=250, y=65)
 # NewOrderIcon = Image.open("./Images/AddnewOrder2.png")
 # resizedNewOrderIconIcon = NewOrderIcon.resize((120,20), Image.ANTIALIAS)
 # NewOrderIconimg = ImageTk.PhotoImage(resizedNewOrderIconIcon)
-editButton=Button(ordersFrame, text="Add new order",command=PopUpForNewOrder)
-editButton.pack()
-editButton.place(x=100, y=65)
+editButton=Button(ordersFrame, text="Add new order",command=PopUpForNewOrder);
+editButton.pack();
+editButton.place(x=100, y=65);
+
 
 
 
