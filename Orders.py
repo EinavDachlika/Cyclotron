@@ -9,12 +9,11 @@ import pandas as pd
 from docx.api import Document
 import aspose.words as aw
 import xlrd #Version 1.2.0
-from tkcalendar import Calendar,DateEntry
+from tkcalendar import DateEntry
 import csv
 import traceback
 import logging
-import math
-from datetime import datetime
+
 
 ##table code
 #https://pythonguides.com/python-tkinter-table-tutorial/
