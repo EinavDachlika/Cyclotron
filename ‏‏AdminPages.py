@@ -10,6 +10,7 @@ import aspose.words as aw
 from tkinter import filedialog as fd
 from tkcalendar import DateEntry
 import xlrd #Version 1.2.0
+import Permission
 
 #from Permission import *
 ##table code
@@ -71,10 +72,16 @@ PlaceLable_Y=10
 feedLabel.pack(side=LEFT)
 feedLabel.place(x=PlaceLable_X,y=PlaceLable_Y)
 
-# user label
-AdminLabelHospitalPage = Label(hospitalFrame, text='Admin', font=('Helvetica', 13, 'bold'), fg='red');
-AdminLabelHospitalPage.pack();
-AdminLabelHospitalPage.place(x=530, y=20);
+# admin label
+AdminLabelHospitalpage1 = Label(hospitalFrame, text=f"{Permission.ValidateTypeOfUser} connected:", font=('Helvetica', 13, 'bold'), fg='red')
+AdminLabelHospitalpage1.pack();
+AdminLabelHospitalpage1.place(x=350, y=20);
+
+# admin connected label
+NameOfAdminLabelHospitalpage2 = Label(hospitalFrame, text=Permission.user_verified, font=('Helvetica', 13, 'bold'), fg='red')
+NameOfAdminLabelHospitalpage2.pack();
+NameOfAdminLabelHospitalpage2.place(x=510, y=20);
+
 
 
 # scrollbar
@@ -182,10 +189,15 @@ feedLabel = Label(ordersFrame, text ='Orders', font=('Helvetica', 26, 'bold'), f
 feedLabel.pack(side=LEFT);
 feedLabel.place(x=50,y=10);
 
-# user label
-AdminLabelOrderpage = Label(ordersFrame, text='Admin', font=('Helvetica', 13, 'bold'), fg='red')
-AdminLabelOrderpage.pack()
-AdminLabelOrderpage.place(x=530, y=20)
+# admin label
+AdminLabelOrderslpage1 = Label(ordersFrame, text=f"{Permission.ValidateTypeOfUser} connected:", font=('Helvetica', 13, 'bold'), fg='red')
+AdminLabelOrderslpage1.pack();
+AdminLabelOrderslpage1.place(x=350, y=20);
+
+# admin connected label
+NameOfAdminLabeLoRDERSpage2 = Label(ordersFrame, text=Permission.user_verified, font=('Helvetica', 13, 'bold'), fg='red')
+NameOfAdminLabeLoRDERSpage2.pack();
+NameOfAdminLabeLoRDERSpage2.place(x=510, y=20);
 
 
 #my_label=Label(root,text='');
@@ -2049,10 +2061,16 @@ PlaceLable_Y = 10
 feedLabel.pack(side=LEFT)
 feedLabel.place(x=PlaceLable_X, y=PlaceLable_Y)
 
-# user label
-AdminLabelSettingPage = Label(SettingsFrame, text='Admin', font=('Helvetica', 13, 'bold'), fg='red');
-AdminLabelSettingPage.pack();
-AdminLabelSettingPage.place(x=530, y=20);
+# admin label
+AdminLabelSettingpage1 = Label(SettingsFrame, text=f"{Permission.ValidateTypeOfUser} connected:", font=('Helvetica', 13, 'bold'), fg='red')
+AdminLabelSettingpage1.pack();
+AdminLabelSettingpage1.place(x=350, y=20);
+
+# admin connected label
+NameOfAdminLabeLSettingspage2 = Label(SettingsFrame, text=Permission.user_verified, font=('Helvetica', 13, 'bold'), fg='red')
+NameOfAdminLabeLSettingspage2.pack();
+NameOfAdminLabeLSettingspage2.place(x=510, y=20);
+
 
 ##################### Cyclotron #####################
 # Cyclotron Details label

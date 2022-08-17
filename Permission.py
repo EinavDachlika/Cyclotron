@@ -4,19 +4,52 @@ from PIL import ImageTk,Image
 import tkinter as tk
 from functools import partial
 import sys,importlib
-def importAdmin():
-    spec = importlib.util.spec_from_file_location("module.name", "D:\PythonProjects\Cyclotron\‏‏AdminPages.py")
-    foo = importlib.util.module_from_spec(spec)
-    sys.modules["module.name"] = foo
-    spec.loader.exec_module(foo)
-    foo.hospital_page()
+import mysql.connector
+from mysql.connector import Error
 
-def importUser():
-    spec = importlib.util.spec_from_file_location("module.name", "D:/PythonProjects/Cyclotron/UserPages.py")
-    foo = importlib.util.module_from_spec(spec)
-    sys.modules["module.name"] = foo
-    spec.loader.exec_module(foo)
-    foo.hospital_page()
+# connect to MySqL
+try:
+    #Maor local DB Mysql
+    db = mysql.connector.connect(
+        host="localhost",
+        port=3308,
+        user="root",
+        password="root",
+        database= "cyclotron")
+
+
+    # #Einav local DB Mysql
+    #   db = mysql.connector.connect(
+    #     host="localhost",
+    #     user="root",
+    #     password="Cyclotron2022@?%",
+    #     database= "cyclotron")
+
+    if db.is_connected():
+        # db_Info = db.get_server_info()
+        # print("Connected to MySQL Server version ", db_Info)
+        dbCursor = db.cursor(buffered=True)
+        # dbCursor.execute("select database();")
+        # record = dbCursor.fetchone()
+        # print("You're connected to database: ", record)
+except Error as e:
+    print("Error while connecting to MySQL", e)
+
+
+
+# def importAdmin():
+#     spec = importlib.util.spec_from_file_location("module.name", "D:\PythonProjects\Cyclotron\‏‏AdminPages.py")
+#     foo = importlib.util.module_from_spec(spec)
+#     sys.modules["module.name"] = foo
+#     spec.loader.exec_module(foo)
+#    # foo.hospital_page()
+#
+# def importUser():
+#     spec = importlib.util.spec_from_file_location("module.name", "D:/PythonProjects/Cyclotron/UserPages.py")
+#     foo = importlib.util.module_from_spec(spec)
+#     sys.modules["module.name"] = foo
+#     spec.loader.exec_module(foo)
+#    # foo.hospital_page()
 
 def destroy_widget(widget):
     widget.destroy()
@@ -24,8 +57,12 @@ def destroy_widget(widget):
 
 
 def validateLogin(username, password):
-#Catch capital letters
+    global user_verified,password_verfied,ValidateTypeOfUser;
     UsersTyped = username.get();
+    PassTyped=password.get();
+
+    #Catch capital letters
+    #UsersTyped = username.get();
     UserNameList=[];
     for char in UsersTyped:
         k = char.islower()
@@ -37,31 +74,49 @@ def validateLogin(username, password):
 
     UserString=''.join(str(element) for element in UserNameList);
 
-#Catch capital letters
-    PassTyped=password.get();
-    PasswordList=[];
-    for char in PassTyped:
-        k = char.islower()
-        if k == True:
-            PasswordList.append(char);
-        else:
-            PasswordList.append(char.lower());
 
-    PasswordString=''.join(str(element) for element in PasswordList);
 
-    print("username entered :", UserString);
-    print("password entered :", PasswordString);
+    cursor = db.cursor();
+    GetCredentialsQuery=f"SELECT Name,Password,userType FROM users  WHERE Name='{UserString}' AND Password='{PassTyped}';";
+    cursor.execute(GetCredentialsQuery);
+    dataFromDb = cursor.fetchall();
+    print(dataFromDb);
 
-    if ((UserString == 'admin') and (PasswordString == 'sheri')):
+
+    if dataFromDb:
+        #convert list of tuples into list
+        ListOfDataFromDB = [item1 for t1 in dataFromDb for item1 in t1];
+        print(ListOfDataFromDB);
+        # print("user:",ListOfDataFromDB[0]);
+        # print("pass:",ListOfDataFromDB[1]);
+        # print("Type od user:",ListOfDataFromDB[2]);
+        user_verified=ListOfDataFromDB[0];
+        password_verfied=ListOfDataFromDB[1];
+        ValidateTypeOfUser=ListOfDataFromDB[2];
+        print("Login successful",dataFromDb);
+
+    else:
+        messagebox.showerror("Error message","There is no user or password that fit the DB,please try again!");
+        raise Exception("There is allready order with that date and hospital,cant continue");
+        print("There is no user or password contain in DB");
+
+    db.commit();
+    cursor.close();
+
+
+    print("username entered :", user_verified);
+    print("password entered :", password_verfied);
+
+    if ((user_verified) and (password_verfied) and (ValidateTypeOfUser=='admin')):
         print("Login successful-Admin");
         root.destroy();
-        importAdmin();#call to admin pages function
+     #   importAdmin();#call to admin pages function
         #root.deiconify();
 
-    elif ((UserString == 'user') and (PasswordString == 'user')):
+    elif ((user_verified) and (password_verfied) and (ValidateTypeOfUser=='user')):
         print("Login successful-User");
         root.destroy();
-        importUser()
+#        importUser()
         #root.deiconify();
 
     else:

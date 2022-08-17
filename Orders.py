@@ -114,14 +114,20 @@ ordersFrame.config(bg="#F0F3F4");#color of page-white-gray
 
 ordersFrame.pack(fill=X)
 
-# ScrollbarOrderMainPage = Scrollbar(ordersFrame, orient='vertical')
-# ScrollbarOrderMainPage.pack();
-# ScrollbarOrderMainPage.place(x=50,y=120);
-# feed label
+# ScrollbarOrderMainPage
 feedLabel = Label(ordersFrame, text ='Orders', font=('Helvetica', 26, 'bold'), fg='#034672');
 feedLabel.pack(side=LEFT);
 feedLabel.place(x=50,y=10);
 
+# # admin label
+# AdminLabelOrderslpage1 = Label(ordersFrame, text=f"{Permission.ValidateTypeOfUser} Connected:", font=('Helvetica', 13, 'bold'), fg='red')
+# AdminLabelOrderslpage1.pack();
+# AdminLabelOrderslpage1.place(x=350, y=20);
+#
+# # admin connected label
+# NameOfAdminLabeLoRDERSpage2 = Label(ordersFrame, text=Permission.user_verified, font=('Helvetica', 13, 'bold'), fg='red')
+# NameOfAdminLabeLoRDERSpage2.pack();
+# NameOfAdminLabeLoRDERSpage2.place(x=510, y=20);
 
 
 

@@ -10,11 +10,10 @@ import aspose.words as aw
 from tkinter import filedialog as fd
 from tkcalendar import DateEntry
 import xlrd #Version 1.2.0
-
+import Permission
 #from Permission import *
 ##table code
 # https://pythonguides.com/python-tkinter-table-tutorial/
-
 root = Tk()
 # root.geometry("300x300")
 
@@ -73,9 +72,14 @@ feedLabel.pack(side=LEFT)
 feedLabel.place(x=PlaceLable_X,y=PlaceLable_Y)
 
 # user label
-UserLabelHospitalpage = Label(hospitalFrame, text='User', font=('Helvetica', 13, 'bold'), fg='red')
-UserLabelHospitalpage.pack()
-UserLabelHospitalpage.place(x=530, y=20)
+UserLabelHospitalpage1 = Label(hospitalFrame, text=f"{Permission.ValidateTypeOfUser} connected:", font=('Helvetica', 13, 'bold'), fg='red')
+UserLabelHospitalpage1.pack();
+UserLabelHospitalpage1.place(x=350, y=20);
+
+# user  connected label
+NameOfUserLabelHospitalpage2 = Label(hospitalFrame, text=Permission.user_verified, font=('Helvetica', 13, 'bold'), fg='red')
+NameOfUserLabelHospitalpage2.pack();
+NameOfUserLabelHospitalpage2.place(x=490, y=20);
 
 
 
@@ -186,9 +190,14 @@ feedLabel.pack(side=LEFT);
 feedLabel.place(x=50,y=10);
 
 # user label
-UserLabelOrderpage = Label(ordersFrame, text='User', font=('Helvetica', 13, 'bold'), fg='red')
-UserLabelOrderpage.pack()
-UserLabelOrderpage.place(x=530, y=20)
+UserLabelOrdersPage1 = Label(ordersFrame, text=f"{Permission.ValidateTypeOfUser} connected:", font=('Helvetica', 13, 'bold'), fg='red')
+UserLabelOrdersPage1.pack();
+UserLabelOrdersPage1.place(x=350, y=20);
+
+# user  connected label
+NameOfUserLabelOrdersPage2 = Label(ordersFrame, text=Permission.user_verified, font=('Helvetica', 13, 'bold'), fg='red')
+NameOfUserLabelOrdersPage2.pack();
+NameOfUserLabelOrdersPage2.place(x=490, y=20);
 
 
 

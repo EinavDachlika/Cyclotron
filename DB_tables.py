@@ -53,6 +53,16 @@ dbCursor.execute("CREATE TABLE IF NOT EXISTS resourcecyclotron ("
                  "deleted BOOLEAN DEFAULT FALSE,"
                  "PRIMARY KEY(idresourceCyclotron))");
 
+#Create table of hospitals
+dbCursor.execute("CREATE TABLE IF NOT EXISTS users ("
+                 "iduser int(255) NOT NULL AUTO_INCREMENT"
+                 ",Name varchar(45) NOT NULL,"
+                 "Password varchar(45) NOT NULL"
+                 ",userType ENUM('admin','user','editor') DEFAULT 'user',"
+                 "lastSeen  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                 ",PRIMARY KEY(iduser))");
+
+
 #Create table of resourcemoule
 dbCursor.execute("CREATE TABLE IF NOT EXISTS resourcemodule ("
                  "idresourcemodule int(255) NOT NULL AUTO_INCREMENT"
