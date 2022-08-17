@@ -11,7 +11,10 @@ from tkinter import filedialog as fd
 from tkcalendar import DateEntry
 import xlrd #Version 1.2.0
 import Permission
-#from Permission import *
+from ConnectToDB import *          #connect to mysql DB
+import DB_tables                   #create tables
+
+
 ##table code
 # https://pythonguides.com/python-tkinter-table-tutorial/
 root = Tk()
@@ -22,36 +25,6 @@ root.title("Sheri Orders System")#Setting->to Main(Sheri Orders system)
 
 # defult font
 root.option_add("*Font", "Helvetica")
-
-# connect to MySqL
-try:
-    #Maor local DB Mysql
-    db = mysql.connector.connect(
-        host="localhost",
-        port=3308,
-        user="root",
-        password="root",
-        database="cyclotron")
-
-    # # Einav local DB-Mysql
-    # db = mysql.connector.connect(
-    #   host="localhost",
-    #   user="root",
-    #   password="Cyclotron2022@?%",
-    #   database= "cyclotron")
-
-    if db.is_connected():
-        # db_Info = db.get_server_info()
-        # print("Connected to MySQL Server version ", db_Info)
-        dbCursor = db.cursor(buffered=True)
-        # Check to see if connection to Mysql was created
-        print("connection to local mysql succeed", db)
-
-# dbCursor.execute("select database();")
-# record = dbCursor.fetchone()
-# print("You're connected to database: ", record)
-except Error as e:
-    print("Error while connecting to MySQL", e)
 
 
 #validateLogin();

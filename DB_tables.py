@@ -1,36 +1,7 @@
-import mysql.connector
-from mysql.connector import Error
 
-# connect to MySqL
-try:
-    #Maor local DB Mysql
-    db = mysql.connector.connect(
-        host="localhost",
-        port=3308,
-        user="root",
-        password="root",
-        database="cyclotron")
+from ConnectToDB import *   #connect to mysql DB
 
-    # # # Einav local DB-Mysql
-    # db = mysql.connector.connect(
-    #     host="localhost",
-    #     user="root",
-    #     password="Cyclotron2022@?%",
-    #     database= "cyclotron")
-
-    if db.is_connected():
-        # db_Info = db.get_server_info()
-        # print("Connected to MySQL Server version ", db_Info)
-        dbCursor = db.cursor(buffered=True)
-        # Check to see if connection to Mysql was created
-        print("connection to local mysql succeed", db)
-
-# dbCursor.execute("select database();")
-# record = dbCursor.fetchone()
-# print("You're connected to database: ", record)
-except Error as e:
-    print("Error while connecting to MySQL", e)
-
+dbCursor = db.cursor();
 #create tables
 #Create table of hospitals
 dbCursor.execute("CREATE TABLE IF NOT EXISTS hospital ("
@@ -127,14 +98,14 @@ dbCursor.execute("CREATE TABLE IF NOT EXISTS orders ("
                  "FOREIGN KEY (materialID) REFERENCES material(idmaterial),"
                  "FOREIGN KEY (batchID) REFERENCES batch(idbatch));");
 
-cursor = db.cursor();
 
 #Data for testing
 #Insert data of Hospitals into My-SQl DB
 #The INSERT IGNORE statement will cause MySQL to do nothing when the insertion throws an error. If there’s no error, then a new row will be added to the table.
-cursor.execute("INSERT IGNORE INTO hospital (idhospital,Name,Fixed_activity_level,Transport_time_min,Transport_time_max) VALUES (1,'Belinson',9.2,15.0,20.0),(2,'Ichilov',10.0,20.0,25.0),(3,'Assuta TA',10.9,30.0,35.0),(4,'Sheb',10.5,35.0,40.0),(5,'Ziv',11.0,25.0,30.0),(6,'Assuta Ashdod',13.1,60.0,65.0),(7,'Assaf Harofeh',10.6,65.0,70.0),(8,'Augusta Victoria',9.6,50.0,60.0),(9,'Hila Pharma',9.6,50.0,55.0),(10,'Hadassah',9.5,0.0,0.0);")
+dbCursor.execute("INSERT IGNORE INTO hospital (idhospital,Name,Fixed_activity_level,Transport_time_min,Transport_time_max) VALUES (1,'Belinson',9.2,15.0,20.0),(2,'Ichilov',10.0,20.0,25.0),(3,'Assuta TA',10.9,30.0,35.0),(4,'Sheb',10.5,35.0,40.0),(5,'Ziv',11.0,25.0,30.0),(6,'Assuta Ashdod',13.1,60.0,65.0),(7,'Assaf Harofeh',10.6,65.0,70.0),(8,'Augusta Victoria',9.6,50.0,60.0),(9,'Hila Pharma',9.6,50.0,55.0),(10,'Hadassah',9.5,0.0,0.0);")
 
 #Insert 2 material to the DB,material table
-cursor.execute("INSERT IGNORE INTO material (idmaterial,materialName) VALUES (1,'FDG'),(2,'FDOPA');")
+dbCursor.execute("INSERT IGNORE INTO material (idmaterial,materialName) VALUES (1,'FDG'),(2,'FDOPA');")
 #cleanup DB
 db.commit();
+dbCursor.close();
