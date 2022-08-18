@@ -70,8 +70,7 @@ def validateLogin(username, password):
 
     else:
         messagebox.showerror("Error message","There is no user or password that fit the DB,please try again!");
-        raise Exception("There is allready order with that date and hospital,cant continue");
-        print("There is no user or password contain in DB");
+        raise Exception("There is no user or password contain in DB");
 
     db.commit();
     cursor.close();

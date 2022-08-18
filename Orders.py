@@ -9,11 +9,12 @@ import pandas as pd
 from docx.api import Document
 import aspose.words as aw
 import xlrd #Version 1.2.0
-from tkcalendar import DateEntry
+from tkcalendar import DateEntry,Calendar
+from datetime import date,timedelta,datetime
 import csv
 import traceback
 import logging
-import sys,importlib
+#import sys,importlib
 from ConnectToDB import *          #connect to mysql DB
 import DB_tables                   #create tables
 #import Permission
@@ -123,6 +124,15 @@ feedLabel.place(x=50,y=10);
 # NameOfAdminLabeLoRDERSpage2.pack();
 # NameOfAdminLabeLoRDERSpage2.place(x=510, y=20);
 
+# # user label
+# UserLabelHospitalpage1 = Label(hospitalFrame, text=f"{Permission.ValidateTypeOfUser} connected:", font=('Helvetica', 13, 'bold'), fg='red')
+# UserLabelHospitalpage1.pack();
+# UserLabelHospitalpage1.place(x=350, y=20);
+#
+# # user  connected label
+# NameOfUserLabelHospitalpage2 = Label(hospitalFrame, text=Permission.user_verified, font=('Helvetica', 13, 'bold'), fg='red')
+# NameOfUserLabelHospitalpage2.pack();
+# NameOfUserLabelHospitalpage2.place(x=490, y=20);
 
 
 #my_label=Label(root,text='');
@@ -757,6 +767,7 @@ def importFileFunc():
     CalenderLabelicon.pack();
     CalenderLabelicon.place(x=180, y=238);
 
+    date_today = datetime.now() # today's date
 
     #Add calender widget/method
     selectedDate=tk.StringVar() # declaring string variable
@@ -765,10 +776,13 @@ def importFileFunc():
         TempList[1]=ChoosenDateForImport;
         print( TempList[1]);
 
-    cal1=DateEntry(ImportFilePage,selectmode='day',textvariable=selectedDate);
+    cal1=DateEntry(ImportFilePage,background='darkblue',foreground='white',mindate=date_today,textvariable=selectedDate);
     cal1.pack(pady = 20);
     cal1.place(x=20, y=240);
     cal1.bind("<<DateEntrySelected>>", print_sel);#catch date event
+
+    #cal1=Calendar(ImportFilePage,font="Arial 14", selectmode='day',year=2022, month=5, disableddaybackground="red", day=22);
+
     # for i in range(len(page_stuff)):
     #  OrdersTree.insert('', 'end',values=i)
     #OrdersTree.insert(parent='', index=0, text='', values=(TempList[0],TempList[1]));
@@ -981,11 +995,7 @@ def PopUpForNewOrder():
         if OrderDatatoSpecificOrder:
             messagebox.showerror("Error message","There is allready order with that date and hospital,cant continue!");
             raise Exception("There is allready order with that date and hospital,cant continue");
-        # except Exception as e:
-        #     messagebox.showerror("Error message","There is allready order with that date and hospital,cant continue!");
-        #     print(e)
-        # else:
-        #     print("all good");
+
 
         try:
             if ChoosenMaretrialIDNewOrderManual in globals():
@@ -1137,6 +1147,7 @@ def PopUpForNewOrder():
     CalenderLabelicon1.pack();
     CalenderLabelicon1.place(x=172, y=237);
 
+    date_today = datetime.now() # today's date
 
     #Add calender widget/method
     selectDateEventManaulOrder=tk.StringVar(NewOrdersecondaryPage) # declaring string variable
@@ -1157,7 +1168,7 @@ def PopUpForNewOrder():
         updateOrdersTreeMainPageOutputOnly();#Refresh/Update Main page
         OrdersTree.pack();         #open order main page immedaitly
 
-    cal=DateEntry(NewOrderMainPage,selectmode='day',textvariable=selectDateEventManaulOrder);
+    cal=DateEntry(NewOrderMainPage,background='darkblue',mindate=date_today,foreground='white',textvariable=selectDateEventManaulOrder);
     cal.pack(pady = 20);
     cal.config(width=20);#width of window
     cal.place(x=20, y=240);

@@ -1,5 +1,5 @@
 from tkinter import *
-from tkinter import ttk
+from tkinter import ttk,messagebox
 import tkinter as tk
 from PIL import Image, ImageTk
 import mysql.connector
@@ -9,6 +9,7 @@ from docx.api import Document
 import aspose.words as aw
 from tkinter import filedialog as fd
 from tkcalendar import DateEntry
+from datetime import date,timedelta,datetime
 import xlrd #Version 1.2.0
 import Permission
 from ConnectToDB import *          #connect to mysql DB
@@ -766,6 +767,8 @@ def importFileFunc():
     CalenderLabelicon.pack();
     CalenderLabelicon.place(x=180, y=238);
 
+    date_today = datetime.now() # today's date
+
 
     #Add calender widget/method
     selectedDate=tk.StringVar() # declaring string variable
@@ -781,7 +784,7 @@ def importFileFunc():
         #  #OrdersTree.insert(parent=counter,index= "end",iid=counter+2,text=TempList[0]);
         #  counter=counter+1;
 
-    cal1=DateEntry(ImportFilePage,selectmode='day',textvariable=selectedDate);
+    cal1=DateEntry(ImportFilePage,selectmode='day',mindate=date_today,textvariable=selectedDate);
     cal1.pack(pady = 20);
     cal1.place(x=20, y=240);
     cal1.bind("<<DateEntrySelected>>", print_sel);#catch date event
@@ -990,6 +993,21 @@ def PopUpForNewOrder():
         #     root.after(5000, destroy_widget, MatrerialInputCheckMsg) ##Clear label after 5 secondes
         # else:
         #     print(ChoosenMaretrialIDNewOrderManual);
+        cursor = db.cursor();
+        SearchSpecOrderQueryByDoubleclick=f'SELECT idorders,CONCAT(hospitalID,Date) AS AdressPlusHospital FROM orders where hospitalID="{hospitalId}" AND Date="{ChoosenDateForManaulOrder}"';
+        cursor.execute(SearchSpecOrderQueryByDoubleclick);
+        OrderDatatoSpecificOrder = cursor.fetchall();
+
+        db.commit();
+        cursor.close();
+
+        for x in OrderDatatoSpecificOrder:
+            print(f"order selected:{x}");
+
+        if OrderDatatoSpecificOrder:
+            messagebox.showerror("Error message","There is allready order with that date and hospital,cant continue!");
+            raise Exception("There is allready order with that date and hospital,cant continue");
+
         try:
             if ChoosenMaretrialIDNewOrderManual in globals():
                 MaterialInputCheckMsg=Label(NewOrderMainPage, text="Please  choose Material ",fg="red", font=('Helvetica 12'));
@@ -1140,6 +1158,7 @@ def PopUpForNewOrder():
     CalenderLabelicon1.pack();
     CalenderLabelicon1.place(x=172, y=237);
 
+    date_today = datetime.now() # today's date
 
     #Add calender widget/method
     selectDateEventManaulOrder=tk.StringVar(NewOrdersecondaryPage) # declaring string variable
@@ -1160,7 +1179,7 @@ def PopUpForNewOrder():
         updateOrdersTreeMainPageOutputOnly();#Refresh/Update Main page
         OrdersTree.pack();         #open order main page immedaitly
 
-    cal=DateEntry(NewOrderMainPage,selectmode='day',textvariable=selectDateEventManaulOrder);
+    cal=DateEntry(NewOrderMainPage,selectmode='day',mindate=date_today,textvariable=selectDateEventManaulOrder);
     cal.pack(pady = 20);
     cal.config(width=20);#width of window
     cal.place(x=20, y=240);
