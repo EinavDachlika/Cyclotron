@@ -13,8 +13,16 @@ from tkcalendar import DateEntry
 import csv
 import traceback
 import logging
+import sys,importlib
 from ConnectToDB import *          #connect to mysql DB
 import DB_tables                   #create tables
+#import Permission
+
+# def UsersFunction():
+#     spec = importlib.util.spec_from_file_location("module.name", "D:\PythonProjects\Cyclotron\Permission.py")
+#     foo = importlib.util.module_from_spec(spec)
+#     sys.modules["module.name"] = foo
+#     spec.loader.exec_module(foo)
 
 ##table code
 #https://pythonguides.com/python-tkinter-table-tutorial/
@@ -32,13 +40,14 @@ root.option_add("*Font", "Helvetica")
 
 
 #############################################
+#Disable foreiken-key relations
+# cursor = db.cursor();
+# Hack_Disabled_ChildSqlForeignKeys="SET FOREIGN_KEY_CHECKS=1;"
 #
-Hack_Disabled_ChildSqlForeignKeys="SET FOREIGN_KEY_CHECKS=1;"
-
-cursor = db.cursor();
-cursor.execute(Hack_Disabled_ChildSqlForeignKeys);
-db.commit();
-cursor.close();
+#
+# cursor.execute(Hack_Disabled_ChildSqlForeignKeys);
+# db.commit();
+# cursor.close();
 
 ################################################################
 toolbarbgcolor = "white"
@@ -75,6 +84,17 @@ settingsIcon = Image.open("gearIcon.png")
 resizedSettingsIcon = settingsIcon.resize((35,35), Image.ANTIALIAS)
 imgSettings = ImageTk.PhotoImage(resizedSettingsIcon)
 Button(toolbar, image=imgSettings, borderwidth=0).pack(side=RIGHT,padx=10,pady=3)
+
+# # Users Icon - toolbar
+def usersFunc():
+      pass
+#     Permission.OutputScreen();
+
+
+# LogInIcon = Image.open("./Images/UsersIcon.jpg")
+# resizedLogInIcon = LogInIcon.resize((35,35), Image.ANTIALIAS)
+# imgLogIn = ImageTk.PhotoImage(resizedLogInIcon)
+# Button(toolbar, image=imgLogIn, borderwidth=0,command=usersFunc).pack(side=RIGHT,padx=10,pady=3)
 
 
 toolbar.pack(side=TOP, fill=X)
@@ -375,7 +395,7 @@ def deleteOrderEvent(event):
         #print(dataofchoosnenRowListEditTree);
         DataOfRowSelectedDicEditTree=OrdersTree.item(dataofchoosnenRowListEditTree);
         DataOfRowSelectedList=DataOfRowSelectedDicEditTree['values'];
-        print("Record/Order selected: ",DataOfRowSelectedList);
+        print("Record/Order selected to delete: ",DataOfRowSelectedList);
         hospitalSelected=DataOfRowSelectedList[0];
         DateSelected=DataOfRowSelectedList[1];
         InjectionTimeSelected=DataOfRowSelectedList[2];
@@ -1498,7 +1518,7 @@ def PopUpForNewOrder():
 
 ################################Edit/Update Order main page###################################################################
 def UpdateOrder(event):
-
+    global hospitalId;
     curItem = OrdersTree.focus();
     DataOfRowSelectedDic=OrdersTree.item(curItem);
     DataOfRowSelectedList=DataOfRowSelectedDic['values'];
@@ -1517,6 +1537,7 @@ def UpdateOrder(event):
     HospitalListNewOrderPage = hospitalsListForNewOrderManual;
     print(HospitalListNewOrderPage);
 
+
     EditPage =Toplevel(root);
     EditPage.title("Edit Order");
     EditPage.geometry("700x600");
@@ -1526,7 +1547,7 @@ def UpdateOrder(event):
 
     #NewOrdersecondaryPage = tk.Frame(root);
 
-    global hospitalId;
+
     HospitalLabelForEditPage=Label(EditPage, text=HospitalSelected,bg="white", font=('Helvetica 14'));
     x=str(HospitalListNewOrderPage);#string type here
     print(x);
@@ -1541,6 +1562,13 @@ def UpdateOrder(event):
     HospitalLabelForEditPage.pack();
     HospitalLabelForEditPage.place(x=20,y=80);
 
+    FindActivityByHospitalID=f'SELECT Fixed_activity_level FROM hospital where idhospital="{hospitalId}"';
+    cursor.execute(FindActivityByHospitalID);
+    ActivitiyBySpecificOrder = cursor.fetchall();
+    TempID=[i[0] for i in ActivitiyBySpecificOrder];#find index number in a list of tuple
+    ActivitiyBySpecificOrder2=TempID[0];
+    print("Activity of Hospital selected:",ActivitiyBySpecificOrder2);
+
 
     #Create tree/table for the Edit page
     EditTree = ttk.Treeview(EditPage,height=15,selectmode="browse");#select=browse means can choose only 1 record at the time
@@ -1550,24 +1578,32 @@ def UpdateOrder(event):
 
         #Edit page/tree scrollbar -vertical
     EditOrderPageScroll = Scrollbar(EditPage, orient="vertical", command=EditTree.yview);
-    EditOrderPageScroll.place(x=495, y=130, height=330)
+    EditOrderPageScroll.place(x=515, y=130, height=330)
     EditTree.configure(yscrollcommand = EditOrderPageScroll.set);
 
 
 #Foramte Columns
     EditTree.column("#0",width=0,minwidth=0);
     EditTree.column("ID",anchor=W,width=80,minwidth=25);
-    EditTree.column("Amount",anchor=CENTER,width=120,minwidth=25);
+    EditTree.column("Amount",anchor=CENTER,width=140,minwidth=25);
     EditTree.column("Injection time",anchor=W,width=120,minwidth=25);
 
     #Define headers/titles in table
     EditTree.heading("#0", text="Label",anchor=W);
     EditTree.heading("ID", text="ID",anchor=W);
-    EditTree.heading("Amount", text="Amount",anchor=CENTER);
+    EditTree.heading("Amount", text=f"Amount of Doses ({ActivitiyBySpecificOrder2})",anchor=CENTER);
     EditTree.heading("Injection time", text="Injection time",anchor=W);
 
     #get order detail from DB by hospitalID and Date
     cursor = db.cursor();
+    FindActivityByHospitalID=f'SELECT Fixed_activity_level FROM hospital where idhospital="{hospitalId}"';
+    cursor.execute(FindActivityByHospitalID);
+    ActivitiyBySpecificOrder = cursor.fetchall();
+    TempID=[i[0] for i in ActivitiyBySpecificOrder];#find index number in a list of tuple
+    ActivitiyBySpecificOrder2=TempID[0];
+    print("Activity of Hospital selected:",ActivitiyBySpecificOrder2);
+
+
     SearchSpecOrderQueryByDoubleclick=f'SELECT idorders,amount,Injection_time FROM orders where hospitalID="{hospitalId}" AND Date="{DateSelected}"';
     cursor.execute(SearchSpecOrderQueryByDoubleclick);
     OrderDatatoSpecificOrder = cursor.fetchall();

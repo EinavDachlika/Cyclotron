@@ -6,34 +6,7 @@ from functools import partial
 import sys,importlib
 import mysql.connector
 from mysql.connector import Error
-
-# connect to MySqL
-try:
-    #Maor local DB Mysql
-    db = mysql.connector.connect(
-        host="localhost",
-        port=3308,
-        user="root",
-        password="root",
-        database= "cyclotron")
-
-
-    # #Einav local DB Mysql
-    #   db = mysql.connector.connect(
-    #     host="localhost",
-    #     user="root",
-    #     password="Cyclotron2022@?%",
-    #     database= "cyclotron")
-
-    if db.is_connected():
-        # db_Info = db.get_server_info()
-        # print("Connected to MySQL Server version ", db_Info)
-        dbCursor = db.cursor(buffered=True)
-        # dbCursor.execute("select database();")
-        # record = dbCursor.fetchone()
-        # print("You're connected to database: ", record)
-except Error as e:
-    print("Error while connecting to MySQL", e)
+from ConnectToDB import *   #connect to mysql DB
 
 
 
@@ -148,11 +121,12 @@ topPermissionScreen=Frame();
 # topPermissionScreen.geometry('400x150');
 topPermissionScreen.configure(bg='white');
 
-
-bg=ImageTk.PhotoImage(file="./LogoImage.png");
-Photocanvas= Canvas(topPermissionScreen,width=323,height=250);
-Photocanvas.create_image(0,0,image=bg,anchor="nw");
-Photocanvas.create_text((160,200),text="Sheri Orders System",font=('Halvetica',21))
+Photocanvas= Canvas(topPermissionScreen,width=400,height=250);
+SheriLogoImg=(Image.open("./Images/logoSheri2.png"))
+resizedSheriLogoimage= SheriLogoImg.resize((400,250), Image.ANTIALIAS)
+ResizedSheriImage=ImageTk.PhotoImage(resizedSheriLogoimage);
+Photocanvas.create_image(0,0,image=ResizedSheriImage,anchor="nw");
+Photocanvas.create_text((210,147),text="Welcome to \n\nS.R.Y Orders System ",fill="red",font=('Halvetica',30))
 
 #username label and text entry box
 usernameLabel = Label(topPermissionScreen, text="User Name",font=('Halvetica',10));
@@ -171,14 +145,14 @@ validateLogin = partial(validateLogin, username, password);
 loginButton = Button(topPermissionScreen, text="Login", command=validateLogin);
 
 CancelButton=Button(topPermissionScreen,text="Cancel",command=lambda: [root.destroy()]);
-CancelButton.place(x=255,y=461);
+CancelButton.place(x=315,y=480);
 
 def LoginButton(event):
     validateLogin();
 
 passwordEntry.bind('<Return>',LoginButton);
 
-CopyrightLabel=Label(topPermissionScreen,text='Copyright to Sheri L.t.d 2022',font=('Arial',8));
+CopyrightLabel=Label(topPermissionScreen,text='Copyright to S.R.Y L.t.d 2022',font=('Arial',8));
 
 Photocanvas.pack();
 #TitleLabel.pack;
