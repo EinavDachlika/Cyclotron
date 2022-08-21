@@ -404,7 +404,7 @@ OrderselectedEvent = tk.StringVar();
 def deleteOrderEvent(event):
 
         """Function for removing order from DB"""
-        global IidSelected,DateSelected,InjectionTimeSelected,IDofHospitalSelected2;
+        global DoseNum_Selected,DateSelected,InjectionTimeSelected,IDofHospitalSelected2;
         row = OrdersTree.focus();
 
         dataofchoosnenRowListEditTree=row;
@@ -1361,7 +1361,7 @@ def PopUpForNewOrder():
 
     #Define headers/titles in table
     NewOrderTree_P2.heading("#0", text="Label",anchor=W);
-    NewOrderTree_P2.heading("ID", text="ID",anchor=W);
+    NewOrderTree_P2.heading("ID", text="Dose Number",anchor=W);
     NewOrderTree_P2.heading("Amount", text="Amount",anchor=CENTER);
     NewOrderTree_P2.heading("Injection time", text="Injection time",anchor=W);
 
@@ -1381,7 +1381,7 @@ def PopUpForNewOrder():
         print(dataofchoosnenRowListEditTree);
         DataOfRowSelectedDicEditTree=NewOrderTree_P2.item(dataofchoosnenRowListEditTree);
         DataOfRowSelectedList=DataOfRowSelectedDicEditTree['values'];
-        print(DataOfRowSelectedList);
+        print("Raw selectes to edit:",DataOfRowSelectedList);
         IidSelected=DataOfRowSelectedList[0];
         AmountSelected=DataOfRowSelectedList[1];
         InjectionTimeSelected=DataOfRowSelectedList[2];
@@ -1393,11 +1393,11 @@ def PopUpForNewOrder():
 
     def set_amountValueEventNewOrderP(CurAmountvalue):
         row = NewOrderTree_P2.focus();
-        print(CurAmountvalue);
+        print("Amount selected",CurAmountvalue);
         if row:
             try:
                 cursor = db.cursor(buffered=True);
-                UpdateSQlQuery=f"UPDATE  orders SET injection_time='{InjectionTimeSelected}',amount='{CurAmountvalue}'  WHERE DoseNumber = '{IidSelected}' AND hospitalID= '{ListofVal[5]}' AND Date= '{ChoosenDateForManaulOrder}';";
+                UpdateSQlQuery=f"UPDATE  orders SET amount='{CurAmountvalue}'  WHERE DoseNumber = '{DoseNum_Selected}' AND hospitalID= '{ListofVal[5]}' AND Date= '{ChoosenDateForManaulOrder}';";
                 cursor.execute(UpdateSQlQuery);
                 print("DB updated(Amount) successfully ");
                 db.commit();
@@ -1431,15 +1431,15 @@ def PopUpForNewOrder():
     #Catch Injection  event
     def InjectionTimeselect(event):
         row = NewOrderTree_P2.focus();
-        global IidSelected,AmountSelected,InjectionTimeSelected,DosesSelectedEvent;
+        global DoseNum_Selected,AmountSelected,InjectionTimeSelected,DosesSelectedEvent;
         row = NewOrderTree_P2.focus();
 
         dataofchoosnenRowListEditTree=row;
         print(dataofchoosnenRowListEditTree);
         DataOfRowSelectedDicEditTree=NewOrderTree_P2.item(dataofchoosnenRowListEditTree);
         DataOfRowSelectedList=DataOfRowSelectedDicEditTree['values'];
-        print(DataOfRowSelectedList);
-        IidSelected=DataOfRowSelectedList[0];
+        print("Raw selectes to edit 2:",DataOfRowSelectedList);
+        DoseNum_Selected=DataOfRowSelectedList[0];
         AmountSelected=DataOfRowSelectedList[1];
         InjectionTimeSelected=DataOfRowSelectedList[2];
         if row:
@@ -1452,7 +1452,7 @@ def PopUpForNewOrder():
         if row:
             try:
                 cursor = db.cursor(buffered=True);
-                UpdateSQlQuery=f"UPDATE  orders SET injection_time='{CurTimevalueEditNewOrderP}',amount='{AmountSelected}'  WHERE DoseNumber = '{IidSelected}' AND hospitalID= '{ListofVal[5]}' AND Date= '{ChoosenDateForManaulOrder}';";
+                UpdateSQlQuery=f"UPDATE  orders SET injection_time='{CurTimevalueEditNewOrderP}'  WHERE DoseNumber = '{DoseNum_Selected}' AND hospitalID= '{ListofVal[5]}' AND Date= '{ChoosenDateForManaulOrder}';";
                 cursor.execute(UpdateSQlQuery);
                 print("DB updated(Injection_Time) successfully ");
                 db.commit();
@@ -1552,7 +1552,7 @@ def UpdateOrder(event):
     DataOfRowSelectedDic=OrdersTree.item(curItem);
     DataOfRowSelectedList=DataOfRowSelectedDic['values'];
     #print(DataOfRowSelectedList);
-    HospitalSelected=DataOfRowSelectedList[0];
+    HospitalSelectedName=DataOfRowSelectedList[0];
     DateSelected=DataOfRowSelectedList[1];
     AmountOfDosesSelected=DataOfRowSelectedList[2];
 
@@ -1560,7 +1560,7 @@ def UpdateOrder(event):
 
     #search hospital by name from hospital table db and get the ID and the name as output
     cursor = db.cursor();
-    cursor.execute(f'SELECT idhospital,Name FROM hospital where Name="{HospitalSelected}"');
+    cursor.execute(f'SELECT idhospital,Name FROM hospital where Name="{HospitalSelectedName}"');
     hospitalsListForNewOrderManual = cursor.fetchall();
 
     HospitalListNewOrderPage = hospitalsListForNewOrderManual;
@@ -1577,7 +1577,7 @@ def UpdateOrder(event):
     #NewOrdersecondaryPage = tk.Frame(root);
 
 
-    HospitalLabelForEditPage=Label(EditPage, text=HospitalSelected,bg="white", font=('Helvetica 14'));
+    HospitalLabelForEditPage=Label(EditPage, text=HospitalSelectedName,bg="white", font=('Helvetica 14'));
     x=str(HospitalListNewOrderPage);#string type here
     print(x);
     hospitalLabel = x.split(",",1);
@@ -1810,7 +1810,7 @@ def UpdateOrder(event):
     #print(status);
     #Catch Injection  event
     def InjectionTimeselect(event):
-        global IidSelected,AmountSelected,InjectionTimeSelected,DosesSelectedEvent;
+        global DoseNum_Selected,AmountSelected,InjectionTimeSelected,DosesSelectedEvent;
 
         global ClickingRowsCounter;
 
@@ -1829,7 +1829,7 @@ def UpdateOrder(event):
         DataOfRowSelectedDicEditTree=EditTree.item(dataofchoosnenRowListEditTree);
         DataOfRowSelectedList=DataOfRowSelectedDicEditTree['values'];
         print("Row/Values selected",DataOfRowSelectedList);
-        IidSelected=DataOfRowSelectedList[0];
+        DoseNum_Selected=DataOfRowSelectedList[0];
         AmountSelected=DataOfRowSelectedList[1];
         TempListForUpdateOrderValues[1]=AmountSelected;#insert current amount selected to the list-Defualt
         InjectionTimeSelected=DataOfRowSelectedList[2];
@@ -1841,7 +1841,7 @@ def UpdateOrder(event):
     EditTree.bind('<<TreeviewSelect>>', InjectionTimeselect)
 
     def setInjectionTime(CurValueForTime):
-        global IidSelected,AmountSelected,InjectionTimeSelected,DosesSelectedEvent;
+        global DoseNum_Selected,AmountSelected,InjectionTimeSelected,DosesSelectedEvent;
         print(CurValueForTime);
         TempListForUpdateOrderValues[0]=CurValueForTime;
         #print(f'Injection time selected:{TempListForUpdateOrderValues[0]}');
@@ -1865,7 +1865,7 @@ def UpdateOrder(event):
 
     def enterToDB_UpdateOrder():
         """Function for submitting/save changes from edit order page"""
-        global IidSelected,ClickingRowsCounter;
+        global DoseNum_Selected,ClickingRowsCounter;
         ClickingRowsCounter=0;
         #Disable  Injection-time and amount dropdown menues
         dropDownInjectionT_M.configure(state="disabled")
@@ -1874,7 +1874,7 @@ def UpdateOrder(event):
 
         try:
             cursor = db.cursor(buffered=True);
-            UpdateSQlQuery=f"UPDATE  orders SET injection_time='{TempListForUpdateOrderValues[0]}',amount='{TempListForUpdateOrderValues[1]}' WHERE idorders = '{IidSelected}';";
+            UpdateSQlQuery=f"UPDATE  orders SET injection_time='{TempListForUpdateOrderValues[0]}',amount='{TempListForUpdateOrderValues[1]}' WHERE hospitalID = '{hospitalId}' and Date = '{DateSelected}' and idorders={DoseNum_Selected};";
             cursor.execute(UpdateSQlQuery);
             print("DB updated successfully ");
             db.commit();
@@ -1922,7 +1922,7 @@ def UpdateOrder(event):
         ListofVal[4]+=1;#current amount= courrent amount+1
 
     def removeRawFunc():
-        global IidSelected;
+        global DoseNum_Selected;
         #rowTree=rowTree.get();
         #for i,j in zip(range(IntAmount),range(BeginigHour,IntAmount)):
         rawSelectedToDelete=EditTree.selection();
@@ -1930,7 +1930,7 @@ def UpdateOrder(event):
             try:
                 EditTree.delete(rawselected);
                 cursor = db.cursor(buffered=True);
-                DeleteRecordOrdersTable_query = f'DELETE FROM orders WHERE idorders = {IidSelected}';
+                DeleteRecordOrdersTable_query = f'DELETE FROM orders WHERE idorders = {DoseNum_Selected}';
                 cursor.execute(DeleteRecordOrdersTable_query);
                 print("Remove record from DB sucssful ");
                 db.commit();
