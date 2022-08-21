@@ -16,7 +16,8 @@ import traceback
 import logging
 #import sys,importlib
 from ConnectToDB import *          #connect to mysql DB
-import DB_tables                   #create tables
+#import DB_tables                   #create tables ans import them
+#import DB_tables_test
 #import Permission
 
 # def UsersFunction():
@@ -181,6 +182,11 @@ def ClearEdittree_2():
 
 ListofCurrnetHospitalOrderMainPage=[];
 
+global counterOrderId;
+
+#if counterOrderId==0:
+counterOrderId=0;
+
 def updateOrdersTreeMainPageOutputOnly():
 
     clear_tree();
@@ -189,7 +195,7 @@ def updateOrdersTreeMainPageOutputOnly():
 
     #Show output to Order main page tree-id,date,sum of doses,and last updated
     #cursor.execute("SELECT hospitalID,Date,SUM(amount) FROM orders GROUP BY Date,hospitalID;");
-    cursor.execute("SELECT hospital.Name,orders.Date,SUM(orders.amount),MAX(updated_at) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID WHERE orders.deleted=0 GROUP BY orders.Date,orders.hospitalID;");
+    cursor.execute("SELECT hospital.Name,orders.Date,SUM(orders.amount),MAX(updated_at) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID  GROUP BY orders.Date,orders.hospitalID;");
     SumOFAmount1 = cursor.fetchall();
     print(SumOFAmount1);
     # for x in SumOFAmount1:
@@ -234,7 +240,7 @@ def SearchOutpout(data):
 
     #Show output to Order main page tree-id,date,sum of doses
     #cursor.execute("SELECT hospitalID,Date,SUM(amount) FROM orders GROUP BY Date,hospitalID;");
-    cursor.execute(f'SELECT hospital.Name,orders.Date,SUM(orders.amount),MAX(updated_at) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID WHERE orders.deleted={0} GROUP BY orders.Date,orders.hospitalID;');
+    cursor.execute(f'SELECT hospital.Name,orders.Date,SUM(orders.amount),MAX(updated_at) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID GROUP BY orders.Date,orders.hospitalID;');
     DataAchievedBtSearch = cursor.fetchall();
     for x in DataAchievedBtSearch:
         print(x);
@@ -291,7 +297,7 @@ def SearchComponent(event):
 
     #Show output to Order main page tree-id,date,sum of doses
     #cursor.execute("SELECT hospitalID,Date,SUM(amount) FROM orders GROUP BY Date,hospitalID;");
-      cursor.execute("SELECT hospital.Name,orders.Date,SUM(orders.amount),MAX(updated_at) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID WHERE orders.deleted=0 GROUP BY orders.Date,orders.hospitalID;");
+      cursor.execute("SELECT hospital.Name,orders.Date,SUM(orders.amount),MAX(updated_at) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID GROUP BY orders.Date,orders.hospitalID;");
       SumOFAmount1 = cursor.fetchall();
       print(SumOFAmount1);
       ListofCurrnetHospitalOrderMainPage=[];
@@ -349,10 +355,10 @@ def updateOrdersTreeByMaterialFiltering(materialSelData):
     cursor = db.cursor();
     if materialSelData=='A':
     #Show output to Order main page tree-id,date,sum of doses
-     cursor.execute(f"SELECT hospital.Name,orders.Date,SUM(orders.amount),MAX(updated_at) FROM orders  INNER JOIN hospital ON hospital.idhospital = orders.hospitalID WHERE orders.deleted=0 GROUP BY orders.Date,orders.hospitalID ;");
+     cursor.execute(f"SELECT hospital.Name,orders.Date,SUM(orders.amount),MAX(updated_at) FROM orders  INNER JOIN hospital ON hospital.idhospital = orders.hospitalID GROUP BY orders.Date,orders.hospitalID ;");
     else:
     #Show output to Order main page tree-id,date,sum of doses filtering by Material ID
-     cursor.execute(f"SELECT hospital.Name,orders.Date,SUM(orders.amount),MAX(updated_at) FROM orders  INNER JOIN hospital ON hospital.idhospital = orders.hospitalID WHERE materialID={materialSelData} AND orders.deleted=0   GROUP BY orders.Date,orders.hospitalID ;");
+     cursor.execute(f"SELECT hospital.Name,orders.Date,SUM(orders.amount),MAX(updated_at) FROM orders  INNER JOIN hospital ON hospital.idhospital = orders.hospitalID WHERE materialID={materialSelData}  GROUP BY orders.Date,orders.hospitalID ;");
 
     filteringRowsFromDB = cursor.fetchall();
     print(filteringRowsFromDB);
@@ -419,21 +425,32 @@ def deleteOrderEvent(event):
         print(f'{IDofHospitalSelected2} : {hospitalSelected}');
 
 def deleteOrderfunc():
+    MsgBox = messagebox.askquestion ('Info message','Are you sure you want to cancel/delete the order?',icon = 'warning')
+    if MsgBox == 'yes':
         rawSelectedToDelete=OrdersTree.selection();#selected item:I001,I002,I003....
         RecoredDeletedFlug=1;
         try:
             cursor = db.cursor(buffered=True);
             for rawselected in rawSelectedToDelete:
                 UpdateSQlQuery=f"UPDATE  orders SET deleted='{RecoredDeletedFlug}' WHERE  hospitalID= '{IDofHospitalSelected2}' AND Date= '{DateSelected}';";
-                #DeleteQuery = f"DELETE FROM orders WHERE hospitalID= '{IDofHospitalSelected2}' AND Date= '{DateSelected}';";
+                DeleteQuery = f"DELETE FROM orders WHERE hospitalID= '{IDofHospitalSelected2}' AND Date= '{DateSelected}';";
                 cursor.execute(UpdateSQlQuery);
+                cursor.execute(DeleteQuery);
                 OrdersTree.delete(rawselected);
                 print("DB updated successfully-Record add to deleted column ");
                 db.commit();
                 cursor.close();
+        except mysql.connector.errors.IntegrityError as e:
+            messagebox.showinfo("info message","Watch out\nThere is workplan that relate to the order you trying to delete/cancel that still active\n,action cancel!");
+            logging.error(traceback.format_exc())
         except Exception as e:
             logging.error(traceback.format_exc())
-            print("Error-Order was not updated-please check MySQL")
+            print("Error-Order was not updated-please check MySQL");
+
+    else:
+        messagebox.showinfo('Return','Return to the Orders screen');
+
+
 
 # Remove button (Icon) -Delete Order
 global imgDelete;
@@ -683,7 +700,7 @@ def importFileFunc():
 
     def SaveToDB():
         # Function to save order into DB from Import file
-
+        global counterOrderId;
         ######################################################################################################
         def delete_label(label):#Function for Clear label
             label.destroy()
@@ -694,9 +711,9 @@ def importFileFunc():
 
         try:
            for i in range(1,len(AmountListFromDoc)):
-            ValuseTuple=(i,TempList[1],InjectionTImeListFromdoc[i],AmountListFromDoc[i], TempList[0],TempList[2],0,0);#BatchId=null
-            cursor.execute("INSERT INTO orders (DoseNumber,Date,injection_time,amount,hospitalID,materialID,DecayCorrected,batchID) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);#BatchId=null
-
+            ValuseTuple=(counterOrderId,i,TempList[1],InjectionTImeListFromdoc[i],AmountListFromDoc[i], TempList[0],TempList[2],0);#BatchId=null
+            cursor.execute("INSERT INTO orders (idorders,DoseNumber,Date,injection_time,amount,hospitalID,materialID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);#BatchId=null
+            counterOrderId=counterOrderId+1;
            updateOrdersTreeMainPageOutputOnly();##update orders tree main page
         except (mysql.connector.errors.DatabaseError,UnboundLocalError):
             logging.error(traceback.format_exc());
@@ -1246,7 +1263,7 @@ def PopUpForNewOrder():
         # ordersFrame.forget();
         # toolbar.forget();
         #ordersFrame.wm_state('iconic');#minimize orders main page
-
+        global counterOrderId;
         MsgBox = messagebox.askquestion ('Info message','Do you wish to proceed? every changed will be saved in the DB',icon = 'warning')
         if MsgBox == 'yes':
             # ValuseDic = {
@@ -1277,11 +1294,12 @@ def PopUpForNewOrder():
 
             cursor = db.cursor(buffered=True);
             for i in range(1,ListofVal[4]+1):
-                ValuseTuple=(i, ChoosenDateForManaulOrder, ListofTimeIntervals[i-1], ListofVal[1], ListofVal[5],ListofVal[7],0,1);#BatchId=null
-                #print("order trying to get in DB-Add pressed");
+                ValuseTuple=(counterOrderId,i, ChoosenDateForManaulOrder, ListofTimeIntervals[i-1], ListofVal[1], ListofVal[5],ListofVal[7],0);#BatchId=null
+                print("order trying to get in DB-Add pressed");
                 try:
-                    UpdateSQlQuery="INSERT INTO orders (DoseNumber,Date,injection_time,amount,hospitalID,materialID,DecayCorrected,batchID) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);";#BatchId=null
+                    UpdateSQlQuery="INSERT INTO orders (idorders,DoseNumber,Date,injection_time,amount,hospitalID,materialID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);";#BatchId=null
                     cursor.execute(UpdateSQlQuery,ValuseTuple);
+                    counterOrderId=counterOrderId+1;
                     print("DB updated successfully ");
                 except Exception as e:
                     logging.error(traceback.format_exc());

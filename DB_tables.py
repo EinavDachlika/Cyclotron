@@ -28,7 +28,7 @@ dbCursor.execute("CREATE TABLE IF NOT EXISTS resourcecyclotron ("
 dbCursor.execute("CREATE TABLE IF NOT EXISTS users ("
                  "iduser int(255) NOT NULL AUTO_INCREMENT"
                  ",Name varchar(45) NOT NULL,"
-                 "Password varchar(45) BINARY NOT NULL"
+                 "Password varchar(45) BINARY NOT NULL"#Binari=case senaitive password 
                  ",userType ENUM('admin','user','editor') DEFAULT 'user',"
                  "lastSeen  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
                  ",PRIMARY KEY(iduser))");
@@ -94,8 +94,8 @@ dbCursor.execute("CREATE TABLE IF NOT EXISTS orders ("
                  "deleted BOOLEAN DEFAULT FALSE,"
                  "updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,"
                  "PRIMARY KEY(idorders),"
-                 "FOREIGN KEY (hospitalID) REFERENCES hospital(idhospital),"
-                 "FOREIGN KEY (materialID) REFERENCES material(idmaterial),"
+                 "FOREIGN KEY (hospitalID) REFERENCES hospital(idhospital) on update cascade,"
+                 "FOREIGN KEY (materialID) REFERENCES material(idmaterial) on update cascade),"
                  "FOREIGN KEY (batchID) REFERENCES batch(idbatch));");
 
 
