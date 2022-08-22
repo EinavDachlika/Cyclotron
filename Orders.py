@@ -14,21 +14,19 @@ from datetime import date,timedelta,datetime
 import csv
 import traceback
 import logging
-#import sys,importlib
+import sys,importlib
 from ConnectToDB import *          #connect to mysql DB
 #import DB_tables                   #create tables ans import them
-#import DB_tables_test
 #import Permission
 
+#import DB_tables_test
 # def UsersFunction():
-#     spec = importlib.util.spec_from_file_location("module.name", "D:\PythonProjects\Cyclotron\Permission.py")
-#     foo = importlib.util.module_from_spec(spec)
-#     sys.modules["module.name"] = foo
-#     spec.loader.exec_module(foo)
+spec = importlib.util.spec_from_file_location("module.name", "D:\PythonProjects\Cyclotron\‏‏DB_tables_test.py")
+foo = importlib.util.module_from_spec(spec)
+sys.modules["module.name"] = foo
+spec.loader.exec_module(foo)
 
-##table code
-#https://pythonguides.com/python-tkinter-table-tutorial/
-
+###############################################################################################
 root = tk.Tk();
 #root.geometry("300x300")
 
@@ -1111,19 +1109,26 @@ def PopUpForNewOrder():
 
         for record in range(int(IntAmount)):
             NewOrderTree_P2.insert("", "end",values=( ListofVal[0],ListofVal[1],f'{ListofVal[2]}:{ListofVal[3]}'));#ListofVal[0]=id,ListofVal[1]=amount/amount,ListofVal[2]=hours:ListofVal[3]=minutes
-            ListofVal[2]=ListofVal[2]+1;       #Hours jumps/intervals
+            #ListofVal[2]=ListofVal[2]+1;       #Hours jumps/intervals
             ListofVal[3]=ListofVal[6];         #Add minutes intervals
             ListofVal[0]= ListofVal[0]+1;
             TimeInjectionVar=f'{ListofVal[2]}:{ListofVal[3]}';
-            ListofTimeIntervals.append(TimeInjectionVar)
+            print("Time per Dose:",TimeInjectionVar);
+            ListofTimeIntervals.append(TimeInjectionVar);
+            ListofVal[2]=ListofVal[2]+1;       #Hours jumps/intervals
+
         OrderID+=1;#counterID=counterID+1
         #print(OrderID);
         amountVar.set("");
         MinutesVar.set("");
         HoursVar.set("");
-        print(ListofTimeIntervals);
+        print("List of intervals:",ListofTimeIntervals);
 
+        deleteButton2['state'] = DISABLED;#Disable remove button
+        AddRowButton['state'] = DISABLED;#Disable add dose/record button
         NewOrderTree_P2.state(('disabled',));#Disabled/gray-out new order tree
+        dropDownInjectionT_M.configure(state="disabled");#Disabled/gray-out time-injection drop-down menu
+        dropDownAmountM.configure(state="disabled");#Disabled/gray-out change amount drop-down menu
         #swap function for viewing New order page,frame 2,after pressing "next" """
         NewOrderMainPage.forget();
         NewOrdersecondaryPage.pack(fill='both',expand=1);
@@ -1278,6 +1283,10 @@ def PopUpForNewOrder():
             #Check if all input was enterd
             if (ListofVal[7]!='') and (ListofVal[6]!='') and (ListofVal[5]!='') and (ListofVal[4]!='') and (ListofVal[3]!='') and (ListofVal[2]!='') and (ListofVal[1]!='') and (ListofVal[0]!=''):
                 NewOrderTree_P2.state(('!disabled',));#Enable tree items
+                deleteButton2['state'] = NORMAL;#Enable remove button
+                AddRowButton['state'] = NORMAL;#Enable add dose/record button
+                dropDownInjectionT_M.configure(state="normal");#Disabled/gray-out time-injection drop-down menu
+                dropDownAmountM.configure(state="normal");#Disabled/gray-out change amount drop-down menu
             else:
                 NewOrderTree_P2.state(('disabled',));#Disable tree items
                 messagebox.showerror("Error message","Error ! one of the records not filled,please fill order again");
@@ -1521,10 +1530,6 @@ def PopUpForNewOrder():
     deleteButton2.pack();
     deleteButton2.place(x=465, y=95);
 
-    #remove/delete record from db
-    # def deleteCyclotronfun():
-    #     query = "DELETE FROM resourcecyclotron WHERE idresourceCyclotron = %s"
-    #     cyclo_tabel.delete_record(query)
 
 
 
@@ -1619,7 +1624,7 @@ def UpdateOrder(event):
 
     #Define headers/titles in table
     EditTree.heading("#0", text="Label",anchor=W);
-    EditTree.heading("ID", text="ID",anchor=W);
+    EditTree.heading("ID", text="Dose number",anchor=W);
     EditTree.heading("Amount", text=f"Amount of Doses ({ActivitiyBySpecificOrder2})",anchor=CENTER);
     EditTree.heading("Injection time", text="Injection time",anchor=W);
 
@@ -1633,7 +1638,7 @@ def UpdateOrder(event):
     print("Activity of Hospital selected:",ActivitiyBySpecificOrder2);
 
 
-    SearchSpecOrderQueryByDoubleclick=f'SELECT idorders,amount,Injection_time FROM orders where hospitalID="{hospitalId}" AND Date="{DateSelected}"';
+    SearchSpecOrderQueryByDoubleclick=f'SELECT DoseNumber,amount,Injection_time FROM orders where hospitalID="{hospitalId}" AND Date="{DateSelected}"';
     cursor.execute(SearchSpecOrderQueryByDoubleclick);
     OrderDatatoSpecificOrder = cursor.fetchall();
     print(f"order selected: {OrderDatatoSpecificOrder}");
@@ -1874,7 +1879,7 @@ def UpdateOrder(event):
 
         try:
             cursor = db.cursor(buffered=True);
-            UpdateSQlQuery=f"UPDATE  orders SET injection_time='{TempListForUpdateOrderValues[0]}',amount='{TempListForUpdateOrderValues[1]}' WHERE hospitalID = '{hospitalId}' and Date = '{DateSelected}' and idorders={DoseNum_Selected};";
+            UpdateSQlQuery=f"UPDATE  orders SET injection_time='{TempListForUpdateOrderValues[0]}',amount='{TempListForUpdateOrderValues[1]}' WHERE hospitalID = '{hospitalId}' and Date = '{DateSelected}' and DoseNumber={DoseNum_Selected};";
             cursor.execute(UpdateSQlQuery);
             print("DB updated successfully ");
             db.commit();
