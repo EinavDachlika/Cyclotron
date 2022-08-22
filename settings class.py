@@ -14,7 +14,6 @@ import math
 from numpy import log as ln
 import webbrowser
 from operator import itemgetter
-import time
 
 # from importlib import reload
 
@@ -271,9 +270,6 @@ def warning_message(text):
 def YES_NO_message(title_tab, text):
     return messagebox.askyesno(title_tab,text)
 
-def refresh_page():
-    root.destroy()
-    root.mainloop()
 
 #algorithm functions
 lamda = ln(2) / 109.6
@@ -765,24 +761,18 @@ class Popup(Toplevel):
 
         # prevented 'Date', 'Batch Number','Material' show as entry box
         if args[len(args) - 1] == 'batch' :
-            label_text = valueList [2] + '  -  Batch Number: '+ valueList[1] + '  -  '+ valueList[0]
-            p_label = Label(self, text=label_text, font=('Helvetica 14 bold underline'))
+            label_text = valueList [0] + '  |  '+ valueList[1]  +'  |  Batch Number: '+ valueList[2]
+            p_label = Label(self, text=label_text, font=('Helvetica 14 bold '), fg=label_color)
             p_label.grid(row=row_num, column=1)
             p_label.place(x=p_last_label_x, y=p_last_label_y)
             valueList=valueList[3:]
-            p_last_label_y += 18*3
+            p_last_label_y += 18*2.5
             p_last_label_x+=10
-
-
 
 
         entries = []
         error_labels_list=[]
         for lab in labels:
-            # if args[len(args)-1] == 'batch' and lab[0] in  ('Date', 'Batch Number','Material'):
-            #     p_last_label_y += 18
-            #     continue
-
             p_label = Label(self, text=lab[0])
             p_label.grid(row=row_num, column=1)
             p_label.place(x=p_last_label_x, y=p_last_label_y)
@@ -798,6 +788,11 @@ class Popup(Toplevel):
             entry_box.insert(0, valueList[value_index])
             value_index += 1
             entries.append(entry_box)
+
+            if args[len(args) - 1] == 'batch' and lab[0] in ('Time leaves Hadassah','Total EOS'):
+                entry_box.config(state='disabled')
+                p_last_label_y-=10
+
 
             if lab[1] != '':
                 p_label_units = Label(self, text=lab[1])
@@ -1101,6 +1096,7 @@ class Popup(Toplevel):
         workplanID_list = cursor.fetchall()
         workplanID = workplanID_list[0][0]
 
+        batch_input_values_list=[]
         index=1
         for batch in batches_general_data:
             if len(batch)!=0:
@@ -1109,6 +1105,10 @@ class Popup(Toplevel):
 
                 cursor.execute(create_batch_query)
                 db.commit()
+
+                #for ui table - in batch page
+                list = [str(selected_date),selected_material,index,str(batch['Tout']),batch['Activity'],None,None]
+                batch_input_values_list.append(list)
             index+=1
 
         i=1
@@ -1121,6 +1121,9 @@ class Popup(Toplevel):
                 batchID_list = cursor.fetchall()
                 batchID = batchID_list[0][0]
 
+                #for ui table - in batch page
+                batch_input_values_list[i-1].append(batchID)
+
                 for order in b:
                     values= (batchID,float(order['Activity_Tcal']))
                     update_rec_query = """UPDATE orders SET batchID= %s,DecayCorrected= %s
@@ -1131,15 +1134,21 @@ class Popup(Toplevel):
             i+=1
 
         # insert the id from db to values list (not in table) to allow deleting the record without refreshing the page
-        input_values_list=[str(selected_date),selected_material]
+        wp_input_values_list=[str(selected_date),selected_material]
         selectMaxIDquery = """SELECT MAX(idworkplan) FROM workplan"""
         cursor.execute(selectMaxIDquery)
         data = cursor.fetchall()
-        input_values_list.append(data[0][0])
-        #add to table (show to user)
+        wp_input_values_list.append(data[0][0])
+
+        #add to wp table (show to user)
         wp_tabel.insert(parent='', index='end', iid=None, text='',
-                    values=input_values_list)
-        refresh_page
+                    values=wp_input_values_list)
+
+
+        # add to batch table (show to user)
+        for b_r in batch_input_values_list:
+            batch_tabel.insert(parent='', index='end', iid=None, text='',
+                           values=b_r)
 
         #excel
         excelIcon = Image.open("excelIcon.png")
@@ -1416,7 +1425,8 @@ class table(ttk.Treeview):
                     query2 = "UPDATE " + table_name +" SET deleted = True " +"WHERE " + pk_name + "=" + pk_delected_record
                     cursor.execute(query2)
                     db.commit()
-                self.delete(self.selection()[0])
+                # self.delete(self.selection()[0])
+                print(self.selection()[0])
 
     def delete_WP_record(self):
         selected_rec = self.selected()
@@ -1446,6 +1456,12 @@ class table(ttk.Treeview):
                     raise TypeError("update orders error")
 
                 try:
+                    #for deleting rows from table
+                    delete_table_batch_query = "SELECT idbatch FROM batch WHERE workplanID=" + pk_delected_record
+                    cursor.execute(delete_table_batch_query)
+                    to_delete_list_idbatch = cursor.fetchall()
+                    to_delete_batches_list =  [b[0] for b in to_delete_list_idbatch]
+
                     # delete batch
                     delete_batch_query = "DELETE FROM batch WHERE workplanID=" + pk_delected_record
                     cursor.execute(delete_batch_query)
@@ -1454,6 +1470,13 @@ class table(ttk.Treeview):
                     raise TypeError("update batch error")
 
                 self.delete(self.selection()[0])
+
+                # delete from batch table (show to user)
+                children = batch_tabel.get_children()
+                batch_table_index = [b for b in children if batch_tabel.item(b)['values'][7] in to_delete_batches_list]
+
+                for b_index in batch_table_index:
+                    batch_tabel.delete(b_index)
 
 ##################### settings - cyclotron #####################
 #cyclotron frame
@@ -2025,9 +2048,9 @@ c = 80
 lable_place_x = 80
 lable_place_y=70
 
-columns_name_list=('  Date  ', 'Batch Number','Material','TargetCurrentLB ', 'DecayCorrected_TTA (mci)', 'EOS_activity')
+columns_name_list=('  Date  ','Material', 'Batch Number','Time leaves Hadassah','Total EOS (mCi)','TargetCurrentLB ', 'DecayCorrected_TTA (mCi)')
 
-batch_query="""SELECT  b.idbatch , wp.Date ,b.batchNumber, m.materialName, b.TargetCurrentLB ,b.DecayCorrected_TTA, b.EOS_activity 
+batch_query="""SELECT  b.idbatch , wp.Date ,m.materialName,b.batchNumber,b.Time_leaves_Hadassah,b.Total_eos, b.TargetCurrentLB ,b.DecayCorrected_TTA
                 FROM batch b 
                 JOIN workplan wp ON wp.idworkplan = b.workplanID 
                 JOIN material m ON m.idmaterial = wp.materialID"""
@@ -2037,6 +2060,7 @@ batch_tabel=table(frame,scroll_width,list_height,tab_side,x,y,lable_place_x,
 batch_tabel.create_fully_tabel( columns_name_list, batch_query)
 
 batchFrame.pack(fill='both',expand=1)
+
 
 ###batch functions###
 def editBatchfun():
@@ -2048,11 +2072,11 @@ def editBatchfun():
         popup_size = "900x550"
         editBatchPopup.open_pop('Edit Batch Details',popup_size)
         table_name= 'batch'
-        query = "UPDATE batch SET TargetCurrentLB = %s ,DecayCorrected_TTA= %s, EOS_activity=%s  WHERE idbatch = %s"
+        query = "UPDATE batch SET Time_leaves_Hadassah=%s,Total_eos=%s ,TargetCurrentLB = %s ,DecayCorrected_TTA= %s  WHERE idbatch = %s"
 
-        pk = selected_rec[6]
+        pk = selected_rec[7]
 
-        labels = (('TargetCurrentLB', ''), ('DecayCorrected_TTA', '(mci/h)'),  ('EOS_activity', ''))
+        labels = ( ('Time leaves Hadassah',''),('Total EOS', '(mCi/h)'),('TargetCurrentLB', ''), ('Decay Corrected TTA', '(mCi/h)'))
         save_title = "Save Changes"
 
         # def edit_popup(self, labels, valueList, save_title, *args, table_name):
