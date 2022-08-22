@@ -704,30 +704,53 @@ def importFileFunc():
             label.destroy()
 
 
+        if TempList[1]=='':
+            DateInputCheckMsgImportPage=Label(ImportFilePage, text="Please choose date of order",fg="red", font=('Helvetica 12'));
+            DateInputCheckMsgImportPage.pack();
+            DateInputCheckMsgImportPage.place(x=20,y=270);
+            root.after(5000, delete_label, DateInputCheckMsgImportPage); ##Clear label after 5 secondes
+            raise TypeError("Error,cant find date,date is empty");
+
+        elif TempList[2]=='':
+            MaterialInputCheckMsgImportPage=Label(ImportFilePage, text="Please choose material",fg="red", font=('Helvetica 12'));
+            MaterialInputCheckMsgImportPage.pack();
+            MaterialInputCheckMsgImportPage.place(x=20,y=360);
+            root.after(5000, delete_label, MaterialInputCheckMsgImportPage); ##Clear label after 5 secondes
+            raise TypeError("Error,cant find material or material is empty");
+        elif TempList[0]=='':
+            HospitalInputCheckMsgImportPage=Label(ImportFilePage, text="Please choose hospital",fg="red", font=('Helvetica 12'));
+            HospitalInputCheckMsgImportPage.pack();
+            HospitalInputCheckMsgImportPage.place(x=20,y=130);
+            root.after(5000, delete_label, HospitalInputCheckMsgImportPage); ##Clear label after 5 secondes
+            raise TypeError("Error,cant find hospital or material is hospital");
+        elif AmountListFromDoc==[]:
+            OrderFileInputCheckMsgImportPage=Label(ImportFilePage, text="Please choose/import order file",fg="red", font=('Helvetica 12'));
+            OrderFileInputCheckMsgImportPage.pack();
+            OrderFileInputCheckMsgImportPage.place(x=420,y=190);
+            root.after(5000, delete_label, OrderFileInputCheckMsgImportPage); ##Clear label after 5 secondes
+            raise TypeError("Error,cant find file");
+        else:
+            print(f"Date chosen:{TempList[1]}");
+
+
         cursor = db.cursor(buffered=True);
         print("order trying to get in DB-Add pressed");
+        if AmountListFromDoc:
+            try:
+               for i in range(1,len(AmountListFromDoc)):
+                ValuseTuple=(counterOrderId,i,TempList[1],InjectionTImeListFromdoc[i],AmountListFromDoc[i], TempList[0],TempList[2],0);#BatchId=null
+                cursor.execute("INSERT INTO orders (idorders,DoseNumber,Date,injection_time,amount,hospitalID,materialID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);#BatchId=null
+                counterOrderId=counterOrderId+1;
+               #updateOrdersTreeMainPageOutputOnly();##update orders tree main page
+            except Exception as e:
+                logging.error(traceback.format_exc());
+                messagebox.showerror("Error message","Error !");
+                print("Error");
 
-        try:
-           for i in range(1,len(AmountListFromDoc)):
-            ValuseTuple=(counterOrderId,i,TempList[1],InjectionTImeListFromdoc[i],AmountListFromDoc[i], TempList[0],TempList[2],0);#BatchId=null
-            cursor.execute("INSERT INTO orders (idorders,DoseNumber,Date,injection_time,amount,hospitalID,materialID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);#BatchId=null
-            counterOrderId=counterOrderId+1;
-           updateOrdersTreeMainPageOutputOnly();##update orders tree main page
-        except (mysql.connector.errors.DatabaseError,UnboundLocalError):
-            logging.error(traceback.format_exc());
-            DateInputCheckMsg=Label(ImportFilePage, text="Please choose date of order",fg="red", font=('Helvetica 12'));
-            DateInputCheckMsg.pack();
-            DateInputCheckMsg.place(x=20,y=270);
-            root.after(5000, delete_label, DateInputCheckMsg); ##Clear label after 5 secondes
-
-            HospitalInputMsg=Label(ImportFilePage, text="Please choose hospital",fg="red", font=('Helvetica 12'));
-            HospitalInputMsg.pack();
-            HospitalInputMsg.place(x=20,y=130);
-            root.after(5000, delete_label, HospitalInputMsg);#Clear label after 5 secondes
-        except Exception as e:
-            logging.error(traceback.format_exc());
-            #messagebox.showerror("Error message","Error !");
-            print("Error");
+        else:
+            print(AmountListFromDoc);
+            messagebox.showerror("Error message","Cant recognize any choose,please choose\n hospital,date,material and order file !");
+            raise Exception("Cant recognize any choose");
 
         updateOrdersTreeMainPageOutputOnly();
         ImportFilePage.destroy();##Close import file window
@@ -996,20 +1019,6 @@ def PopUpForNewOrder():
         # else:
         #     print(ChoosenMaretrialIDNewOrderManual);
         #try:
-        cursor = db.cursor();
-        SearchSpecOrderQueryByDoubleclick=f'SELECT idorders,CONCAT(hospitalID,Date) AS AdressPlusHospital FROM orders where hospitalID="{hospitalId}" AND Date="{ChoosenDateForManaulOrder}"';
-        cursor.execute(SearchSpecOrderQueryByDoubleclick);
-        OrderDatatoSpecificOrder = cursor.fetchall();
-
-        db.commit();
-        cursor.close();
-
-        for x in OrderDatatoSpecificOrder:
-            print(f"order selected:{x}");
-
-        if OrderDatatoSpecificOrder:
-            messagebox.showerror("Error message","There is allready order with that date and hospital,cant continue!");
-            raise Exception("There is allready order with that date and hospital,cant continue");
 
 
         try:
@@ -1041,7 +1050,7 @@ def PopUpForNewOrder():
             print(ChoosenDateForManaulOrder);
 
         try:
-         hospitalId
+         hospitalId;
         except NameError:
          HospitalInputMsg=Label(NewOrderMainPage, text="Please choose hospital",fg="red", font=('Helvetica 12'));
          HospitalInputMsg.pack();
@@ -1092,6 +1101,21 @@ def PopUpForNewOrder():
             root.after(5000, destroy_widget, AmountOfrowsMsg2);#Clear label after 5 secondes
         else:
             print(IntAmount);
+
+        cursor = db.cursor();
+        SearchSpecOrderQueryByDoubleclick=f'SELECT idorders,CONCAT(hospitalID,Date) AS AdressPlusHospital FROM orders where hospitalID="{hospitalId}" AND Date="{ChoosenDateForManaulOrder}"';
+        cursor.execute(SearchSpecOrderQueryByDoubleclick);
+        OrderDatatoSpecificOrder = cursor.fetchall();
+
+        db.commit();
+        cursor.close();
+
+        for x in OrderDatatoSpecificOrder:
+            print(f"order selected:{x}");
+
+        if OrderDatatoSpecificOrder:
+            messagebox.showerror("Error message","There is allready order with that date and hospital,cant continue!");
+            raise Exception("There is allready order with that date and hospital,cant continue");
 
 
         #print("Error")
