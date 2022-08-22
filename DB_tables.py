@@ -95,7 +95,7 @@ dbCursor.execute("CREATE TABLE IF NOT EXISTS orders ("
                  "updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,"
                  "PRIMARY KEY(idorders),"
                  "FOREIGN KEY (hospitalID) REFERENCES hospital(idhospital) on update cascade,"
-                 "FOREIGN KEY (materialID) REFERENCES material(idmaterial) on update cascade),"
+                 "FOREIGN KEY (materialID) REFERENCES material(idmaterial) on update cascade,"
                  "FOREIGN KEY (batchID) REFERENCES batch(idbatch));");
 
 

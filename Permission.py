@@ -3,9 +3,6 @@ from tkinter import ttk,messagebox
 from PIL import ImageTk,Image
 import tkinter as tk
 from functools import partial
-import sys,importlib
-import mysql.connector
-from mysql.connector import Error
 from ConnectToDB import *   #connect to mysql DB
 
 

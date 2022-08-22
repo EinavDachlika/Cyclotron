@@ -451,11 +451,11 @@ def deleteOrderfunc():
 
 
 # Remove button (Icon) -Delete Order
-global imgDelete;
+global imgDelete2;
 deleteIcon = Image.open("./‏‏deleteIcon.png")
 resizedDeleteIcon = deleteIcon.resize((20,20), Image.ANTIALIAS)
-imgDelete = ImageTk.PhotoImage(resizedDeleteIcon)
-deleteButton=Button(ordersFrame, image=imgDelete, borderwidth=0,command=deleteOrderfunc)
+imgDelete2 = ImageTk.PhotoImage(resizedDeleteIcon)
+deleteButton=Button(ordersFrame, image=imgDelete2, borderwidth=0,command=deleteOrderfunc)
 deleteButton.pack()
 deleteButton.place(x=560, y=65)
 

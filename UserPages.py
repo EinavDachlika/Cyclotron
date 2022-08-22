@@ -157,22 +157,30 @@ ordersFrame.config(bg="#F0F3F4");#color of page-white-gray
 
 #ordersFrame.pack(fill=X)
 
-
-# feed label
+# ScrollbarOrderMainPage
 feedLabel = Label(ordersFrame, text ='Orders', font=('Helvetica', 26, 'bold'), fg='#034672');
 feedLabel.pack(side=LEFT);
 feedLabel.place(x=50,y=10);
 
-# user label
-UserLabelOrdersPage1 = Label(ordersFrame, text=f"{Permission.ValidateTypeOfUser} connected:", font=('Helvetica', 13, 'bold'), fg='red')
-UserLabelOrdersPage1.pack();
-UserLabelOrdersPage1.place(x=350, y=20);
+# # admin label
+# AdminLabelOrderslpage1 = Label(ordersFrame, text=f"{Permission.ValidateTypeOfUser} Connected:", font=('Helvetica', 13, 'bold'), fg='red')
+# AdminLabelOrderslpage1.pack();
+# AdminLabelOrderslpage1.place(x=350, y=20);
+#
+# # admin connected label
+# NameOfAdminLabeLoRDERSpage2 = Label(ordersFrame, text=Permission.user_verified, font=('Helvetica', 13, 'bold'), fg='red')
+# NameOfAdminLabeLoRDERSpage2.pack();
+# NameOfAdminLabeLoRDERSpage2.place(x=510, y=20);
 
-# user  connected label
-NameOfUserLabelOrdersPage2 = Label(ordersFrame, text=Permission.user_verified, font=('Helvetica', 13, 'bold'), fg='red')
-NameOfUserLabelOrdersPage2.pack();
-NameOfUserLabelOrdersPage2.place(x=490, y=20);
-
+# # user label
+UserLabelHospitalpage1 = Label(hospitalFrame, text=f"{Permission.ValidateTypeOfUser} connected:", font=('Helvetica', 13, 'bold'), fg='red')
+UserLabelHospitalpage1.pack();
+UserLabelHospitalpage1.place(x=350, y=20);
+#
+# # user  connected label
+NameOfUserLabelHospitalpage2 = Label(hospitalFrame, text=Permission.user_verified, font=('Helvetica', 13, 'bold'), fg='red')
+NameOfUserLabelHospitalpage2.pack();
+NameOfUserLabelHospitalpage2.place(x=490, y=20);
 
 
 #my_label=Label(root,text='');
@@ -181,7 +189,7 @@ NameOfUserLabelOrdersPage2.place(x=490, y=20);
 OrdersTree = ttk.Treeview(ordersFrame,height=20);
 
 # Defining number of columns
-OrdersTree["columns"]=("1","2","3");
+OrdersTree["columns"]=("1","2","3","4");
 
 OrdersTree.pack(side=LEFT, padx=100, pady=110)
 
@@ -193,17 +201,20 @@ OrderMainPagescroll.place(x=705, y=110, height=330)
 OrdersTree.configure(yscrollcommand = OrderMainPagescroll.set);
 
 
-#Foramte Columns
+#Formate Columns
 OrdersTree.column("#0",width=0,minwidth=0);
 OrdersTree.column("1");
-OrdersTree.column("2");
-OrdersTree.column("3");
+OrdersTree.column("2",width=120);
+OrdersTree.column("3",width=40);
+OrdersTree.column("4");
+
 
 #Define headers/titles in table
 OrdersTree.heading("#0", text="Label");
 OrdersTree.heading("1", text="Hospital");
 OrdersTree.heading("2", text="Injection Date");
 OrdersTree.heading("3", text="Doses");
+OrdersTree.heading("4", text="Last Updated");
 
 #clear/delete Order main page tree-all records
 def clear_tree():
@@ -218,29 +229,44 @@ def ClearEdittree_2():
 
 ListofCurrnetHospitalOrderMainPage=[];
 
+global counterOrderId;
+
+#if counterOrderId==0:
+counterOrderId=0;
+
 def updateOrdersTreeMainPageOutputOnly():
+
     clear_tree();
     # # Absorb Orders list data from db
     cursor = db.cursor();
 
-    #Show output to Order main page tree-id,date,sum of doses
+    #Show output to Order main page tree-id,date,sum of doses,and last updated
     #cursor.execute("SELECT hospitalID,Date,SUM(amount) FROM orders GROUP BY Date,hospitalID;");
-    cursor.execute("SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID WHERE orders.deleted=0 GROUP BY orders.Date,orders.hospitalID;");
+    cursor.execute("SELECT hospital.Name,orders.Date,SUM(orders.amount),MAX(updated_at) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID  GROUP BY orders.Date,orders.hospitalID;");
     SumOFAmount1 = cursor.fetchall();
-    #print(SumOFAmount1);
-    for x in SumOFAmount1:
-        print(x);
+    print(SumOFAmount1);
+    # for x in SumOFAmount1:
+    #     print(x);
     #convert list of tuples into list
     # ListofSumOfAmountPerHospital1 = [item1 for t1 in ListofSumOfAmountPerHospital for item1 in t1];
 
-    # #Remove any duplicates from a List:
+    # #Remove any duplicates from a List:-method 1
     # mylist = list(dict.fromkeys(ListofSumOfAmountPerHospital1))
     # ListOfSumOfAmount = [item1 for t1 in mylist for item1 in t1];
+
+    # remove duplicated from list-method 2
+    # FIxedHospitalList = []
+    # for i in ListofCurrnetHospitalOrderMainPage:
+    #     if i not in FIxedHospitalList:
+    #         FIxedHospitalList.append(i)
+    #
+    # # printing list after removal
+    # print ("The list after removing duplicates : " + str(FIxedHospitalList))
 
     #         cursor.execute("INSERT INTO orders (idorders,Date,injection_time,amount,hospitalID,batchID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);
     #output orders main data from DB to the orders tree
     for record in SumOFAmount1:
-        OrdersTree.insert(parent='', index='end', text='',values=(record[0],record[1],record[2]))#record[0]=Idhospital,record[1]=Injection time,record[2]=Amount of doses
+        OrdersTree.insert(parent='', index='end', text='',values=(record[0],record[1],record[2],record[3]))#record[0]=Idhospital,record[1]=Injection time,record[2]=Amount of doses,record[3]=last updated
         ListofCurrnetHospitalOrderMainPage.append(record[0]);
 
     #print(ListofCurrnetHospitalOrderMainPage);
@@ -261,16 +287,18 @@ def SearchOutpout(data):
 
     #Show output to Order main page tree-id,date,sum of doses
     #cursor.execute("SELECT hospitalID,Date,SUM(amount) FROM orders GROUP BY Date,hospitalID;");
-    cursor.execute(f'SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID WHERE orders.deleted={0} GROUP BY orders.Date,orders.hospitalID;');
-    SumOFAmount1 = cursor.fetchall();
+    cursor.execute(f'SELECT hospital.Name,orders.Date,SUM(orders.amount),MAX(updated_at) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID GROUP BY orders.Date,orders.hospitalID;');
+    DataAchievedBtSearch = cursor.fetchall();
+    for x in DataAchievedBtSearch:
+        print(x);
     #convert list of tuples into list
     # y = [item1 for t1 in SumOFAmount1 for item1 in t1];
     # print(y);
-    print(SumOFAmount1);
+    #print(DataAchievedBtSearch);
     countertemp=0;
-    for record in SumOFAmount1:
+    for record in DataAchievedBtSearch:
         print(record)
-        OrdersTree.insert(parent='', index='end', text='',values=(data[countertemp],record[1],record[2]));   #record[0]=hospital name,record[1]=Injection time,record[2]=Amount of doses
+        OrdersTree.insert(parent='', index='end', text='',values=(data[countertemp],record[1],record[2],record[3]));   #record[0]=hospital name,record[1]=Injection time,record[2]=Amount of doses,record[3]=updated_at
         countertemp=countertemp+1;
 
 
@@ -310,6 +338,29 @@ SearchLabelicon.place(x=610, y=135);
 
 def SearchComponent(event):
     """Function for creating search component """
+
+    #get the Orders data from DB list-refresh
+    cursor = db.cursor();
+
+    #Show output to Order main page tree-id,date,sum of doses
+    #cursor.execute("SELECT hospitalID,Date,SUM(amount) FROM orders GROUP BY Date,hospitalID;");
+    cursor.execute("SELECT hospital.Name,orders.Date,SUM(orders.amount),MAX(updated_at) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID GROUP BY orders.Date,orders.hospitalID;");
+    SumOFAmount1 = cursor.fetchall();
+    print(SumOFAmount1);
+    ListofCurrnetHospitalOrderMainPage=[];
+    for record in SumOFAmount1:
+        OrdersTree.insert(parent='', index='end', text='',values=(record[0],record[1],record[2],record[3])) #record[0]=Idhospital,record[1]=Injection time,record[2]=Amount of doses,record[3]=updated_at
+        ListofCurrnetHospitalOrderMainPage.append(record[0]);
+
+    #print(ListofCurrnetHospitalOrderMainPage);
+    root.wm_state('normal');#Open orders main page
+    #OrdersTree.pack();
+
+    db.commit();
+    cursor.close();
+
+
+
     typed = searchEntry.get();
     if typed == '':#if nothing typed in the entry
         dataList = ListofCurrnetHospitalOrderMainPage;#return all of curent list(relevant orders)
@@ -318,7 +369,7 @@ def SearchComponent(event):
         for item in ListofCurrnetHospitalOrderMainPage:
             if typed.lower() in item.lower():           #catch capital and lower case
                 dataList.append(item);
-                print(dataList);
+                print("Hospital finded:",dataList);
 
     SearchOutpout(dataList);#update past list in the new searched list
 
@@ -351,15 +402,15 @@ def updateOrdersTreeByMaterialFiltering(materialSelData):
     cursor = db.cursor();
     if materialSelData=='A':
         #Show output to Order main page tree-id,date,sum of doses
-        cursor.execute(f"SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders  INNER JOIN hospital ON hospital.idhospital = orders.hospitalID WHERE orders.deleted=0 GROUP BY orders.Date,orders.hospitalID ;");
+        cursor.execute(f"SELECT hospital.Name,orders.Date,SUM(orders.amount),MAX(updated_at) FROM orders  INNER JOIN hospital ON hospital.idhospital = orders.hospitalID GROUP BY orders.Date,orders.hospitalID ;");
     else:
         #Show output to Order main page tree-id,date,sum of doses filtering by Material ID
-        cursor.execute(f"SELECT hospital.Name,orders.Date,SUM(orders.amount) FROM orders  INNER JOIN hospital ON hospital.idhospital = orders.hospitalID WHERE materialID={materialSelData} AND orders.deleted=0   GROUP BY orders.Date,orders.hospitalID ;");
+        cursor.execute(f"SELECT hospital.Name,orders.Date,SUM(orders.amount),MAX(updated_at) FROM orders  INNER JOIN hospital ON hospital.idhospital = orders.hospitalID WHERE materialID={materialSelData}  GROUP BY orders.Date,orders.hospitalID ;");
 
     filteringRowsFromDB = cursor.fetchall();
     print(filteringRowsFromDB);
     for record in filteringRowsFromDB:
-        OrdersTree.insert(parent='', index='end', text='',values=(record[0],record[1],record[2]))#record[0]=Idhospital,record[1]=Injection time,record[2]=Amount of doses
+        OrdersTree.insert(parent='', index='end', text='',values=(record[0],record[1],record[2],record[3]))#record[0]=Idhospital,record[1]=Injection time,record[2]=Amount of doses,record[3]=last updated
         ListofCurrnetHospitalOrderMainPage.append(record[0]);
 
     #print(ListofCurrnetHospitalOrderMainPage);
@@ -400,14 +451,14 @@ OrderselectedEvent = tk.StringVar();
 def deleteOrderEvent(event):
 
     """Function for removing order from DB"""
-    global IidSelected,DateSelected,InjectionTimeSelected,IDofHospitalSelected2;
+    global DoseNum_Selected,DateSelected,InjectionTimeSelected,IDofHospitalSelected2;
     row = OrdersTree.focus();
 
     dataofchoosnenRowListEditTree=row;
     #print(dataofchoosnenRowListEditTree);
     DataOfRowSelectedDicEditTree=OrdersTree.item(dataofchoosnenRowListEditTree);
     DataOfRowSelectedList=DataOfRowSelectedDicEditTree['values'];
-    print("Record/Order selected: ",DataOfRowSelectedList);
+    print("Record/Order selected to delete: ",DataOfRowSelectedList);
     hospitalSelected=DataOfRowSelectedList[0];
     DateSelected=DataOfRowSelectedList[1];
     InjectionTimeSelected=DataOfRowSelectedList[2];
@@ -421,28 +472,39 @@ def deleteOrderEvent(event):
     print(f'{IDofHospitalSelected2} : {hospitalSelected}');
 
 def deleteOrderfunc():
-    rawSelectedToDelete=OrdersTree.selection();#selected item:I001,I002,I003....
-    RecoredDeletedFlug=1;
-    try:
-        cursor = db.cursor(buffered=True);
-        for rawselected in rawSelectedToDelete:
-            UpdateSQlQuery=f"UPDATE  orders SET deleted='{RecoredDeletedFlug}' WHERE  hospitalID= '{IDofHospitalSelected2}' AND Date= '{DateSelected}';";
-            #DeleteQuery = f"DELETE FROM orders WHERE hospitalID= '{IDofHospitalSelected2}' AND Date= '{DateSelected}';";
-            cursor.execute(UpdateSQlQuery);
-            OrdersTree.delete(rawselected);
-            print("DB updated successfully-Record add to deleted column ");
-            db.commit();
-            cursor.close();
-    except Exception as e:
-        logging.error(traceback.format_exc())
-        print("Error-Order was not updated-please check MySQL")
+    MsgBox = messagebox.askquestion ('Info message','Are you sure you want to cancel/delete the order?',icon = 'warning')
+    if MsgBox == 'yes':
+        rawSelectedToDelete=OrdersTree.selection();#selected item:I001,I002,I003....
+        RecoredDeletedFlug=1;
+        try:
+            cursor = db.cursor(buffered=True);
+            for rawselected in rawSelectedToDelete:
+                UpdateSQlQuery=f"UPDATE  orders SET deleted='{RecoredDeletedFlug}' WHERE  hospitalID= '{IDofHospitalSelected2}' AND Date= '{DateSelected}';";
+                DeleteQuery = f"DELETE FROM orders WHERE hospitalID= '{IDofHospitalSelected2}' AND Date= '{DateSelected}';";
+                cursor.execute(UpdateSQlQuery);
+                cursor.execute(DeleteQuery);
+                OrdersTree.delete(rawselected);
+                print("DB updated successfully-Record add to deleted column ");
+                db.commit();
+                cursor.close();
+        except mysql.connector.errors.IntegrityError as e:
+            messagebox.showinfo("info message","Watch out\nThere is workplan that relate to the order you trying to delete/cancel that still active\n,action cancel!");
+            logging.error(traceback.format_exc())
+        except Exception as e:
+            logging.error(traceback.format_exc())
+            print("Error-Order was not updated-please check MySQL");
+
+    else:
+        messagebox.showinfo('Return','Return to the Orders screen');
+
+
 
 # Remove button (Icon) -Delete Order
-global imgDeleteForOrderVar;
+global imgDelete2;
 deleteIcon = Image.open("./‏‏deleteIcon.png")
 resizedDeleteIcon = deleteIcon.resize((20,20), Image.ANTIALIAS)
-imgDeleteForOrderVar = ImageTk.PhotoImage(resizedDeleteIcon)
-deleteButton=Button(ordersFrame, image=imgDelete, borderwidth=0,command=deleteOrderfunc)
+imgDelete2 = ImageTk.PhotoImage(resizedDeleteIcon)
+deleteButton=Button(ordersFrame, image=imgDelete2, borderwidth=0,command=deleteOrderfunc)
 deleteButton.pack()
 deleteButton.place(x=560, y=65)
 
@@ -685,7 +747,7 @@ def importFileFunc():
 
     def SaveToDB():
         # Function to save order into DB from Import file
-
+        global counterOrderId;
         ######################################################################################################
         def delete_label(label):#Function for Clear label
             label.destroy()
@@ -696,9 +758,9 @@ def importFileFunc():
 
         try:
             for i in range(1,len(AmountListFromDoc)):
-                ValuseTuple=(i,TempList[1],InjectionTImeListFromdoc[i],AmountListFromDoc[i], TempList[0],TempList[2],0,0);#BatchId=null
-                cursor.execute("INSERT INTO orders (DoseNumber,Date,injection_time,amount,hospitalID,materialID,DecayCorrected,batchID) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);#BatchId=null
-
+                ValuseTuple=(counterOrderId,i,TempList[1],InjectionTImeListFromdoc[i],AmountListFromDoc[i], TempList[0],TempList[2],0);#BatchId=null
+                cursor.execute("INSERT INTO orders (idorders,DoseNumber,Date,injection_time,amount,hospitalID,materialID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);#BatchId=null
+                counterOrderId=counterOrderId+1;
             updateOrdersTreeMainPageOutputOnly();##update orders tree main page
         except (mysql.connector.errors.DatabaseError,UnboundLocalError):
             logging.error(traceback.format_exc());
@@ -716,7 +778,7 @@ def importFileFunc():
             #messagebox.showerror("Error message","Error !");
             print("Error");
 
-
+        updateOrdersTreeMainPageOutputOnly();
         ImportFilePage.destroy();##Close import file window
         #Commit changes in DB and close connection
         db.commit()
@@ -777,18 +839,14 @@ def importFileFunc():
         ChoosenDateForImport=cal1.get_date();
         TempList[1]=ChoosenDateForImport;
         print( TempList[1]);
-        # if ((counter==0) or (counter==null)):
-        # counter=0;
-        # #Loop throw the tree/table
-        # for recordInrow in range(len(TempList)-1):
-        #  OrdersTree.insert(parent="",index= "end",iid=counter, values=(TempList[0],TempList[1]));
-        #  #OrdersTree.insert(parent=counter,index= "end",iid=counter+2,text=TempList[0]);
-        #  counter=counter+1;
 
-    cal1=DateEntry(ImportFilePage,selectmode='day',mindate=date_today,textvariable=selectedDate);
+    cal1=DateEntry(ImportFilePage,background='darkblue',foreground='white',mindate=date_today,textvariable=selectedDate);
     cal1.pack(pady = 20);
     cal1.place(x=20, y=240);
     cal1.bind("<<DateEntrySelected>>", print_sel);#catch date event
+
+    #cal1=Calendar(ImportFilePage,font="Arial 14", selectmode='day',year=2022, month=5, disableddaybackground="red", day=22);
+
     # for i in range(len(page_stuff)):
     #  OrdersTree.insert('', 'end',values=i)
     #OrdersTree.insert(parent='', index=0, text='', values=(TempList[0],TempList[1]));
@@ -815,14 +873,6 @@ def importFileFunc():
 #     iid +=1
 #
 # hospitals_list.pack()
-
-
-
-# def open_popup_hospital():
-#     pass
-#
-# def delete_hospital():
-#     pass
 
 
 ###################Buttons for edit,delete,import file and etc.###################################
@@ -994,6 +1044,7 @@ def PopUpForNewOrder():
         #     root.after(5000, destroy_widget, MatrerialInputCheckMsg) ##Clear label after 5 secondes
         # else:
         #     print(ChoosenMaretrialIDNewOrderManual);
+        #try:
         cursor = db.cursor();
         SearchSpecOrderQueryByDoubleclick=f'SELECT idorders,CONCAT(hospitalID,Date) AS AdressPlusHospital FROM orders where hospitalID="{hospitalId}" AND Date="{ChoosenDateForManaulOrder}"';
         cursor.execute(SearchSpecOrderQueryByDoubleclick);
@@ -1008,6 +1059,7 @@ def PopUpForNewOrder():
         if OrderDatatoSpecificOrder:
             messagebox.showerror("Error message","There is allready order with that date and hospital,cant continue!");
             raise Exception("There is allready order with that date and hospital,cant continue");
+
 
         try:
             if ChoosenMaretrialIDNewOrderManual in globals():
@@ -1106,19 +1158,26 @@ def PopUpForNewOrder():
 
         for record in range(int(IntAmount)):
             NewOrderTree_P2.insert("", "end",values=( ListofVal[0],ListofVal[1],f'{ListofVal[2]}:{ListofVal[3]}'));#ListofVal[0]=id,ListofVal[1]=amount/amount,ListofVal[2]=hours:ListofVal[3]=minutes
-            ListofVal[2]=ListofVal[2]+1;       #Hours jumps/intervals
+            #ListofVal[2]=ListofVal[2]+1;       #Hours jumps/intervals
             ListofVal[3]=ListofVal[6];         #Add minutes intervals
             ListofVal[0]= ListofVal[0]+1;
             TimeInjectionVar=f'{ListofVal[2]}:{ListofVal[3]}';
-            ListofTimeIntervals.append(TimeInjectionVar)
+            print("Time per Dose:",TimeInjectionVar);
+            ListofTimeIntervals.append(TimeInjectionVar);
+            ListofVal[2]=ListofVal[2]+1;       #Hours jumps/intervals
+
         OrderID+=1;#counterID=counterID+1
         #print(OrderID);
         amountVar.set("");
         MinutesVar.set("");
         HoursVar.set("");
-        print(ListofTimeIntervals);
+        print("List of intervals:",ListofTimeIntervals);
 
+        deleteButton2['state'] = DISABLED;#Disable remove button
+        AddRowButton['state'] = DISABLED;#Disable add dose/record button
         NewOrderTree_P2.state(('disabled',));#Disabled/gray-out new order tree
+        dropDownInjectionT_M.configure(state="disabled");#Disabled/gray-out time-injection drop-down menu
+        dropDownAmountM.configure(state="disabled");#Disabled/gray-out change amount drop-down menu
         #swap function for viewing New order page,frame 2,after pressing "next" """
         NewOrderMainPage.forget();
         NewOrdersecondaryPage.pack(fill='both',expand=1);
@@ -1180,7 +1239,7 @@ def PopUpForNewOrder():
         updateOrdersTreeMainPageOutputOnly();#Refresh/Update Main page
         OrdersTree.pack();         #open order main page immedaitly
 
-    cal=DateEntry(NewOrderMainPage,selectmode='day',mindate=date_today,textvariable=selectDateEventManaulOrder);
+    cal=DateEntry(NewOrderMainPage,background='darkblue',mindate=date_today,foreground='white',textvariable=selectDateEventManaulOrder);
     cal.pack(pady = 20);
     cal.config(width=20);#width of window
     cal.place(x=20, y=240);
@@ -1258,7 +1317,7 @@ def PopUpForNewOrder():
         # ordersFrame.forget();
         # toolbar.forget();
         #ordersFrame.wm_state('iconic');#minimize orders main page
-
+        global counterOrderId;
         MsgBox = messagebox.askquestion ('Info message','Do you wish to proceed? every changed will be saved in the DB',icon = 'warning')
         if MsgBox == 'yes':
             # ValuseDic = {
@@ -1273,6 +1332,10 @@ def PopUpForNewOrder():
             #Check if all input was enterd
             if (ListofVal[7]!='') and (ListofVal[6]!='') and (ListofVal[5]!='') and (ListofVal[4]!='') and (ListofVal[3]!='') and (ListofVal[2]!='') and (ListofVal[1]!='') and (ListofVal[0]!=''):
                 NewOrderTree_P2.state(('!disabled',));#Enable tree items
+                deleteButton2['state'] = NORMAL;#Enable remove button
+                AddRowButton['state'] = NORMAL;#Enable add dose/record button
+                dropDownInjectionT_M.configure(state="normal");#Disabled/gray-out time-injection drop-down menu
+                dropDownAmountM.configure(state="normal");#Disabled/gray-out change amount drop-down menu
             else:
                 NewOrderTree_P2.state(('disabled',));#Disable tree items
                 messagebox.showerror("Error message","Error ! one of the records not filled,please fill order again");
@@ -1289,11 +1352,12 @@ def PopUpForNewOrder():
 
             cursor = db.cursor(buffered=True);
             for i in range(1,ListofVal[4]+1):
-                ValuseTuple=(i, ChoosenDateForManaulOrder, ListofTimeIntervals[i-1], ListofVal[1], ListofVal[5],ListofVal[7],0,1);#BatchId=null
-                #print("order trying to get in DB-Add pressed");
+                ValuseTuple=(counterOrderId,i, ChoosenDateForManaulOrder, ListofTimeIntervals[i-1], ListofVal[1], ListofVal[5],ListofVal[7],0);#BatchId=null
+                print("order trying to get in DB-Add pressed");
                 try:
-                    UpdateSQlQuery="INSERT INTO orders (DoseNumber,Date,injection_time,amount,hospitalID,materialID,DecayCorrected,batchID) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);";#BatchId=null
+                    UpdateSQlQuery="INSERT INTO orders (idorders,DoseNumber,Date,injection_time,amount,hospitalID,materialID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);";#BatchId=null
                     cursor.execute(UpdateSQlQuery,ValuseTuple);
+                    counterOrderId=counterOrderId+1;
                     print("DB updated successfully ");
                 except Exception as e:
                     logging.error(traceback.format_exc());
@@ -1355,7 +1419,7 @@ def PopUpForNewOrder():
 
     #Define headers/titles in table
     NewOrderTree_P2.heading("#0", text="Label",anchor=W);
-    NewOrderTree_P2.heading("ID", text="ID",anchor=W);
+    NewOrderTree_P2.heading("ID", text="Dose Number",anchor=W);
     NewOrderTree_P2.heading("Amount", text="Amount",anchor=CENTER);
     NewOrderTree_P2.heading("Injection time", text="Injection time",anchor=W);
 
@@ -1375,7 +1439,7 @@ def PopUpForNewOrder():
         print(dataofchoosnenRowListEditTree);
         DataOfRowSelectedDicEditTree=NewOrderTree_P2.item(dataofchoosnenRowListEditTree);
         DataOfRowSelectedList=DataOfRowSelectedDicEditTree['values'];
-        print(DataOfRowSelectedList);
+        print("Raw selectes to edit:",DataOfRowSelectedList);
         IidSelected=DataOfRowSelectedList[0];
         AmountSelected=DataOfRowSelectedList[1];
         InjectionTimeSelected=DataOfRowSelectedList[2];
@@ -1387,11 +1451,11 @@ def PopUpForNewOrder():
 
     def set_amountValueEventNewOrderP(CurAmountvalue):
         row = NewOrderTree_P2.focus();
-        print(CurAmountvalue);
+        print("Amount selected",CurAmountvalue);
         if row:
             try:
                 cursor = db.cursor(buffered=True);
-                UpdateSQlQuery=f"UPDATE  orders SET injection_time='{InjectionTimeSelected}',amount='{CurAmountvalue}'  WHERE DoseNumber = '{IidSelected}' AND hospitalID= '{ListofVal[5]}' AND Date= '{ChoosenDateForManaulOrder}';";
+                UpdateSQlQuery=f"UPDATE  orders SET amount='{CurAmountvalue}'  WHERE DoseNumber = '{DoseNum_Selected}' AND hospitalID= '{ListofVal[5]}' AND Date= '{ChoosenDateForManaulOrder}';";
                 cursor.execute(UpdateSQlQuery);
                 print("DB updated(Amount) successfully ");
                 db.commit();
@@ -1425,15 +1489,15 @@ def PopUpForNewOrder():
     #Catch Injection  event
     def InjectionTimeselect(event):
         row = NewOrderTree_P2.focus();
-        global IidSelected,AmountSelected,InjectionTimeSelected,DosesSelectedEvent;
+        global DoseNum_Selected,AmountSelected,InjectionTimeSelected,DosesSelectedEvent;
         row = NewOrderTree_P2.focus();
 
         dataofchoosnenRowListEditTree=row;
         print(dataofchoosnenRowListEditTree);
         DataOfRowSelectedDicEditTree=NewOrderTree_P2.item(dataofchoosnenRowListEditTree);
         DataOfRowSelectedList=DataOfRowSelectedDicEditTree['values'];
-        print(DataOfRowSelectedList);
-        IidSelected=DataOfRowSelectedList[0];
+        print("Raw selectes to edit 2:",DataOfRowSelectedList);
+        DoseNum_Selected=DataOfRowSelectedList[0];
         AmountSelected=DataOfRowSelectedList[1];
         InjectionTimeSelected=DataOfRowSelectedList[2];
         if row:
@@ -1446,7 +1510,7 @@ def PopUpForNewOrder():
         if row:
             try:
                 cursor = db.cursor(buffered=True);
-                UpdateSQlQuery=f"UPDATE  orders SET injection_time='{CurTimevalueEditNewOrderP}',amount='{AmountSelected}'  WHERE DoseNumber = '{IidSelected}' AND hospitalID= '{ListofVal[5]}' AND Date= '{ChoosenDateForManaulOrder}';";
+                UpdateSQlQuery=f"UPDATE  orders SET injection_time='{CurTimevalueEditNewOrderP}'  WHERE DoseNumber = '{DoseNum_Selected}' AND hospitalID= '{ListofVal[5]}' AND Date= '{ChoosenDateForManaulOrder}';";
                 cursor.execute(UpdateSQlQuery);
                 print("DB updated(Injection_Time) successfully ");
                 db.commit();
@@ -1470,7 +1534,7 @@ def PopUpForNewOrder():
         #Function to insert data into My-SQL Db
         destroyNewOrderFunc();
         # root.destroy();#Close import file-manual window
-        # updateOrdersTreeMainPageOutputOnly();#Refresh/Update Main page
+        updateOrdersTreeMainPageOutputOnly();#Refresh/Update Main page
         # OrdersTree.pack();         #open order main page immedaitly
 
 
@@ -1515,10 +1579,6 @@ def PopUpForNewOrder():
     deleteButton2.pack();
     deleteButton2.place(x=465, y=95);
 
-    #remove/delete record from db
-    # def deleteCyclotronfun():
-    #     query = "DELETE FROM resourcecyclotron WHERE idresourceCyclotron = %s"
-    #     cyclo_tabel.delete_record(query)
 
 
 
@@ -1541,12 +1601,12 @@ def PopUpForNewOrder():
 
 ################################Edit/Update Order main page###################################################################
 def UpdateOrder(event):
-
+    global hospitalId;
     curItem = OrdersTree.focus();
     DataOfRowSelectedDic=OrdersTree.item(curItem);
     DataOfRowSelectedList=DataOfRowSelectedDic['values'];
     #print(DataOfRowSelectedList);
-    HospitalSelected=DataOfRowSelectedList[0];
+    HospitalSelectedName=DataOfRowSelectedList[0];
     DateSelected=DataOfRowSelectedList[1];
     AmountOfDosesSelected=DataOfRowSelectedList[2];
 
@@ -1554,11 +1614,12 @@ def UpdateOrder(event):
 
     #search hospital by name from hospital table db and get the ID and the name as output
     cursor = db.cursor();
-    cursor.execute(f'SELECT idhospital,Name FROM hospital where Name="{HospitalSelected}"');
+    cursor.execute(f'SELECT idhospital,Name FROM hospital where Name="{HospitalSelectedName}"');
     hospitalsListForNewOrderManual = cursor.fetchall();
 
     HospitalListNewOrderPage = hospitalsListForNewOrderManual;
     print(HospitalListNewOrderPage);
+
 
     EditPage =Toplevel(root);
     EditPage.title("Edit Order");
@@ -1569,8 +1630,8 @@ def UpdateOrder(event):
 
     #NewOrdersecondaryPage = tk.Frame(root);
 
-    global hospitalId;
-    HospitalLabelForEditPage=Label(EditPage, text=HospitalSelected,bg="white", font=('Helvetica 14'));
+
+    HospitalLabelForEditPage=Label(EditPage, text=HospitalSelectedName,bg="white", font=('Helvetica 14'));
     x=str(HospitalListNewOrderPage);#string type here
     print(x);
     hospitalLabel = x.split(",",1);
@@ -1584,6 +1645,13 @@ def UpdateOrder(event):
     HospitalLabelForEditPage.pack();
     HospitalLabelForEditPage.place(x=20,y=80);
 
+    FindActivityByHospitalID=f'SELECT Fixed_activity_level FROM hospital where idhospital="{hospitalId}"';
+    cursor.execute(FindActivityByHospitalID);
+    ActivitiyBySpecificOrder = cursor.fetchall();
+    TempID=[i[0] for i in ActivitiyBySpecificOrder];#find index number in a list of tuple
+    ActivitiyBySpecificOrder2=TempID[0];
+    print("Activity of Hospital selected:",ActivitiyBySpecificOrder2);
+
 
     #Create tree/table for the Edit page
     EditTree = ttk.Treeview(EditPage,height=15,selectmode="browse");#select=browse means can choose only 1 record at the time
@@ -1593,25 +1661,33 @@ def UpdateOrder(event):
 
     #Edit page/tree scrollbar -vertical
     EditOrderPageScroll = Scrollbar(EditPage, orient="vertical", command=EditTree.yview);
-    EditOrderPageScroll.place(x=495, y=130, height=330)
+    EditOrderPageScroll.place(x=515, y=130, height=330)
     EditTree.configure(yscrollcommand = EditOrderPageScroll.set);
 
 
     #Foramte Columns
     EditTree.column("#0",width=0,minwidth=0);
     EditTree.column("ID",anchor=W,width=80,minwidth=25);
-    EditTree.column("Amount",anchor=CENTER,width=120,minwidth=25);
+    EditTree.column("Amount",anchor=CENTER,width=140,minwidth=25);
     EditTree.column("Injection time",anchor=W,width=120,minwidth=25);
 
     #Define headers/titles in table
     EditTree.heading("#0", text="Label",anchor=W);
-    EditTree.heading("ID", text="ID",anchor=W);
-    EditTree.heading("Amount", text="Amount",anchor=CENTER);
+    EditTree.heading("ID", text="Dose number",anchor=W);
+    EditTree.heading("Amount", text=f"Amount of Doses ({ActivitiyBySpecificOrder2})",anchor=CENTER);
     EditTree.heading("Injection time", text="Injection time",anchor=W);
 
     #get order detail from DB by hospitalID and Date
     cursor = db.cursor();
-    SearchSpecOrderQueryByDoubleclick=f'SELECT idorders,amount,Injection_time FROM orders where hospitalID="{hospitalId}" AND Date="{DateSelected}"';
+    FindActivityByHospitalID=f'SELECT Fixed_activity_level FROM hospital where idhospital="{hospitalId}"';
+    cursor.execute(FindActivityByHospitalID);
+    ActivitiyBySpecificOrder = cursor.fetchall();
+    TempID=[i[0] for i in ActivitiyBySpecificOrder];#find index number in a list of tuple
+    ActivitiyBySpecificOrder2=TempID[0];
+    print("Activity of Hospital selected:",ActivitiyBySpecificOrder2);
+
+
+    SearchSpecOrderQueryByDoubleclick=f'SELECT DoseNumber,amount,Injection_time FROM orders where hospitalID="{hospitalId}" AND Date="{DateSelected}"';
     cursor.execute(SearchSpecOrderQueryByDoubleclick);
     OrderDatatoSpecificOrder = cursor.fetchall();
     print(f"order selected: {OrderDatatoSpecificOrder}");
@@ -1788,7 +1864,7 @@ def UpdateOrder(event):
     #print(status);
     #Catch Injection  event
     def InjectionTimeselect(event):
-        global IidSelected,AmountSelected,InjectionTimeSelected,DosesSelectedEvent;
+        global DoseNum_Selected,AmountSelected,InjectionTimeSelected,DosesSelectedEvent;
 
         global ClickingRowsCounter;
 
@@ -1807,7 +1883,7 @@ def UpdateOrder(event):
         DataOfRowSelectedDicEditTree=EditTree.item(dataofchoosnenRowListEditTree);
         DataOfRowSelectedList=DataOfRowSelectedDicEditTree['values'];
         print("Row/Values selected",DataOfRowSelectedList);
-        IidSelected=DataOfRowSelectedList[0];
+        DoseNum_Selected=DataOfRowSelectedList[0];
         AmountSelected=DataOfRowSelectedList[1];
         TempListForUpdateOrderValues[1]=AmountSelected;#insert current amount selected to the list-Defualt
         InjectionTimeSelected=DataOfRowSelectedList[2];
@@ -1819,7 +1895,7 @@ def UpdateOrder(event):
     EditTree.bind('<<TreeviewSelect>>', InjectionTimeselect)
 
     def setInjectionTime(CurValueForTime):
-        global IidSelected,AmountSelected,InjectionTimeSelected,DosesSelectedEvent;
+        global DoseNum_Selected,AmountSelected,InjectionTimeSelected,DosesSelectedEvent;
         print(CurValueForTime);
         TempListForUpdateOrderValues[0]=CurValueForTime;
         #print(f'Injection time selected:{TempListForUpdateOrderValues[0]}');
@@ -1843,7 +1919,7 @@ def UpdateOrder(event):
 
     def enterToDB_UpdateOrder():
         """Function for submitting/save changes from edit order page"""
-        global IidSelected,ClickingRowsCounter;
+        global DoseNum_Selected,ClickingRowsCounter;
         ClickingRowsCounter=0;
         #Disable  Injection-time and amount dropdown menues
         dropDownInjectionT_M.configure(state="disabled")
@@ -1852,7 +1928,7 @@ def UpdateOrder(event):
 
         try:
             cursor = db.cursor(buffered=True);
-            UpdateSQlQuery=f"UPDATE  orders SET injection_time='{TempListForUpdateOrderValues[0]}',amount='{TempListForUpdateOrderValues[1]}' WHERE idorders = '{IidSelected}';";
+            UpdateSQlQuery=f"UPDATE  orders SET injection_time='{TempListForUpdateOrderValues[0]}',amount='{TempListForUpdateOrderValues[1]}' WHERE hospitalID = '{hospitalId}' and Date = '{DateSelected}' and DoseNumber={DoseNum_Selected};";
             cursor.execute(UpdateSQlQuery);
             print("DB updated successfully ");
             db.commit();
@@ -1900,7 +1976,7 @@ def UpdateOrder(event):
         ListofVal[4]+=1;#current amount= courrent amount+1
 
     def removeRawFunc():
-        global IidSelected;
+        global DoseNum_Selected;
         #rowTree=rowTree.get();
         #for i,j in zip(range(IntAmount),range(BeginigHour,IntAmount)):
         rawSelectedToDelete=EditTree.selection();
@@ -1908,7 +1984,7 @@ def UpdateOrder(event):
             try:
                 EditTree.delete(rawselected);
                 cursor = db.cursor(buffered=True);
-                DeleteRecordOrdersTable_query = f'DELETE FROM orders WHERE idorders = {IidSelected}';
+                DeleteRecordOrdersTable_query = f'DELETE FROM orders WHERE idorders = {DoseNum_Selected}';
                 cursor.execute(DeleteRecordOrdersTable_query);
                 print("Remove record from DB sucssful ");
                 db.commit();
@@ -1969,9 +2045,9 @@ importFileButton.place(x=250, y=65)
 # NewOrderIcon = Image.open("./Images/AddnewOrder2.png")
 # resizedNewOrderIconIcon = NewOrderIcon.resize((120,20), Image.ANTIALIAS)
 # NewOrderIconimg = ImageTk.PhotoImage(resizedNewOrderIconIcon)
-editButton=Button(ordersFrame, text="Add new order",command=PopUpForNewOrder)
-editButton.pack()
-editButton.place(x=100, y=65)
+editButton=Button(ordersFrame, text="Add new order",command=PopUpForNewOrder);
+editButton.pack();
+editButton.place(x=100, y=65);
 
 ##############end of Orders page#########################################
 
