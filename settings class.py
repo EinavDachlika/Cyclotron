@@ -14,6 +14,7 @@ import math
 from numpy import log as ln
 import webbrowser
 from operator import itemgetter
+import time
 
 # from importlib import reload
 
@@ -71,8 +72,15 @@ def work_plan_page():
     materialSettingsFrame.forget()
     hospitalFrame.forget()
     cycloSettingsFrame.forget()
+    batchFrame.forget()
 
-
+def batch_page():
+    batchFrame.pack(fill=X)
+    moduleSettingsFrame.forget()
+    materialSettingsFrame.forget()
+    hospitalFrame.forget()
+    cycloSettingsFrame.forget()
+    WorkPlanFrame.forget()
 ##################### toolbar #####################
 
 toolbarbgcolor = "white"
@@ -95,7 +103,7 @@ ordersButton = Button (toolbar, text="Orders", font='Helvetica 11')
 ordersButton.pack(side=LEFT,padx=10,pady=3)
 
 # Batches button - toolbar
-ordersButton = Button (toolbar, text="Batches", font='Helvetica 11')
+ordersButton = Button (toolbar, text="Batches", font='Helvetica 11',command=lambda: batch_page())
 ordersButton.pack(side=LEFT,padx=10,pady=3)
 
 
@@ -237,6 +245,10 @@ fk = cursor.fetchall()
 # print(fk)
 # print([data for data in fk if data[3]=='idworkplan'])
 
+query = "SELECT materialName,idmaterial FROM material"
+cursor.execute(query)
+material_options_list = cursor.fetchall()
+
 
 def NOT_NULL_DataType_col(table_name):
     # column that define as NOT NULL in db
@@ -258,6 +270,10 @@ def warning_message(text):
 
 def YES_NO_message(title_tab, text):
     return messagebox.askyesno(title_tab,text)
+
+def refresh_page():
+    root.destroy()
+    root.mainloop()
 
 #algorithm functions
 lamda = ln(2) / 109.6
@@ -391,6 +407,7 @@ def main_algorithm_calculation(batches,hospitals_output,batches_general_data):
 
                 if batches_general_data[index]["Activity"] + A_Tcal >= max_activity_batch:
                     batches[index+1].append(order)
+                    batches[index].remove(order)
                     main_algorithm_calculation(batches,hospitals_output,batches_general_data)
 
                 else:
@@ -401,7 +418,7 @@ def main_algorithm_calculation(batches,hospitals_output,batches_general_data):
                     hospital = next(h for h in hospitals_output if h["Name"] == order["Name"] and h["Batch"] == index + 1)
                     order[A_Tcal_key] = A_Tcal
                     order['diff_Tcal_injectionT'] = diff
-                    hospital["Activity"] +=A_Tcal # Hagai - calculate for each bath and hospital separately??
+                    hospital["Activity"] +=A_Tcal
 
                     batches_general_data[index]["Activity"] += A_Tcal
 
@@ -819,6 +836,7 @@ class Popup(Toplevel):
                 cursor.execute(selectMaxIDquery2)
                 data = cursor.fetchall()
                 input_values_list.append(data[0][0])
+
                 list.insert(parent='', index='end', iid=None, text='',
                             values=input_values_list)
 
@@ -887,8 +905,14 @@ class Popup(Toplevel):
     #     webbrowser.open(downloads_path)
 
 
-    def legal_wp(self,selected_material,selected_date,error_labels_list, data):
+    def legal_wp(self,selected_material,selected_date,error_labels_list,selected_material_ID,dataLen ):
         legal = True
+
+        exist_wp_query = "SELECT * FROM workplan WHERE Date= '" +selected_date+ """'
+                            AND ISNULL(deleted) AND materialID=""" + str(selected_material_ID)
+        cursor.execute(exist_wp_query)
+        exist_wp_data = cursor.fetchall()
+
         for error_lab in error_labels_list: #inite error labeles (for more than one tries)
             error_lab['text'] = ""
 
@@ -897,8 +921,15 @@ class Popup(Toplevel):
             # entries[0].config(bg=red_color)
             error_labels_list[0]['text'] = "Please select a material"
             legal = False
+
+        elif len(exist_wp_data)!=0:
+            error_text = "There is a work plan for " + selected_material + " for date " + selected_date + " in the system. Identical work plans cannot be created."
+            error_message(error_text)
+            self.lift()
+            return False
+
         else:
-            if len(data) == 0:
+            if dataLen == 0:
                 error_text = "There are no orders for material " + selected_material + " for date " + selected_date + " in the system. Please change your selection"
                 error_message(error_text)
                 self.lift()
@@ -1010,7 +1041,7 @@ class Popup(Toplevel):
         # root.mainloop()
 
         # algorithm
-        query = """SELECT h.Name,o.DoseNumber,h.Fixed_activity_level*o.amount as Fixed_activity_level, o.injection_time,o.amount,h.Transport_time_min,h.Transport_time_max
+        query = """SELECT o.idorders, h.Name,o.DoseNumber,h.Fixed_activity_level*o.amount as Fixed_activity_level, o.injection_time,o.amount,h.Transport_time_min,h.Transport_time_max
                 FROM hospital h INNER JOIN orders o ON  h.idhospital=o.hospitalID INNER JOIN material m ON m.idmaterial=o.materialID
                 where Date = '""" + str(selected_date) + """ ' and m.materialName= '""" +str(selected_material)+ """' ORDER BY injection_time """
         # print(query)
@@ -1020,8 +1051,8 @@ class Popup(Toplevel):
         cursor = db.cursor(dictionary=True)
         cursor.execute(query)
         data = cursor.fetchall()
-
         print('date: ', data)
+        cursor = db.cursor(dictionary=False)
 
         batch1 = []
         batch2 = []
@@ -1053,8 +1084,62 @@ class Popup(Toplevel):
         print("batches_general_data: ",batches_general_data)
         all_batches_output = flat_list(batches)
         all_batches_output.sort(key=itemgetter('Name'))
+        cursor = db.cursor()
 
-        # print(all_batches_output)
+        selected_material_ID = next(m[1] for m in material_options_list if m[0]==selected_material)
+
+        #create wp record
+        new_wp_list =(str(selected_date),selected_material_ID)
+        work_plan_query = "INSERT INTO workplan (Date, materialID) VALUES " + str(new_wp_list)
+        cursor.execute(work_plan_query)
+        db.commit()
+
+
+        #get workplanID (for batch records)
+        workplanID_Query = "SELECT MAX(idworkplan) FROM workplan "
+        cursor.execute(workplanID_Query)
+        workplanID_list = cursor.fetchall()
+        workplanID = workplanID_list[0][0]
+
+        index=1
+        for batch in batches_general_data:
+            if len(batch)!=0:
+                values= (workplanID,index,str(batch['Tout']), batch['Activity'] )
+                create_batch_query="INSERT INTO batch (workplanID, batchNumber, Time_leaves_Hadassah,Total_eos) VALUES " + str(values)
+
+                cursor.execute(create_batch_query)
+                db.commit()
+            index+=1
+
+        i=1
+        for b in batches:
+            if len(b)!=0:
+                # get batchID (for orders records)
+                batchID_Query = "SELECT idbatch FROM batch WHERE workplanID= " + str(workplanID) + """
+                                AND batchNumber = """ + str(i)
+                cursor.execute(batchID_Query)
+                batchID_list = cursor.fetchall()
+                batchID = batchID_list[0][0]
+
+                for order in b:
+                    values= (batchID,float(order['Activity_Tcal']))
+                    update_rec_query = """UPDATE orders SET batchID= %s,DecayCorrected= %s
+                                         WHERE idorders = """ + str(order['idorders'])
+
+                    cursor.execute(update_rec_query, values)
+                    db.commit()
+            i+=1
+
+        # insert the id from db to values list (not in table) to allow deleting the record without refreshing the page
+        input_values_list=[str(selected_date),selected_material]
+        selectMaxIDquery = """SELECT MAX(idworkplan) FROM workplan"""
+        cursor.execute(selectMaxIDquery)
+        data = cursor.fetchall()
+        input_values_list.append(data[0][0])
+        #add to table (show to user)
+        wp_tabel.insert(parent='', index='end', iid=None, text='',
+                    values=input_values_list)
+        refresh_page
 
         #excel
         excelIcon = Image.open("excelIcon.png")
@@ -1077,16 +1162,20 @@ class Popup(Toplevel):
 
         selected_date = cal.get()
         selected_material = material_var.get()
+        cursor = db.cursor()
+
+        selected_material_ID = next(m[1] for m in material_options_list if m[0]==selected_material)
 
         ordersQuery = """SELECT h.Name,h.Fixed_activity_level , o.injection_time,o.amount, m.materialName, o.Date
                                                           FROM hospital h INNER JOIN orders o ON  h.idhospital=o.hospitalID INNER JOIN material m ON m.idmaterial=o.materialID
-                                                          where Date = '""" + selected_date + """' and m.materialName= '""" + selected_material + "' ORDER BY hospitalID, injection_time "
+                                                          where Date = '""" + selected_date + """' and o.materialID= '""" + str(selected_material_ID) + "' ORDER BY hospitalID, injection_time "
 
         cursor.execute(ordersQuery)
         data = cursor.fetchall()
         popup_size= "850x550"
+        dataLen=len(data)
 
-        legal = self.legal_wp(selected_material,selected_date,error_labels_list, data)
+        legal = self.legal_wp(selected_material,selected_date,error_labels_list, selected_material_ID,dataLen)
         if legal:
             self.destroy()
             # export_popup=Popup()
@@ -1122,9 +1211,7 @@ class Popup(Toplevel):
                 material_var = StringVar(self)
                 material_var.set("Select a material")  # default value
 
-                query= "SELECT materialName,idmaterial FROM material"
-                cursor.execute(query)
-                material_options_list = cursor.fetchall()
+
 
                 materialname = [m[0] for m in material_options_list ]
                 material_dropdown = OptionMenu(self, material_var, *materialname)
@@ -1147,7 +1234,7 @@ class Popup(Toplevel):
             p_last_label_y += 18 + error_label.winfo_reqheight()
 
             #buttons
-            next_button = Button(self, text='Next',
+            next_button = Button(self, text='Create work plan',
                                  command=lambda: self.wp_validation_plus( material_var,cal,error_labels_list ))
 
             next_button.pack(side=LEFT)
@@ -1331,6 +1418,42 @@ class table(ttk.Treeview):
                     db.commit()
                 self.delete(self.selection()[0])
 
+    def delete_WP_record(self):
+        selected_rec = self.selected()
+        item_in_string= ', '.join([ item for item in selected_rec[:selected_rec.__len__()-1]])
+        is_non=self.selected_is_non(selected_rec)
+        if not is_non:
+            len = selected_rec.__len__()
+            pk_delected_record = selected_rec[len-1]
+            title_tab = "Delete Record"
+            text_mess= "Are you sure you want to delete " + item_in_string + " ?"
+            if YES_NO_message(title_tab, text_mess):
+                try:
+                    # hide work plan
+                    hide_wp_query = "UPDATE workplan SET deleted = True WHERE idworkplan=" +  pk_delected_record
+                    cursor.execute(hide_wp_query)
+                    db.commit()
+                except:
+                    raise TypeError("update work plan error")
+
+                try:
+                    # update orders
+                    update_orders_query = """UPDATE orders SET batchID=NULL,DecayCorrected=NULL WHERE batchID  IN
+                                          (SELECT idbatch FROM batch WHERE workplanID=""" + pk_delected_record +")"
+                    cursor.execute(update_orders_query)
+                    db.commit()
+                except:
+                    raise TypeError("update orders error")
+
+                try:
+                    # delete batch
+                    delete_batch_query = "DELETE FROM batch WHERE workplanID=" + pk_delected_record
+                    cursor.execute(delete_batch_query)
+                    db.commit()
+                except:
+                    raise TypeError("update batch error")
+
+                self.delete(self.selection()[0])
 
 ##################### settings - cyclotron #####################
 #cyclotron frame
@@ -1807,11 +1930,11 @@ tab_side=LEFT
 x=330
 y= 140
 frame=WorkPlanFrame
-list_height=5
+list_height=50
 table_place_x = 80
 table_place_y = 80
 columns_name_list=('    Date   ',' Material ' )
-query = "SELECT WP.idworkplan, WP.Date, m.materialName FROM workplan WP JOIN material M ON WP.materialID=M.idmaterial"
+query = "SELECT WP.idworkplan, WP.Date, m.materialName FROM workplan WP JOIN material M ON WP.materialID=M.idmaterial WHERE ISNULL(WP.deleted) "
 
 wp_tabel=table(frame,scroll_width,list_height,tab_side,x,y,table_place_x,
                   table_place_y,)
@@ -1835,11 +1958,11 @@ wp_tabel.create_fully_tabel( columns_name_list, query)
 #         editCyclPopup.edit_popup(labels, selected_rec, save_title, query, pk, cyclo_tabel,table_name)
 #
 #
-# def deleteCyclotronfun():
-#     query = "DELETE FROM resourcecyclotron WHERE idresourceCyclotron = %s"
-#     table_name='resourcecyclotron'
-#     cyclo_tabel.delete_record(query,table_name)
-#
+def deleteWPfun():
+    query = "DELETE FROM workplan WHERE idworkplan = %s"
+    table_name='workplan'
+    wp_tabel.delete_WP_record()
+
 def addWPfun():
     addWPPopup = Popup()
     popup_size = "800x450"
@@ -1864,16 +1987,16 @@ resizedWPAddIcon = wpAddIcon.resize((25, 25), Image.ANTIALIAS)
 imgAddWP = ImageTk.PhotoImage(resizedWPAddIcon)
 addWPButton = Button(WorkPlanFrame, image=imgAddWP, borderwidth=0, command=lambda : addWPfun())
 addWPButton.pack(side= LEFT)
-addWPButton.place(x=table_place_x+160, y=table_place_y+14)
-#
-#
-# # Create a button in the main Window to Delete record - work plan
-# wpDeleteIcon = Image.open("‏‏deleteIcon.png")
-# resizedWPDeleteIcon = wpDeleteIcon.resize((20, 20), Image.ANTIALIAS)
-# imgDeleteWP = ImageTk.PhotoImage(resizedWPDeleteIcon)
-# deleteWPButton = Button(WorkPlanFrame, image=imgDeleteWP, borderwidth=0, command=lambda : deleteCyclotronfun())
-# deleteWPButton.pack(side=LEFT)
-# deleteWPButton.place(x=table_place_x + 500, y=table_place_y + 15)
+addWPButton.place(x=table_place_x + wp_tabel.winfo_reqwidth() - 45, y=table_place_y+15)
+
+
+# Create a button in the main Window to Delete record - work plan
+wpDeleteIcon = Image.open("‏‏deleteIcon.png")
+resizedWPDeleteIcon = wpDeleteIcon.resize((20, 20), Image.ANTIALIAS)
+imgDeleteWP = ImageTk.PhotoImage(resizedWPDeleteIcon)
+deleteWPButton = Button(WorkPlanFrame, image=imgDeleteWP, borderwidth=0, command=lambda : deleteWPfun())
+deleteWPButton.pack(side=LEFT)
+deleteWPButton.place(x=table_place_x + wp_tabel.winfo_reqwidth() , y=table_place_y+15)
 
 ################### batches #################
 #################### batch Page #####################
