@@ -14,6 +14,13 @@ import xlrd #Version 1.2.0
 import Permission
 from ConnectToDB import *          #connect to mysql DB
 #import DB_tables                   #create tables
+from openpyxl import *
+from openpyxl.styles import *
+from pathlib import Path
+import math
+from numpy import log as ln
+import webbrowser
+from operator import itemgetter
 
 
 ##table code
@@ -2096,6 +2103,975 @@ label_font_flag = ('Helvetica 12')
 sub_label_font = ('Helvetica',18, 'bold')
 label_color = '#034672'
 red_color =  '#f5bfbf'
+
+def error_message(text):
+    messagebox.showerror("Error",text)
+
+def warning_message(text):
+    messagebox.showwarning("Warning",text)
+
+def YES_NO_message(title_tab, text):
+    return messagebox.askyesno(title_tab,text)
+
+#algorithm functions
+lamda = ln(2) / 109.6
+max_activity_batch=7300
+
+
+def sortByTout(hospital):
+    return hospital["tout_required"]
+
+def sortByTeos(hospital):
+    return hospital["eos_req"]
+
+def change_eos_for_tout(hospital_data, diff):
+    Subtract_from_eos = timedelta(minutes=diff)
+    last_eos = hospital_data[0]["eos_req"]
+    update_eos = last_eos - Subtract_from_eos
+    hospital_data[0]["eos_req"] = update_eos
+
+    recursion_for_tout(hospital_data)
+
+def recursion_for_tout(hospital_data,hospitals_output):
+    min_to_add = 0
+    add_to_tout = timedelta(minutes=min_to_add)
+    first_tout = hospital_data[0]["tout_required"]
+    # print('hospital_data(recursion_for_tout): ',hospital_data)
+    for h in hospital_data:
+        if h["delivery_order"] == 2:  # secound is will be after QC1 - needed 5 min more
+            min_to_add += 5
+            add_to_tout = timedelta(minutes=min_to_add)
+
+        Tout_actually = first_tout + add_to_tout
+        if Tout_actually > h["tout_required"]:
+            if  h["delivery_order"]>1:
+                h["delivery_order"]=h["delivery_order"]-1
+
+                recursion_for_tout(hospital_data)
+            else: #change eos req
+                diff = Tout_actually - h["tout_required"]
+                change_eos_for_tout(hospital_data, diff)
+
+
+        h["Tout_actually"] = Tout_actually
+        min_to_add += 5
+        add_to_tout = timedelta(minutes=min_to_add)
+
+        hospital_record = next(hospital for hospital in hospitals_output if hospital["Name"] == h['hospital_name'] and hospital['Batch'] == h['batch'] )
+        hospital_record['delivery_order'] = h["delivery_order"]
+
+def main_algorithm_calculation(batches,hospitals_output,batches_general_data):
+    for b in batches: #calculate T1,Tout, Tcal,Teos, delivery_order, activity
+        if not len(b)==0:
+            index = batches.index(b)
+
+            hospitals=[]
+
+            hospital_data =[]
+            for order in b:
+                hospital_name=order['Name']
+                if hospital_name not in hospitals: # order[1] = hospital name in order
+                    hospitals.append(hospital_name)
+
+                    #add hospital record to hospitals_output list
+                    try:
+                        hospital = next(h for h in hospitals_output if h["Name"] == order["Name"] and h["Batch"]==index+1)
+                    except:
+                        hospitals_output.append({"Name":order["Name"],"Activity":0,'Batch':index+1 })
+
+                    if index != 1:  #condition for choosing Transport_time (min/max) - according to number of batch
+                        tout_temp = order['injection_time'] - timedelta(minutes=(order['Transport_time_max'])) #T1-Transport_time
+                        hospital_data.append({'hospital_name':hospital_name,'batch':index+1, "injection_time": order['injection_time'], "Transport_time": order['Transport_time_max'], "tout_required": tout_temp})
+
+                    else:
+                        tout_temp = order['injection_time'] - timedelta(minutes=(order['Transport_time_min'])) #T1-Transport_time
+                        hospital_data.append({'hospital_name':hospital_name,'batch':index+1, "injection_time": order['injection_time'], "Transport_time": order['Transport_time_min'], "tout_required": tout_temp})
+
+            hospital_data.sort( key=sortByTout) #sort hospital_data by tout_temp
+
+            #insert Tout
+            Tout_key = "Tout"
+            i = len(hospital_data[0]) - 1  # last index in the list (Tout_req)
+            t_out_final = hospital_data[0]["tout_required"]  # first tout_temp
+            batches_general_data[index][Tout_key] = t_out_final
+
+            Hospital_delivery_order=1
+            interval_5 = 15
+            minutes_for_eos_cal = timedelta(minutes=interval_5)
+
+            for h in hospital_data:
+                #delivery_order
+                h["delivery_order"] = Hospital_delivery_order
+                Hospital_delivery_order+=1
+
+                eos_req = h["tout_required"] - minutes_for_eos_cal  # tout - intervals consider the order
+                h["eos_req"] = (eos_req)
+                interval_5 += 5
+                minutes_for_eos_cal = timedelta(minutes=interval_5)
+                # hospital_data.sort(key=sortBy)  # sort hospital_data by tout_eos
+
+            hospital_data.sort(key=sortByTeos)  # sort hospital_data by tout_eos
+            recursion_for_tout(hospital_data,hospitals_output)
+
+
+            # insert Teos - new module
+            Teos_key = "Teos"
+            t_eos_final = hospital_data[0]["eos_req"] #first index in the list is the shortest time of eos (because it's sorted)
+            batches_general_data[index][Teos_key] = t_eos_final
+
+
+            #insert Tcal - new module
+            Tcal_key = "Tcal"
+            minutes_for_Tcal_cal = timedelta(minutes=30)
+            t_cal = t_out_final + minutes_for_Tcal_cal
+            batches_general_data[index][Tcal_key] = t_cal
+
+
+            # bottles_b = len(hospitals) + 2
+            # bottels_key = "bottles_mum"
+            # batches_general_data[index][bottels_key] = bottles_b
+
+            batches_general_data[index]["Activity"] = 0  # define the key
+            for order in b:
+                # insert (A) Activity_Tcal - Activity for Tcal time
+                A_Tcal_key = "Activity_Tcal"
+                injection_time= order["injection_time"]
+                T_cal = batches_general_data[index]["Tcal"]
+                A=order["Fixed_activity_level"]
+
+                diff = (injection_time-T_cal).total_seconds() /60  #convert to minutes and then to float
+                A_Tcal = math.ceil(A * math.pow((math.e),diff*lamda))  # math.ceil is round up
+
+
+                if batches_general_data[index]["Activity"] + A_Tcal >= max_activity_batch:
+                    batches[index+1].append(order)
+                    main_algorithm_calculation(batches,hospitals_output,batches_general_data)
+
+                else:
+                    # try:
+                    #     hospital = next(h for h in hospitals_output if h["Name"] == order["Name"] and h["Batch"]==index+1)
+                    # except:
+                    #     hospitals_output.append({"Name":order["Name"],"Activity":0,'Batch':index+1 })
+                    hospital = next(h for h in hospitals_output if h["Name"] == order["Name"] and h["Batch"] == index + 1)
+                    order[A_Tcal_key] = A_Tcal
+                    order['diff_Tcal_injectionT'] = diff
+                    hospital["Activity"] +=A_Tcal # Hagai - calculate for each bath and hospital separately??
+
+                    batches_general_data[index]["Activity"] += A_Tcal
+
+def export_WP_Excel( selected_material, selected_date, all_batches_output, hospitals_output, batches_general_data):
+    FilePath = "FDG format.xlsx"
+
+    wb = load_workbook(FilePath)
+
+    sheet = wb.active
+    sheet = wb['work plan']
+
+    hospitals = []
+    row_index = 8
+
+    for order in all_batches_output:
+        if order['Name'] not in hospitals:
+            hospitals.append(order['Name'])
+            grey = "c0c0c0"
+            col_start = 4
+            col_end = 11
+
+            sheet.cell(row=row_index, column=col_start).fill = PatternFill(start_color=grey, end_color=grey,
+                                                                           fill_type="solid")  # bg of buffer cell
+
+            merge_buffer = sheet.merge_cells(start_row=row_index, start_column=col_start, end_row=row_index,
+                                             end_column=col_end)
+
+            #hospital name in the first line
+            col_s=12
+            col_e=14
+            sheet.cell(row=row_index, column=col_s).fill = PatternFill(start_color=grey, end_color=grey,
+                                                                       fill_type="solid")  # bg of buffer cell
+            sheet.cell(row=row_index, column=col_s).value =  order['Name']
+            sheet.merge_cells(start_row=row_index, start_column=col_s,
+                              end_row=row_index, end_column=col_e)
+
+            #hospital name on the left side
+            col_index = 3
+            row_index += 1
+            hospital_orders = [row for row in all_batches_output if row['Name'] == order['Name']]
+
+            end_row_to_merge = row_index + len(hospital_orders) - 1
+
+            hospital_name_cell = sheet.cell(row=row_index, column=col_index)
+            hospital_name_cell.value = order['Name'] # insert hoapital name to the first col
+            merge_hospital_name_cells = sheet.merge_cells(start_row=row_index, start_column=col_index,
+                                                          end_row=end_row_to_merge, end_column=col_index)
+            #sum activity of hospital for each batch
+            hospital_output_data = [h for h in hospitals_output if h["Name"] == order["Name"] ]
+            for h_b in hospital_output_data:
+                if h_b["Batch"]==1:
+                    sheet.cell(row=row_index, column=12).value = h_b['Activity']
+                    sheet.cell(row=row_index, column=12).font = Font(size=60,bold=True)
+                elif h_b["Batch"]==2:
+                    sheet.cell(row=row_index, column=13).value = h_b['Activity']
+                    sheet.cell(row=row_index, column=13).font = Font(size=60,bold=True)
+                else:
+                    sheet.cell(row=row_index, column=14).value = h_b['Activity']
+                    sheet.cell(row=row_index, column=14).font = Font(size=60,bold=True)
+
+            for row in hospital_orders:
+                DosemCi = row['Fixed_activity_level']
+                batch_num=row['batch']
+                sheet.cell(row=row_index, column=4).value = row['DoseNumber']  # serial number
+                sheet.cell(row=row_index, column=5).value = batch_num
+                sheet.cell(row=row_index, column=6).value = DosemCi
+                sheet.cell(row=row_index, column=7).value = batches_general_data[batch_num-1]['Teos']
+                sheet.cell(row=row_index, column=8).value = batches_general_data[batch_num-1]['Tcal']
+                sheet.cell(row=row_index, column=9).value = str(row['injection_time'])  # injection time
+                sheet.cell(row=row_index, column=10).value = row['diff_Tcal_injectionT']
+                sheet.cell(row=row_index, column=11).value = row['Activity_Tcal']
+
+                row_index += 1
+
+    batch_number = 0
+    for b in batches_general_data:
+        batch_number+=1
+        if not len(b)==0:
+            if batch_number==1:
+                col_num = 12
+            elif batch_number==2:
+                col_num = 13
+            else:
+                col_num = 14
+
+            sheet.cell(row=1, column=col_num).value = b['Tout']
+            # sheet.cell(row=3, column=col_num).value =  #number of hospitals
+            sheet.cell(row=4, column=col_num).value = b['Tcal']
+            sheet.cell(row=5, column=col_num).value = b['Teos']
+            sheet.cell(row=7, column=col_num).value = b['Activity']
+
+    sheet2 = wb['more info']
+    row_num=2
+    b=0
+    for hb in hospitals_output:
+        if hb['Batch']==1:
+            col_num = 1
+            if not b==1:
+                row_num=2
+                b=1
+        elif hb['Batch']==2:
+            col_num = 3
+            if not b==2:
+                row_num=2
+                b=2
+        else:
+            col_num = 5
+            if not b==3:
+                row_num=2
+                b=3
+        sheet2.cell(row=row_num, column=col_num).value =hb['delivery_order']
+        sheet2.cell(row=row_num, column=col_num+1).value = hb['Name']
+        row_num+=1
+
+    downloads_path = str(Path.home() / "Downloads") + '/'
+
+    wb_name = downloads_path + selected_material + 'workplan' + selected_date + '.xls'
+    wb.save(wb_name)
+    webbrowser.open(downloads_path)
+
+def final_sort_by_hospital(batches):
+    for b in batches:
+        if not len(b)==0:
+            b.sort(key=itemgetter('Name'))
+    return batches
+
+def flat_list(batches):
+    flat_list = []
+    batch_num=0
+    for b in batches:
+        batch_num+=1
+        if not len(b)==0:
+            for order in b:
+                order['batch'] = batch_num
+                flat_list.append(order)
+    return flat_list
+#end algorithm functions
+
+
+class Popup(Toplevel):
+    def __init__(self):
+        Toplevel.__init__(self)
+        # self.popup = self
+
+    def open_pop(self, title,geometry ):
+        # self.geometry("900x550")
+        self.geometry(geometry)
+        self.title(title)
+        Label(self, text=title, font=('Helvetica 17 bold'), fg='#034672').place(x=10, y=18)
+
+        ## in line
+        # #labels and entry box
+        # p_last_label_x=20
+        # p_last_label_y=80
+        # i=0
+        # column_num=1
+        #
+        # for lab in labels:
+        #     p_label = Label(self, text=lab[0])
+        #     p_label.grid(row=1, column=column_num)
+        #     p_label.place(x=p_last_label_x, y=p_last_label_y)
+        #
+        #     # Entry boxes
+        #     entry_box = Entry(self, width=15)
+        #     entry_box.grid(row=2, column=column_num)
+        #     entry_box.place(x=p_last_label_x + 3, y=p_last_label_y + 40)
+        #
+        #
+        #     column_num+=1
+        #     if lab[1]!= '':
+        #         p_label_units = Label(self, text=lab[1])
+        #         font = ("Courier", 9)
+        #         p_label_units.config(font=("Courier", 9))
+        #         p_label_units_x = p_last_label_x + p_label.winfo_reqwidth()-3
+        #         p_label_units.place(x=p_label_units_x, y=p_last_label_y + 7)
+        #
+        #         if entry_box.winfo_reqwidth() > p_label.winfo_reqwidth()+p_label_units.winfo_reqwidth():
+        #             p_last_label_x += entry_box.winfo_reqwidth() + 30
+        #         else:
+        #             p_last_label_x += p_label.winfo_reqwidth()  +p_label_units.winfo_reqwidth()+ 30
+        #     else:
+        #         p_last_label_x += entry_box.winfo_reqwidth() + 30
+
+
+
+    def is_legal(self, table_name, entries, error_labels_list):
+        #validation-  not null filed is not empty
+        column_input = dict_input_column[table_name]
+        datatype_notnull_column = NOT_NULL_DataType_col(table_name)
+        datatype_in_db = [data[1:] for data in datatype_notnull_column if data[0] == table_name and data[1] in column_input]
+        input_values_list = self.get_entry(entries)
+
+        for error_lab in error_labels_list: #inite error labeles (for more than one tries)
+            error_lab['text'] = ""
+
+        legal_notnull=True
+        legal_datatype=True
+        legal = True
+
+        for col in datatype_in_db:
+            if col[0] in column_input:
+                i = column_input.index(col[0])   #index in input_values_list
+                if col[2]=='NO' and input_values_list[i] == "":    # Not null validation
+                    entries[i].config(bg=red_color)
+                    error_labels_list[i]['text'] = "Please fill the box"
+                    legal_notnull = False
+                    legal=False
+
+                else:  # data type validation
+
+                    if col[1] == 'varchar':
+                        try:
+                            str(input_values_list[i])
+                        except:
+                            legal_datatype = False
+                            entries[i].config(bg=red_color)
+                            error_labels_list[i]['text'] = "Incorrect data format"
+                    if col[1] == 'int':
+                        try:
+                            int(input_values_list[i])
+                        except:
+                            legal_datatype = False
+                            entries[i].config(bg=red_color)
+                            error_labels_list[i]['text'] = "Incorrect data format"
+                    if col[1] == 'float':
+                        try:
+                            float(input_values_list[i])
+                        except:
+                            legal_datatype = False
+                            entries[i].config(bg=red_color)
+                            error_labels_list[i]['text'] = "Incorrect data format"
+
+                    if col[1] == 'boolean':
+                        try:
+                            bool(input_values_list[i])
+                        except:
+                            legal_datatype = False
+                            entries[i].config(bg=red_color)
+                            error_labels_list[i]['text'] = "Incorrect data format"
+
+
+                    if col[1] == 'time':
+                        try:
+                            datetime.strptime(input_values_list[i], '%H:%M').time()
+
+                        except:
+                            legal_datatype = False
+                            entries[i].config(bg=red_color)
+                            error_labels_list[i]['text'] = "Incorrect data format"
+
+                    if col[1] == 'date':
+                        try:
+                            datetime.strptime(input_values_list[i], '%m/%d/%Y').date() or datetime.strptime(input_values_list[i], '%m-%d-%Y').date()
+                        except:
+                            legal_datatype = False
+                            entries[i].config(bg=red_color)
+                            error_labels_list[i]['text'] = "Incorrect data format"
+
+
+        if not legal_notnull:
+            text = "There are unallowed empty box. Please fill the highlighted fiels"
+            error_message(text)
+            self.lift()
+
+        if not legal_datatype:
+            legal=False
+            error_message("Incorrect data format in highlighted box")
+            self.lift()
+
+        #move popup to front
+        return legal
+
+
+    def update_record(self,query, pk,list, update_values_list):
+        selected = list.focus()
+        #show the changes
+        list.item(selected, text="", values = update_values_list)
+
+        #save new values in the db
+        updateCyclotronInDB = query
+        try:
+            cursor.execute(updateCyclotronInDB, update_values_list)
+            db.commit()
+        except:
+            # Rollback in case there is any error
+            db.rollback()
+
+        self.destroy()
+
+
+    def cancel_popup(self):
+        self.destroy()
+
+
+    def save_cancel_button(self, save_title,on_click_save_fun, *args):
+        save_button = Button(self, text=save_title,
+                             command=lambda: on_click_save_fun(*args))
+
+        save_button.pack(side=LEFT)
+        save_button_position_x = self.winfo_screenheight() / 2 - save_button.winfo_reqwidth()/2
+        save_button_position_y = 450
+        # save_button_position_y = self.winfo_screenheight() *0.6 - save_button.winfo_reqheight()/2
+
+
+        save_button.place(x=save_button_position_x, y=save_button_position_y)
+
+        cancel_button = Button(self, text="Cancel", command=lambda: self.cancel_popup())
+        cancel_button.pack(side=LEFT)
+        cancel_button.place(x=save_button.winfo_reqwidth() + save_button_position_x + 10, y=save_button_position_y)
+
+
+    def update_if_selected(self,query,pk,list,table_name,entries,error_labels_list):
+        update_values_list=self.get_entry(entries)
+        update_values_list.append(pk)
+        if update_values_list is None: #if the user dont select record
+            error_message("Please select record")
+        else:
+            legal = self.is_legal(table_name, entries,error_labels_list )
+            if legal:
+                self.update_record(query, pk,list,update_values_list)
+                # else:
+                #     text = "There are unallowed empty box. Please fill the empty fiels"
+                #     error_message(text)
+
+                self.destroy()
+
+
+    def get_entry(self, entries): # to edit_popup - get user changes in entry box
+        update_values_list=[]
+
+        for entry in entries:
+            entry.config(bg='white')
+            update_values_list.append(entry.get())
+        return update_values_list
+
+    def edit_popup(self, labels, valueList, save_title, *args):
+        # labels and entry box
+        p_last_label_x = 30
+        p_last_label_y = 80
+        value_index = 0
+        row_num = 1
+
+        # grab record values
+
+        # prevented 'Date', 'Batch Number','Material' show as entry box
+        if args[len(args) - 1] == 'batch' :
+            label_text = valueList [2] + '  -  Batch Number: '+ valueList[1] + '  -  '+ valueList[0]
+            p_label = Label(self, text=label_text, font=('Helvetica 14 bold underline'))
+            p_label.grid(row=row_num, column=1)
+            p_label.place(x=p_last_label_x, y=p_last_label_y)
+            valueList=valueList[3:]
+            p_last_label_y += 18*3
+            p_last_label_x+=10
+
+
+
+
+        entries = []
+        error_labels_list=[]
+        for lab in labels:
+            # if args[len(args)-1] == 'batch' and lab[0] in  ('Date', 'Batch Number','Material'):
+            #     p_last_label_y += 18
+            #     continue
+
+            p_label = Label(self, text=lab[0])
+            p_label.grid(row=row_num, column=1)
+            p_label.place(x=p_last_label_x, y=p_last_label_y)
+
+            row_num += 1
+
+            # Entry boxes
+            entry_box = Entry(self, width=20)
+            entry_box.grid(row=row_num, column=2)
+            entry_box.place(x=p_last_label_x + 4, y=p_last_label_y + 30)
+
+            # insert value into entry box
+            entry_box.insert(0, valueList[value_index])
+            value_index += 1
+            entries.append(entry_box)
+
+            if lab[1] != '':
+                p_label_units = Label(self, text=lab[1])
+                font = ("Courier", 9)
+                p_label_units.config(font=("Courier", 9))
+                p_label_units_x = p_last_label_x + p_label.winfo_reqwidth()
+                p_label_units.place(x=p_label_units_x, y=p_last_label_y + 5)
+
+            # p_last_label_y += entry_box.winfo_reqheight() + 35 + p_label.winfo_reqheight()
+            # row_num += 1
+
+            p_last_label_y += entry_box.winfo_reqheight() + p_label.winfo_reqheight()
+
+            # error labels
+            error_label = Label(self, text='', font=('Courier', 8), fg='red')
+            error_label.place(x=p_last_label_x + 1, y=p_last_label_y+6)
+            error_labels_list.append(error_label)
+            row_num += 1
+
+            p_last_label_y += 18 + error_label.winfo_reqheight()
+
+        self.save_cancel_button(save_title, self.update_if_selected, *args, entries,error_labels_list)
+
+    def Add_if_legal(self, Addquery, list,table_name, entries, error_labels_list):
+        legal = self.is_legal(table_name, entries,error_labels_list)
+        if legal:
+            input_values_list = self.get_entry(entries)
+            try:
+                #insert the record to db
+                cursor.execute(Addquery, input_values_list)
+                db.commit()
+
+                #insert the id from db to values list (not in table) to allow deleting the record without refreshing the page
+                pk_name = [pk[1] for pk in table_pk_list if pk[0] == table_name][0]
+                selectMaxIDquery2 = "SELECT MAX(" + pk_name + ") FROM " + table_name
+                cursor.execute(selectMaxIDquery2)
+                data = cursor.fetchall()
+                input_values_list.append(data[0][0])
+                list.insert(parent='', index='end', iid=None, text='',
+                            values=input_values_list)
+
+            except:
+                # Rollback in case there is any error
+                db.rollback()
+
+            self.destroy()
+
+    # def export_WP_To_Excel(self,selected_date, selected_material, data):
+    #     # ordersQuery = """SELECT h.Name,h.Fixed_activity_level , o.injection_time,o.amount, m.materialName, o.Date
+    #     #                             FROM hospital h INNER JOIN orders o ON  h.idhospital=o.hospitalID INNER JOIN material m ON m.idmaterial=o.materialID
+    #     #                             where Date = '""" + selected_date + """' and m.materialName= '""" + selected_material + "' ORDER BY hospitalID, injection_time "
+    #     #
+    #     # cursor.execute(ordersQuery)
+    #     # data = cursor.fetchall()
+    #
+    #     FilePath = "FDG format.xlsx"
+    #
+    #     wb = load_workbook(FilePath)
+    #
+    #     sheet = wb.active
+    #     sheet = wb['work plan']
+    #
+    #     hospitals = []
+    #     row_index = 9
+    #     for order in data:
+    #         if order[0] not in hospitals:
+    #             grey = "c0c0c0"
+    #             col_start = 4
+    #             col_end = 16
+    #
+    #             sheet.cell(row=row_index, column=col_start).fill = PatternFill(start_color=grey, end_color=grey,
+    #                                                                            fill_type="solid")  # bg of buffer cell
+    #
+    #             merge_buffer = sheet.merge_cells(start_row=row_index, start_column=col_start, end_row=row_index,
+    #                                              end_column=col_end)
+    #
+    #             i = 1
+    #             col_index = 3
+    #             row_index += 1
+    #             hospital_orders = [row[1:] for row in data if row[0] == order[0]]
+    #             end_row_to_merge = row_index + len(hospital_orders) - 1
+    #             hospital_name_cell = sheet.cell(row=row_index, column=col_index)
+    #             hospital_name_cell.value = order[0]  # insert hoapital name to the first col
+    #             merge_hospital_name_cells = sheet.merge_cells(start_row=row_index, start_column=col_index,
+    #                                                           end_row=end_row_to_merge, end_column=col_index)
+    #             hospitals.append(order[0])
+    #
+    #             for row in hospital_orders:
+    #                 DosemCi = row[0] * row[2]
+    #                 # sheet.cell(row=row_index, column=4).value = i  # serial number
+    #                 # sheet.cell(row=row_index, column=6).value = DosemCi
+    #                 # sheet.cell(row=row_index, column=11).value = str(row[1])  # injection time
+    #
+    #                 sheet.cell(row=row_index, column=4).value = i  # serial number
+    #                 sheet.cell(row=row_index, column=6).value = DosemCi
+    #                 sheet.cell(row=row_index, column=9).value = str(row[1])  # injection time
+    #                 i += 1
+    #                 row_index += 1
+    #                 downloads_path = str(Path.home() / "Downloads")
+    #     downloads_path = str(Path.home() / "Downloads") +'/'
+    #
+    #     wb_name = downloads_path+selected_material+ 'workplan'+ selected_date +'.xls'
+    #     wb.save(wb_name)
+    #     webbrowser.open(downloads_path)
+
+
+    def legal_wp(self,selected_material,selected_date,error_labels_list, data):
+        legal = True
+        for error_lab in error_labels_list: #inite error labeles (for more than one tries)
+            error_lab['text'] = ""
+
+        if selected_material=='Select a material':
+            error_message('Please select a material')
+            # entries[0].config(bg=red_color)
+            error_labels_list[0]['text'] = "Please select a material"
+            legal = False
+        else:
+            if len(data) == 0:
+                error_text = "There are no orders for material " + selected_material + " for date " + selected_date + " in the system. Please change your selection"
+                error_message(error_text)
+                self.lift()
+                legal = False
+
+        if not legal:
+            self.lift()
+        return legal
+
+
+    def select_resources(self, selected_date, selected_material, data):
+        # labels and entry box
+        p_last_label_x = 30
+        p_last_label_y = 80
+        value_index = 0
+        row_num = 1
+        labels = ['Cyclotron', 'Module', 'Module', 'Module']
+        entries = []
+        error_labels_list = []
+        rec_var_list=[]
+
+        for lab in labels:
+            p_label = Label(self, text=lab)
+            p_label.grid(row=row_num, column=1)
+            p_label.place(x=p_last_label_x, y=p_last_label_y)
+            row_num += 1
+
+            if lab == 'Cyclotron':
+                rec_var = StringVar(self)
+                rec_var.set("Select a Cyclotron")  # default value
+
+                query = "SELECT version,idresourceCyclotron FROM resourcecyclotron"
+                cursor.execute(query)
+                rec_options_list = cursor.fetchall()
+
+
+            elif lab == 'Module':
+                rec_var = StringVar(self)
+                rec_var.set("Select a module")  # default value
+
+                query = "SELECT version,idresourcemodule FROM resourcemodule"
+                cursor.execute(query)
+                rec_options_list = cursor.fetchall()
+
+            rec_var_list.append(rec_var)
+            recname = [m[0] for m in rec_options_list]
+            rec_dropdown = OptionMenu(self, rec_var, *recname)
+            rec_dropdown.place(x=p_last_label_x + 4, y=p_last_label_y + 30)
+            p_last_label_y += rec_dropdown.winfo_reqheight() + p_label.winfo_reqheight()
+
+            # error labels
+            error_label = Label(self, text='', font=('Courier', 8), fg='red')
+            error_label.place(x=p_last_label_x + 1, y=p_last_label_y)
+            error_labels_list.append(error_label)
+            row_num += 1
+
+            p_last_label_y += 15 + error_label.winfo_reqheight()
+
+            # buttons
+            save_button = Button(self, text='Create a work plan',
+                                 command=lambda: self.create_wp_popup(rec_var_list,selected_date, selected_material, data,error_labels_list,OptionMenu))
+
+            save_button.pack(side=LEFT)
+            save_button_position_x = self.winfo_screenheight() / 2 - save_button.winfo_reqwidth() / 2
+            #
+            save_button_position_y = self.winfo_screenwidth() / 2 - save_button.winfo_reqwidth()
+
+            save_button.place(x=save_button_position_x, y=save_button_position_y)
+
+            cancel_button = Button(self, text="Cancle", command=lambda: self.cancel_popup())
+            cancel_button.pack(side=LEFT)
+            cancel_button.place(x=save_button.winfo_reqwidth() + save_button_position_x + 10, y=save_button_position_y)
+
+
+
+    def create_wp_popup(self,  selected_date, selected_material):
+        # def create_wp_popup(self, rec_var_list,selected_date, selected_material, data, error_labels_list,OptionMenu):
+
+        # #validation - selected recourcrs
+        # legal = True
+        #
+        # i=0
+        # for rec in rec_var_list:
+        #     error_labels_list[i]['text'] =""
+        #     selected_rec = rec.get()
+        #     # if selected_rec[:8] == "Select a":
+        #     #     error_labels_list[i]
+        #     #     error_labels_list[i]['text'] = "Please select a resource"
+        #     #     legal = False
+        #     i+=1
+        #
+        # if not legal :
+        #     error_message('Please select a resources')
+        #     self.lift()
+        #
+        # else:
+        #     selected_cyclotron =rec_var_list[0].get()
+        #     #excel
+        #     excelIcon = Image.open("excelIcon.png")
+        #     resizedExcelIcon = excelIcon.resize((40, 40), Image.ANTIALIAS)
+        #     imgExcel = ImageTk.PhotoImage(resizedExcelIcon)
+        #     ExcelButton = Button(self, image=imgExcel, borderwidth=0,
+        #                          command=lambda: self.export_WP_To_Excel(selected_date, selected_material, data))
+        #     # ExcelButton.pack(side=LEFT)
+        #     ExcelButton.place(x=70, y=90)
+        #
+        #     Label(self, text='Export to Excel File', font=('Helvetica 12'), fg='grey').place(
+        #         x=60 - ExcelButton.winfo_reqwidth() / 2, y=90 + ExcelButton.winfo_reqheight())
+        # root.mainloop()
+
+        # algorithm
+        query = """SELECT h.Name,o.DoseNumber,h.Fixed_activity_level*o.amount as Fixed_activity_level, o.injection_time,o.amount,h.Transport_time_min,h.Transport_time_max
+                FROM hospital h INNER JOIN orders o ON  h.idhospital=o.hospitalID INNER JOIN material m ON m.idmaterial=o.materialID
+                where Date = '""" + str(selected_date) + """ ' and m.materialName= '""" +str(selected_material)+ """' ORDER BY injection_time """
+        # print(query)
+        # query = "SELECT Date FROM orders "
+        # cursor = db.cursor (db.cursors.DictCursor)
+
+        cursor = db.cursor(dictionary=True)
+        cursor.execute(query)
+        data = cursor.fetchall()
+
+        print('date: ', data)
+
+        batch1 = []
+        batch2 = []
+        batch3 = []
+        batch3_exist = True
+
+        for order in data:
+            order_time = datetime.strptime(str(order["injection_time"]), '%H:%M:%S').time()
+            if order_time < datetime.strptime('15:00:00', '%H:%M:%S').time():  # batch 1
+                batch1.append(order)
+
+            elif order_time < datetime.strptime('21:00:00', '%H:%M:%S').time():  # batch 2
+                batch2.append(order)
+            else:  # batch 3
+                batch3.append(order)
+
+        dict_batch1_general = {}
+        dict_batch2_general = {}
+        dict_batch3_general = {}
+        batches_general_data = [dict_batch1_general, dict_batch2_general, dict_batch3_general]
+        batches = [batch1, batch2, batch3]
+
+
+        hospitals_output = []  # for output
+        main_algorithm_calculation(batches, hospitals_output, batches_general_data)
+        hospitals_output.sort(key=lambda hb:(hb['Batch'],hb['delivery_order']))
+        print("batches: ",batches)
+        print("hospitals_output: ",hospitals_output)
+        print("batches_general_data: ",batches_general_data)
+        all_batches_output = flat_list(batches)
+        all_batches_output.sort(key=itemgetter('Name'))
+
+        # print(all_batches_output)
+
+        #excel
+        excelIcon = Image.open("excelIcon.png")
+        resizedExcelIcon = excelIcon.resize((40, 40), Image.ANTIALIAS)
+        imgExcel = ImageTk.PhotoImage(resizedExcelIcon)
+        # ExcelButton = Button(self, image=imgExcel, borderwidth=0,
+        #                      command=lambda: self.export_WP_To_Excel(selected_date, selected_material, data))
+        ExcelButton = Button(self, image=imgExcel, borderwidth=0,
+                             command=lambda: export_WP_Excel(selected_material,selected_date,all_batches_output,hospitals_output,batches_general_data))
+        # ExcelButton.pack(side=LEFT)
+        ExcelButton.place(x=70, y=90)
+
+        Label(self, text='Export to Excel File', font=('Helvetica 12'), fg='grey').place(
+            x=60 - ExcelButton.winfo_reqwidth() / 2, y=90 + ExcelButton.winfo_reqheight())
+
+        root.mainloop()
+
+
+    def wp_validation_plus(self,material_var,cal,error_labels_list):
+
+        selected_date = cal.get()
+        selected_material = material_var.get()
+
+        ordersQuery = """SELECT h.Name,h.Fixed_activity_level , o.injection_time,o.amount, m.materialName, o.Date
+                                                          FROM hospital h INNER JOIN orders o ON  h.idhospital=o.hospitalID INNER JOIN material m ON m.idmaterial=o.materialID
+                                                          where Date = '""" + selected_date + """' and m.materialName= '""" + selected_material + "' ORDER BY hospitalID, injection_time "
+
+        cursor.execute(ordersQuery)
+        data = cursor.fetchall()
+        popup_size= "850x550"
+
+        legal = self.legal_wp(selected_material,selected_date,error_labels_list, data)
+        if legal:
+            self.destroy()
+            # export_popup=Popup()
+            # title = 'Work Plan - '+selected_material +' '+ selected_date
+            # export_popup.open_pop(title,popup_size)
+            # export_popup.wp_popup(selected_date, selected_material,data)
+
+            select_rec = Popup()
+            title = 'Work Plan - ' + selected_material + ' ' + selected_date
+            select_rec.open_pop(title, popup_size)
+            # select_rec.select_resources(selected_date, selected_material, data)
+
+            select_rec.create_wp_popup(selected_date, selected_material)
+
+
+    def add_wp_popup(self):
+        # labels and entry box
+        p_last_label_x = 30
+        p_last_label_y = 80
+        value_index = 0
+        row_num = 1
+        labels = ['Material','Date']
+        entries=[]
+        error_labels_list=[]
+
+        for lab in labels:
+            p_label = Label(self, text=lab)
+            p_label.grid(row=row_num, column=1)
+            p_label.place(x=p_last_label_x, y=p_last_label_y)
+            row_num += 1
+
+            if lab == 'Material':
+                material_var = StringVar(self)
+                material_var.set("Select a material")  # default value
+
+                query= "SELECT materialName,idmaterial FROM material"
+                cursor.execute(query)
+                material_options_list = cursor.fetchall()
+
+                materialname = [m[0] for m in material_options_list ]
+                material_dropdown = OptionMenu(self, material_var, *materialname)
+                material_dropdown.place(x=p_last_label_x + 4, y=p_last_label_y + 30)
+                p_last_label_y += material_dropdown.winfo_reqheight() + p_label.winfo_reqheight()
+
+            elif lab=='Date':
+                # Add Calendar
+                cal = DateEntry(self, width=12, background='darkblue',
+                                foreground='white', borderwidth=2, date_pattern='yyyy-mm-dd')
+                cal.place(x=p_last_label_x + 4, y=p_last_label_y + 30)
+                p_last_label_y += cal.winfo_reqheight() + p_label.winfo_reqheight()
+
+            # error labels
+            error_label = Label(self, text='', font=('Courier', 8), fg='red')
+            error_label.place(x=p_last_label_x + 1, y=p_last_label_y+1)
+            error_labels_list.append(error_label)
+            row_num += 1
+
+            p_last_label_y += 18 + error_label.winfo_reqheight()
+
+            #buttons
+            next_button = Button(self, text='Next',
+                                 command=lambda: self.wp_validation_plus( material_var,cal,error_labels_list ))
+
+            next_button.pack(side=LEFT)
+            save_button_position_x = self.winfo_screenheight() / 2 - next_button.winfo_reqwidth() / 2
+            #
+            save_button_position_y = self.winfo_screenheight() / 2
+
+            next_button.place(x=save_button_position_x, y=save_button_position_y)
+
+            cancel_button = Button(self, text="Cancel", command=lambda: self.cancel_popup())
+            cancel_button.pack(side=LEFT)
+            cancel_button.place(x=next_button.winfo_reqwidth() + save_button_position_x + 10, y=save_button_position_y)
+
+            # #buttons
+            # save_button = Button(self, text='Create a work plan',
+            #                      command=lambda: self.create_wp(material_var,cal,error_labels_list ))
+            #
+            # save_button.pack(side=LEFT)
+            # save_button_position_x = self.winfo_screenheight() / 2 - save_button.winfo_reqwidth() / 2
+            # #
+            # save_button_position_y = self.winfo_screenheight() / 2
+            #
+            # save_button.place(x=save_button_position_x, y=save_button_position_y)
+            #
+            # cancel_button = Button(self, text="Cancle", command=lambda: self.cancel_popup())
+            # cancel_button.pack(side=LEFT)
+            # cancel_button.place(x=save_button.winfo_reqwidth() + save_button_position_x + 10, y=save_button_position_y)
+
+
+    def add_popup(self, labels, save_title, *args):
+        # labels and entry box
+        p_last_label_x = 30
+        p_last_label_y = 80
+        value_index=0
+        row_num = 1
+
+        # grab record values
+        error_labels_list=[]
+        entries = []
+        for lab in labels:
+            p_label = Label(self, text=lab[0])
+            p_label.grid(row=row_num, column=1)
+            p_label.place(x=p_last_label_x, y=p_last_label_y)
+            row_num += 1
+
+            # Entry boxes
+            entry_box = Entry(self, width=20,insertbackground=label_color)
+            entry_box.grid(row=row_num, column=2)
+            entry_box.place(x=p_last_label_x + 4, y=p_last_label_y + 30)
+            entries.append( entry_box)
+
+            if lab[1] != '':
+                p_label_units = Label(self, text=lab[1])
+                font = ("Courier", 9)
+                p_label_units.config(font=("Courier", 9))
+                p_label_units_x = p_last_label_x + p_label.winfo_reqwidth()
+                p_label_units.place(x=p_label_units_x, y=p_last_label_y + 5)
+
+            p_last_label_y += entry_box.winfo_reqheight()  + p_label.winfo_reqheight()
+
+            #error labels
+            error_label = Label(self, text='', font=('Courier',8),fg='red' )
+            error_label.place(x=p_last_label_x+1, y=p_last_label_y+6)
+            error_labels_list.append(error_label)
+            row_num += 1
+
+
+            p_last_label_y += 18  + error_label.winfo_reqheight()
+        self.save_cancel_button(save_title, self.Add_if_legal,*args, entries,error_labels_list ) # will add save.cancel buttons (and click on functions)
+
 
 
 
