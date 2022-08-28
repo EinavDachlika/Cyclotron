@@ -2822,34 +2822,6 @@ batchFrame.forget()
 ################################and of work plan page###############################
 
 
-# #####################Old toolbar #####################
-# toolbarbgcolor = "white"
-# toolbar = Frame(root, bg=toolbarbgcolor)
-# #toolbar.grid(sticky='nesw')
-#
-# # add logo - toolbar
-# LogoImagePath = Image.open("D:\PythonProjects\Cyclotron\LogoImage.png")
-# LogoImageResize = LogoImagePath.resize((120, 57), Image.ANTIALIAS)
-# LogoImage = ImageTk.PhotoImage(LogoImageResize,master=toolbar)
-# Label(toolbar, image=LogoImage).pack(side=LEFT, padx=10, pady=6)
-#
-# # work plan button - toolbar
-# workPlanButton = Button(toolbar, text="Work Plans", font='Helvetica 11')
-# workPlanButton.pack(side=LEFT, padx=10, pady=3)
-#
-# # Hospitals button - toolbar
-# hospitalsButton = Button(toolbar, text="Hospitals",command=hospital_page,font='Helvetica 11', activebackground='red')
-# hospitalsButton.pack(side=LEFT, padx=10, pady=3)
-#
-# # Orders button - toolbar
-# ordersButton = Button(toolbar, text="Orders", font='Helvetica 11',command=Orders_page)
-# ordersButton.pack(side=LEFT, padx=10, pady=3)
-#
-# # Reports button - toolbar
-# reportsButton = Button(toolbar, text="Reports", font='Helvetica 11')
-# reportsButton.pack(side=LEFT, padx=10, pady=3)
-#
-
 #####################New toolbar #####################
 
 toolbarbgcolor = "white"
