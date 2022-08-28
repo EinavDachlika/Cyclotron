@@ -13,7 +13,7 @@ from datetime import date,timedelta,datetime
 import xlrd #Version 1.2.0
 import Permission
 from ConnectToDB import *          #connect to mysql DB
-import DB_tables                   #create tables
+#import DB_tables                   #create tables
 
 
 ##table code
@@ -2296,7 +2296,7 @@ def addCyclotronfun():
 #cyclotron buttons
 
 #Create a button in the main Window to add record - cyclotron
-cyclotronAddIcon = Image.open("addIcon.png")
+cyclotronAddIcon = Image.open("D:/PythonProjects/Cyclotron/addIcon.png")
 resizedCycloAddIcon = cyclotronAddIcon.resize((25, 25), Image.ANTIALIAS)
 imgAddCyclotron = ImageTk.PhotoImage(resizedCycloAddIcon)
 addCyclotronButton = Button(cycloSettingsFrame, image=imgAddCyclotron, borderwidth=0, command=lambda : addCyclotronfun())
@@ -2304,7 +2304,7 @@ addCyclotronButton.pack(side= LEFT)
 addCyclotronButton.place(x=table_place_x + cyclo_tabel.winfo_reqwidth() -100, y=table_place_y+14)
 
 #Create a button in the main Window to edit  record (open the popup) - cyclotron
-cyclotronEditIcon = Image.open("editIcon.jpg")
+cyclotronEditIcon = Image.open("D:\PythonProjects\Cyclotron\editIcon.jpg")
 resizedCycloEditIcon = cyclotronEditIcon.resize((20, 20), Image.ANTIALIAS)
 imgEditCyclotron = ImageTk.PhotoImage(resizedCycloEditIcon)
 # editCyclotronButton = Button(ctcloSettingsFrame, image=imgEditCyclotron, borderwidth=0, command= lambda :editCyclotronfun())
@@ -2315,7 +2315,7 @@ editCyclotronButton.place(x=table_place_x + cyclo_tabel.winfo_reqwidth() -50, y=
 
 
 # Create a button in the main Window to Delete record - cyclotron
-cyclotronDeleteIcon = Image.open("‏‏deleteIcon.png")
+cyclotronDeleteIcon = Image.open("D:\PythonProjects\Cyclotron\‏‏deleteIcon.png")
 resizedCycloDeleteIcon = cyclotronDeleteIcon.resize((20, 20), Image.ANTIALIAS)
 imgDeleteCyclotron = ImageTk.PhotoImage(resizedCycloDeleteIcon)
 deleteCyclotronButton = Button(cycloSettingsFrame, image=imgDeleteCyclotron, borderwidth=0, command=lambda : deleteCyclotronfun())
@@ -2412,7 +2412,7 @@ def deleteModulefun():
 #module buttons
 
 #Create a button in the main Window to add record - module
-moduleAddIcon = Image.open("addIcon.png")
+moduleAddIcon = Image.open("D:/PythonProjects/Cyclotron/addIcon.png")
 resizedModuleAddIcon = moduleAddIcon.resize((25, 25), Image.ANTIALIAS)
 imgAddModule = ImageTk.PhotoImage(resizedModuleAddIcon)
 addModuleButton = Button(moduleSettingsFrame, image=imgAddModule, borderwidth=0, command=addModulefun)
@@ -2420,7 +2420,7 @@ addModuleButton.pack(side= LEFT)
 addModuleButton.place(x=table_place_x+ module_tabel.winfo_reqwidth() -100 , y=table_place_y+14)
 
 #Create a button in the main Window to edit  record (open the popup) - module
-moduleEditIcon = Image.open("editIcon.jpg")
+moduleEditIcon = Image.open("D:\PythonProjects\Cyclotron\editIcon.jpg")
 resizedModuleEditIcon = moduleEditIcon.resize((20, 20), Image.ANTIALIAS)
 imgEditModule = ImageTk.PhotoImage(resizedModuleEditIcon)
 editModuleButton = Button(moduleSettingsFrame, image=imgEditModule, borderwidth=0, command=editModulefun)
@@ -2429,7 +2429,7 @@ editModuleButton.place(x=table_place_x+module_tabel.winfo_reqwidth() - 50, y=tab
 
 
 #Create a button in the main Window to Delete record - module
-moduleDeleteIcon = Image.open("‏‏deleteIcon.png")
+moduleDeleteIcon = Image.open("D:\PythonProjects\Cyclotron\‏‏deleteIcon.png")
 resizedModuleDeleteIcon = moduleDeleteIcon.resize((20, 20), Image.ANTIALIAS)
 imgDeleteModule = ImageTk.PhotoImage(resizedModuleDeleteIcon)
 deleteModuleButton = Button(moduleSettingsFrame, image=imgDeleteModule, borderwidth=0, command=deleteModulefun)
@@ -2525,7 +2525,7 @@ def deleteMaterialfun():
 #material buttons
 
 #Create a button in the main Window to add record - material
-materialAddIcon = Image.open("addIcon.png")
+materialAddIcon = Image.open("D:/PythonProjects/Cyclotron/addIcon.png")
 resizedMaterialAddIcon = materialAddIcon.resize((25, 25), Image.ANTIALIAS)
 imgAddMaterial = ImageTk.PhotoImage(resizedMaterialAddIcon)
 addMaterialButton = Button(materialSettingsFrame, image=imgAddModule, borderwidth=0, command=addMaterialfun)
@@ -2533,7 +2533,7 @@ addMaterialButton.pack(side= LEFT)
 addMaterialButton.place(x=table_place_x + material_tabel.winfo_reqwidth() - 95, y=table_place_y+14)
 
 #Create a button in the main Window to edit  record (open the popup) - material
-materialEditIcon = Image.open("editIcon.jpg")
+materialEditIcon = Image.open("D:\PythonProjects\Cyclotron\editIcon.jpg")
 resizedMaterialEditIcon = materialEditIcon.resize((20, 20), Image.ANTIALIAS)
 imgEditMaterial = ImageTk.PhotoImage(resizedMaterialEditIcon)
 editMaterialButton = Button(materialSettingsFrame, image=imgEditMaterial, borderwidth=0, command=editMaterialfun)
@@ -2541,7 +2541,7 @@ editMaterialButton.pack(side= LEFT)
 editMaterialButton.place(x=table_place_x + material_tabel.winfo_reqwidth() - 45, y=table_place_y+15)
 
 #Create a button in the main Window to Delete record - material
-materialDeleteIcon = Image.open("‏‏deleteIcon.png")
+materialDeleteIcon = Image.open("D:\PythonProjects\Cyclotron\‏‏deleteIcon.png")
 resizedMaterialDeleteIcon = materialDeleteIcon.resize((20, 20), Image.ANTIALIAS)
 imgDeleteMaterial = ImageTk.PhotoImage(resizedMaterialDeleteIcon)
 deleteMaterialButton = Button(materialSettingsFrame, image=imgDeleteMaterial, borderwidth=0, command=deleteMaterialfun)
@@ -2639,7 +2639,7 @@ def deleteHospitalfun():
 #hospital buttons
 
 #Create a button in the main Window to add record - hospital
-hospitalAddIcon = Image.open("addIcon.png")
+hospitalAddIcon = Image.open("D:/PythonProjects/Cyclotron/addIcon.png")
 resizedHospitalAddIcon = hospitalAddIcon.resize((25, 25), Image.ANTIALIAS)
 imgAddHospital = ImageTk.PhotoImage(resizedHospitalAddIcon)
 addHospitalButton = Button(hospitalFrame, image=imgAddHospital, borderwidth=0, command=lambda : addHospitalfun())
@@ -2648,7 +2648,7 @@ addHospitalButton.place(x=lable_place_x + hospital_tabel.winfo_reqwidth() - 100,
 
 
 #Create a button in the main Window to edit  record (open the popup) - hospital
-hospitalEditIcon = Image.open("editIcon.jpg")
+hospitalEditIcon = Image.open("D:\PythonProjects\Cyclotron\editIcon.jpg")
 resizedHospitalEditIcon = hospitalEditIcon.resize((20, 20), Image.ANTIALIAS)
 imgEditHospital = ImageTk.PhotoImage(resizedHospitalEditIcon)
 editHospitalButton = Button(hospitalFrame, image=imgEditHospital, borderwidth=0, command= lambda :editHospitalfun())
@@ -2658,7 +2658,7 @@ editHospitalButton.place(x=lable_place_x + hospital_tabel.winfo_reqwidth() - 50,
 
 
 # Create a button in the main Window to Delete record - hospital
-hospitalDeleteIcon = Image.open("‏‏deleteIcon.png")
+hospitalDeleteIcon = Image.open("D:\PythonProjects\Cyclotron\‏‏deleteIcon.png")
 resizedHospitalDeleteIcon = hospitalDeleteIcon.resize((20, 20), Image.ANTIALIAS)
 imgDeleteHospital = ImageTk.PhotoImage(resizedHospitalDeleteIcon)
 deleteHospitalButton = Button(hospitalFrame, image=imgDeleteHospital, borderwidth=0, command=lambda : deleteHospitalfun())
@@ -2752,7 +2752,7 @@ def addWPfun():
 # editWPButton.place(x=table_place_x+450, y=table_place_y+15)
 #
 #Create a button in the main Window to add record - work plan
-wpAddIcon = Image.open("addIcon.png")
+wpAddIcon = Image.open("D:/PythonProjects/Cyclotron/addIcon.png")
 resizedWPAddIcon = wpAddIcon.resize((25, 25), Image.ANTIALIAS)
 
 imgAddWP = ImageTk.PhotoImage(resizedWPAddIcon)
@@ -2832,7 +2832,7 @@ def editBatchfun():
 #batch buttons
 
 #Create a button in the main Window to edit  record (open the popup) - hospital
-batchEditIcon = Image.open("editIcon.jpg")
+batchEditIcon = Image.open("D:\PythonProjects\Cyclotron\editIcon.jpg")
 resizedBatchEditIcon = batchEditIcon.resize((20, 20), Image.ANTIALIAS)
 imgEditBatch = ImageTk.PhotoImage(resizedBatchEditIcon)
 editBatchButton = Button(batchFrame, image=imgEditBatch, borderwidth=0, command= lambda :editBatchfun())
@@ -2886,7 +2886,7 @@ toolbar = Frame(root, bg=toolbarbgcolor)
 toolbar.grid(sticky='nesw')
 
 # logo - toolbar
-LogoImagePath = Image.open("LogoImage.png")
+LogoImagePath = Image.open("D:\PythonProjects\Cyclotron\LogoImage.png")
 LogoImageResize = LogoImagePath.resize((120, 57),Image.ANTIALIAS)
 LogoImage = ImageTk.PhotoImage(LogoImageResize)
 Label(toolbar,image=LogoImage).pack(side=LEFT,padx=10,pady=6)
