@@ -64,6 +64,7 @@ except Error as e:
     print("Error while connecting to MySQL", e)
 
 cursor = db.cursor()
+
 #toolbar function
 def work_plan_page():
     WorkPlanFrame.pack(fill=X)

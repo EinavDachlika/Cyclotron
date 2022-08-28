@@ -141,14 +141,14 @@ deleteButton.place(x=470, y=55)
 
 #####################end of hospital page###################################################
 
-def hospital_page():
-    """ this function is swap function for hospital frame/page"""
-    settingButton.config(bg='#F0F0F0');
-    ordersButton.config(bg='#F0F0F0');
-    hospitalsButton.config(bg='gray');
-    hospitalFrame.pack(fill='both',expand=1);
-    SettingsFrame.forget();
-    ordersFrame.forget();
+# def hospital_page():
+#     """ this function is swap function for hospital frame/page"""
+#     #settingButton.config(bg='#F0F0F0');
+#     #ordersButton.config(bg='#F0F0F0');
+#     #hospitalsButton.config(bg='gray');
+#     hospitalFrame.pack(fill='both',expand=1);
+#     #SettingsFrame.forget();
+#     ordersFrame.forget();
 
 ##################Orders page############################################
 
@@ -2054,511 +2054,1157 @@ editButton.place(x=100, y=65);
 
 def Orders_page():
     """ this function is swap function for Orders frame/page"""
-    settingButton.config(bg='#F0F0F0');  ##F0F0F0 is default color(gray)
-    hospitalsButton.config(bg='#F0F0F0');
+    workPlanButton.config(bg='#F0F0F0');  ##F0F0F0 is default color(gray)
+    mbtn.config(bg='#F0F0F0'); ##F0F0F0 is default color(gray)
     ordersButton.config(bg="gray");
     ordersFrame.pack(fill='both',expand=1);
+    WorkPlanFrame.forget();
     hospitalFrame.forget();
-    SettingsFrame.forget();
+    moduleSettingsFrame.forget()
+    materialSettingsFrame.forget()
+    hospitalFrame.forget()
+    cycloSettingsFrame.forget()
+
+#    SettingsFrame.forget();
+
+###########################################################################################
+#start Einav code-Settings & Workplane&Batches
+
+#general
+label_font = ('Helvetica',26, 'bold')
+label_font_flag_on_page = ('Helvetica 12 bold underline')
+label_font_flag = ('Helvetica 12')
+sub_label_font = ('Helvetica',18, 'bold')
+label_color = '#034672'
+red_color =  '#f5bfbf'
 
 
 
+class table(ttk.Treeview):
+    def  __init__(self,frame,scroll_width,list_height,side,x_crol,y_crol,lable_place_x,
+                  lable_place_y):
+        self.side = side
+        scroll = Scrollbar(frame, orient="vertical", width=scroll_width)
+        scroll.pack(side=side)
+        scroll.place(x=x_crol, y=y_crol)
+        ttk.Treeview.__init__(self,frame, yscrollcommand=scroll.set, height=list_height)
+        self.pack(side=LEFT, padx=lable_place_x + 30, pady=lable_place_y + 50)
+        scroll.config(command=self.yview)
 
-##################### toolbar #####################
+        # list = self.(frame, yscrollcommand=scroll.set, height=list_height)
+
+    # def create_fully_tabel(self,scroll_width,side, x_crol,y_crol, frame, list_height, lable_place_x,lable_place_y, columns_name_list, query):
+    def create_fully_tabel(self, columns_name_list, query):
+
+        # scroll = Scrollbar(frame, orient="vertical", width=scroll_width)
+        # scroll.pack(side=side)
+        # scroll.place(x=x_crol, y=y_crol)
+        #
+        # list = ttk.Treeview(frame, yscrollcommand=scroll.set, height=list_height)
+
+        self['columns'] = columns_name_list
+
+        self.column("#0", width=0, stretch=NO)
+        self.heading("#0", text="", anchor=CENTER)
+
+        i=0
+        len_of_col=len(columns_name_list)
+        for column_name in columns_name_list:
+            # column format
+            if i == 0 or i == len_of_col-2:
+                width = len(column_name)*6 +30
+            else:
+                width = len(column_name)*6
+
+            self.column(column_name, anchor=CENTER, width=width)
+            # # Create Headings
+            self.heading(column_name, text=column_name, anchor=CENTER)
+        # query = query + " WHERE ISNULL(deleted)"
+        cursor.execute(query)
+        data = cursor.fetchall()
+        # print(query,data)
+        iid=0
+        for recorf in data:
+            val=[]
+            for i in range (0,len_of_col): # plus 1 is for the pk that will not show in the table
+                val.append(recorf[i+1])
+            val.append(recorf[0])
+
+            self.insert(parent='', index='end', iid=iid, text='',
+                        values=val)
+            iid +=1
+
+            self.pack()
+
+    def selected(self):
+        selected = self.focus()
+        selected_record = self.item(selected, 'values')
+        return selected_record
+
+    def selected_is_non(self, selected_record):
+        if selected_record =='':
+            text = "Please select a record from the table"
+            error_message(text)
+            return True
+        else:
+            return False
+
+    def fk_rec_is_exist(self,query,table_name, pk_delected_record ):
+        fk_list = [rec for rec in fk if rec[2]== table_name]
+        if len(fk_list) != 0:
+            for fk_rec in fk_list:
+                query = "select * from "+ fk_rec[0] + " where " + fk_rec[1] + "=" + pk_delected_record
+                try:
+                    cursor.execute(query)
+                    data = cursor.fetchall()
+                    if data != []:
+                        return True
+                except:
+                    #Rollback in case there is any error
+                    db.rollback()
+        return False
+
+    def delete_record(self, query,table_name):
+        selected_rec = self.selected()
+        item_in_string= ', '.join([ item for item in selected_rec[:selected_rec.__len__()-1]])
+        is_non=self.selected_is_non(selected_rec)
+        if not is_non:
+            len = selected_rec.__len__()
+            pk_delected_record = selected_rec[len-1]
+            title_tab = "Delete Record"
+            text_mess= "Are you sure you want to delete " + item_in_string + " ?"
+            if YES_NO_message(title_tab, text_mess):
+                pk_delected_record_list = (pk_delected_record, )
+                to_delete= not self.fk_rec_is_exist(query,table_name,pk_delected_record)
+                pk_name = [pk[1] for pk in table_pk_list if pk[0] == table_name][0]
+                if to_delete:
+                    try:
+                        query = "delete from "+table_name + " where " + pk_name + "=" + pk_delected_record
+                        cursor.execute(query )
+                        db.commit()
+                    except:
+                        # Rollback in case there is any error
+                        db.rollback()
+
+                else: #to hide
+                    query2 = "UPDATE " + table_name +" SET deleted = True " +"WHERE " + pk_name + "=" + pk_delected_record
+                    cursor.execute(query2)
+                    db.commit()
+                self.delete(self.selection()[0])
+
+
+##################### settings new - cyclotron #####################
+#cyclotron frame
+cycloSettingsFrame = Frame(root)
+# h = Scrollbar(cycloSettingsFrame, orient='horizontal')
+# cycloSettingsFrame.pack(fill=X)
+
+# feed label - cyclotron
+feedLabel = Label(cycloSettingsFrame, text = 'Settings ➝ ', font=label_font_flag,fg=label_color)
+PlaceLable_X=50
+PlaceLable_Y=10
+feedLabel.pack(side=LEFT)
+feedLabel.place(x=PlaceLable_X,y=PlaceLable_Y)
+
+feedLabeflag = Label(cycloSettingsFrame, text = 'Cyclotron', font=label_font_flag_on_page,fg=label_color)
+
+PlaceLable2_X=135
+feedLabeflag.pack(side=LEFT)
+feedLabeflag.place(x=PlaceLable2_X,y=PlaceLable_Y)
+
+##################### Cyclotron #####################
+# Cyclotron Details label
+CyclotronLabel = Label(cycloSettingsFrame, text = 'Cyclotron Details', font=sub_label_font,fg=label_color)
+Lable_place_x=80
+Lable_place_y=60
+
+CyclotronLabel.pack(side=LEFT)
+CyclotronLabel.place(x=Lable_place_x,y=Lable_place_y)
+
+###cycortion tabel###
+scroll_width=20
+tab_side=LEFT
+x=613
+y= 140
+frame=cycloSettingsFrame
+list_height=5
+table_place_x = 80
+table_place_y = 80
+columns_name_list=('Version', 'Capacity (mci/h)', 'Constant Efficiency (mCi/mA)', 'Description')
+
+query = "SELECT * FROM resourcecyclotron WHERE ISNULL(deleted)"
+
+# cyclo_tabel=table(scroll_width,tab_side, x,y,frame,list_height,lable_place_x,lable_place_y, columns_name_list, query )
+cyclo_tabel=table(frame,scroll_width,list_height,tab_side,x,y,table_place_x,
+                  table_place_y,)
+cyclo_tabel.create_fully_tabel( columns_name_list, query)
+
+
+###cycortion functions###
+def editCyclotronfun():
+    selected_rec = cyclo_tabel.selected()
+    selected_non=cyclo_tabel.selected_is_non(selected_rec)
+    if not selected_non:
+        editCyclPopup = Popup()
+        popup_size = "900x550"
+        editCyclPopup.open_pop('Edit Cyclotron Details',popup_size)
+
+        query = "UPDATE resourcecyclotron SET version = %s ,capacity= %s, constant_efficiency= %s,description=%s  WHERE idresourceCyclotron = %s"
+        pk = selected_rec[4]
+        table_name = 'resourcecyclotron'
+        labels = (('Version', ''), ('Capacity', '(mci/h)'), ('Constant Efficiency', '(mCi/mA)'), ('Description', ''))
+        save_title = "Save Changes"
+
+        editCyclPopup.edit_popup(labels, selected_rec, save_title, query, pk, cyclo_tabel,table_name)
+
+
+def deleteCyclotronfun():
+    query = "DELETE FROM resourcecyclotron WHERE idresourceCyclotron = %s"
+    table_name='resourcecyclotron'
+    cyclo_tabel.delete_record(query,table_name)
+
+def addCyclotronfun():
+    addCyclPopup = Popup()
+    popup_size = "900x550"
+    addCyclPopup.open_pop('Add Cyclotron Details',popup_size)
+    labels = (('Version', ''), ('Capacity', '(mci/h)'), ('Constant Efficiency', '(mCi/mA)'), ('Description', ''))
+    save_title = "Add Cyclotron"
+    insertquery = "INSERT INTO resourcecyclotron SET version = %s ,capacity= %s, constant_efficiency= %s,description=%s"
+    # selectIDquery = "SELECT MAX(idresourceCyclotron) FROM resourcecyclotron"
+    table_name='resourcecyclotron'
+    addCyclPopup.add_popup(labels, save_title, insertquery, cyclo_tabel,table_name)
+
+#cyclotron buttons
+
+#Create a button in the main Window to add record - cyclotron
+cyclotronAddIcon = Image.open("addIcon.png")
+resizedCycloAddIcon = cyclotronAddIcon.resize((25, 25), Image.ANTIALIAS)
+imgAddCyclotron = ImageTk.PhotoImage(resizedCycloAddIcon)
+addCyclotronButton = Button(cycloSettingsFrame, image=imgAddCyclotron, borderwidth=0, command=lambda : addCyclotronfun())
+addCyclotronButton.pack(side= LEFT)
+addCyclotronButton.place(x=table_place_x + cyclo_tabel.winfo_reqwidth() -100, y=table_place_y+14)
+
+#Create a button in the main Window to edit  record (open the popup) - cyclotron
+cyclotronEditIcon = Image.open("editIcon.jpg")
+resizedCycloEditIcon = cyclotronEditIcon.resize((20, 20), Image.ANTIALIAS)
+imgEditCyclotron = ImageTk.PhotoImage(resizedCycloEditIcon)
+# editCyclotronButton = Button(ctcloSettingsFrame, image=imgEditCyclotron, borderwidth=0, command= lambda :editCyclotronfun())
+editCyclotronButton = Button(cycloSettingsFrame, image=imgEditCyclotron, borderwidth=0, command= lambda :editCyclotronfun())
+
+editCyclotronButton.pack(side= LEFT)
+editCyclotronButton.place(x=table_place_x + cyclo_tabel.winfo_reqwidth() -50, y=table_place_y+15)
+
+
+# Create a button in the main Window to Delete record - cyclotron
+cyclotronDeleteIcon = Image.open("‏‏deleteIcon.png")
+resizedCycloDeleteIcon = cyclotronDeleteIcon.resize((20, 20), Image.ANTIALIAS)
+imgDeleteCyclotron = ImageTk.PhotoImage(resizedCycloDeleteIcon)
+deleteCyclotronButton = Button(cycloSettingsFrame, image=imgDeleteCyclotron, borderwidth=0, command=lambda : deleteCyclotronfun())
+deleteCyclotronButton.pack(side=LEFT)
+deleteCyclotronButton.place(x=table_place_x + cyclo_tabel.winfo_reqwidth(), y=table_place_y + 15)
+
+
+##################### settings new - module #####################
+#module frame
+moduleSettingsFrame = Frame(root)
+# h = Scrollbar(moduleSettingsFrame, orient='horizontal')
+# moduleSettingsFrame.pack(fill=X)
+
+# feed label - module
+feedLabel = Label(moduleSettingsFrame, text = 'Settings ➝ ', font=label_font_flag,fg=label_color)
+PlaceLable_X=50
+PlaceLable_Y=10
+feedLabel.pack(side=LEFT)
+feedLabel.place(x=PlaceLable_X,y=PlaceLable_Y)
+
+feedLabeflag = Label(moduleSettingsFrame, text = 'Module', font=label_font_flag_on_page,fg=label_color)
+
+PlaceLable2_X=135
+feedLabeflag.pack(side=LEFT)
+feedLabeflag.place(x=PlaceLable2_X,y=PlaceLable_Y)
+
+##################### Module #####################
+
+# Module Details label
+moduleLabel = Label(moduleSettingsFrame, text = 'Module Details', font=sub_label_font,fg=label_color)
+# module_Lable_place_x=80
+# module_Lable_place_y=60
+
+moduleLabel.pack(side=LEFT)
+moduleLabel.place(x=Lable_place_x,y=Lable_place_y)
+moduleLabel.pack(side=RIGHT)
+moduleLabel.place(x=Lable_place_x,y=Lable_place_y)
+
+###module tabel###
+scroll_width=20
+tab_side=LEFT
+x=420
+y= 150
+frame=moduleSettingsFrame
+list_height=5
+# table_place_x = 80
+# table_place_y=80
+
+columns_name_list=('Version', 'Capacity (mci/h)', 'Description')
+
+queryModule = "SELECT * FROM resourcemodule WHERE ISNULL(deleted)"
+
+module_tabel=table(frame,scroll_width,list_height,tab_side,x,y,table_place_x,
+                   table_place_y)
+module_tabel.create_fully_tabel( columns_name_list, queryModule)
+
+###module functions###
+def editModulefun():
+    selected_rec = module_tabel.selected()
+    selected_non = module_tabel.selected_is_non(selected_rec)
+    if not selected_non:
+        # popup_size = "800x450"
+        popup_size = "900x550"
+        editModulePopup = Popup()
+        editModulePopup.open_pop('Edit Module Details', popup_size)
+
+        query = "UPDATE resourcemodule SET version = %s ,capacity= %s, description=%s  WHERE idresourcemodule = %s"
+        table_name = 'resourcemodule'
+        pk = selected_rec[3]
+
+        labels = (('Version', ''), ('Capacity', '(mci/h)'),  ('Description', ''))
+        save_title = "Save Changes"
+
+        editModulePopup.edit_popup(labels, selected_rec, save_title, query, pk, module_tabel,  table_name)
+
+
+def addModulefun():
+    addModulePopup = Popup()
+    # popup_size = "800x450"
+    popup_size = "900x550"
+    addModulePopup.open_pop('Add Module Details',popup_size)
+    labels = (('Version', ''), ('Capacity', '(mci/h)'), ('Description', ''))
+    save_title = "Add Module"
+    insetQuery = "INSERT INTO resourcemodule SET version = %s ,capacity= %s,description=%s"
+    table_name='resourcemodule'
+    addModulePopup.add_popup(labels, save_title, insetQuery, module_tabel, table_name)
+
+def deleteModulefun():
+    query = "DELETE FROM resourcemodule WHERE idresourcemodule = %s"
+    table_name='resourcemodule'
+    module_tabel.delete_record(query,table_name)
+
+
+#module buttons
+
+#Create a button in the main Window to add record - module
+moduleAddIcon = Image.open("addIcon.png")
+resizedModuleAddIcon = moduleAddIcon.resize((25, 25), Image.ANTIALIAS)
+imgAddModule = ImageTk.PhotoImage(resizedModuleAddIcon)
+addModuleButton = Button(moduleSettingsFrame, image=imgAddModule, borderwidth=0, command=addModulefun)
+addModuleButton.pack(side= LEFT)
+addModuleButton.place(x=table_place_x+ module_tabel.winfo_reqwidth() -100 , y=table_place_y+14)
+
+#Create a button in the main Window to edit  record (open the popup) - module
+moduleEditIcon = Image.open("editIcon.jpg")
+resizedModuleEditIcon = moduleEditIcon.resize((20, 20), Image.ANTIALIAS)
+imgEditModule = ImageTk.PhotoImage(resizedModuleEditIcon)
+editModuleButton = Button(moduleSettingsFrame, image=imgEditModule, borderwidth=0, command=editModulefun)
+editModuleButton.pack(side= LEFT)
+editModuleButton.place(x=table_place_x+module_tabel.winfo_reqwidth() - 50, y=table_place_y+15)
+
+
+#Create a button in the main Window to Delete record - module
+moduleDeleteIcon = Image.open("‏‏deleteIcon.png")
+resizedModuleDeleteIcon = moduleDeleteIcon.resize((20, 20), Image.ANTIALIAS)
+imgDeleteModule = ImageTk.PhotoImage(resizedModuleDeleteIcon)
+deleteModuleButton = Button(moduleSettingsFrame, image=imgDeleteModule, borderwidth=0, command=deleteModulefun)
+deleteModuleButton.pack(side= LEFT)
+deleteModuleButton.place(x=table_place_x+module_tabel.winfo_reqwidth(), y=table_place_y+15)
+
+
+
+# ##################### Material #####################
+##################### settings new - Material #####################
+#material frame
+materialSettingsFrame = Frame(root)
+# h = Scrollbar(materialSettingsFrame, orient='horizontal')
+# materialSettingsFrame.pack(fill=X)
+
+# feed label - material
+feedLabelmaterial = Label(materialSettingsFrame, text = 'Settings ➝ ', font=label_font_flag,fg=label_color)
+PlaceLable_X=50
+PlaceLable_Y=10
+feedLabelmaterial.pack(side=LEFT)
+feedLabelmaterial.place(x=PlaceLable_X,y=PlaceLable_Y)
+
+feedLabeflag = Label(materialSettingsFrame, text = 'Material', font=label_font_flag_on_page,fg=label_color)
+
+PlaceLable2_X=135
+feedLabeflag.pack(side=LEFT)
+feedLabeflag.place(x=PlaceLable2_X,y=PlaceLable_Y)
+
+##################### material #####################
+
+# material Details label
+materialLabel = Label(materialSettingsFrame, text = 'Material Details', font=sub_label_font,fg=label_color)
+# material_Lable_place_x=80
+# material_Lable_place_y=60
+
+materialLabel.pack(side=LEFT)
+materialLabel.place(x=Lable_place_x,y=Lable_place_y)
+
+###material tabel###
+scroll_width=20
+tab_side=LEFT
+x=420
+y= 150
+frame=materialSettingsFrame
+list_height=5
+# table_place_x = 80
+# table_place_y=80
+
+columns_name_list=[' Material ']
+
+queryMaterial = "SELECT * FROM material WHERE ISNULL(deleted)"
+
+material_tabel=table(frame,scroll_width,list_height,tab_side,x,y,table_place_x,
+                     table_place_y)
+material_tabel.create_fully_tabel( columns_name_list, queryMaterial)
+
+###material functions###
+def editMaterialfun():
+    selected_rec = material_tabel.selected()
+    selected_non = material_tabel.selected_is_non(selected_rec)
+    if not selected_non:
+        # popup_size = "800x450"
+        popup_size = "700x550"
+        editMaterialPopup = Popup()
+        editMaterialPopup.open_pop('Edit Material Details', popup_size)
+
+        query = "UPDATE material SET materialName = %s   WHERE idmaterial = %s"
+        table_name = 'material'
+        pk = selected_rec[1]
+        labels = [('Material', '')]
+        save_title = "Save Changes"
+
+        editMaterialPopup.edit_popup(labels, selected_rec, save_title, query, pk, material_tabel,  table_name)
+
+
+def addMaterialfun():
+    addMaterialPopup = Popup()
+    # popup_size = "800x450"
+    popup_size = "900x550"
+    addMaterialPopup.open_pop('Add Material Details', popup_size)
+    labels = [('Material', '')]
+    save_title = "Add Material"
+    insetQuery = "INSERT INTO material SET materialName = %s "
+    table_name='material'
+    addMaterialPopup.add_popup(labels, save_title, insetQuery, material_tabel, table_name)
+
+def deleteMaterialfun():
+    query = "DELETE FROM material WHERE idmaterial = %s"
+    table_name='material'
+    material_tabel.delete_record(query,table_name)
+
+
+#material buttons
+
+#Create a button in the main Window to add record - material
+materialAddIcon = Image.open("addIcon.png")
+resizedMaterialAddIcon = materialAddIcon.resize((25, 25), Image.ANTIALIAS)
+imgAddMaterial = ImageTk.PhotoImage(resizedMaterialAddIcon)
+addMaterialButton = Button(materialSettingsFrame, image=imgAddModule, borderwidth=0, command=addMaterialfun)
+addMaterialButton.pack(side= LEFT)
+addMaterialButton.place(x=table_place_x + material_tabel.winfo_reqwidth() - 95, y=table_place_y+14)
+
+#Create a button in the main Window to edit  record (open the popup) - material
+materialEditIcon = Image.open("editIcon.jpg")
+resizedMaterialEditIcon = materialEditIcon.resize((20, 20), Image.ANTIALIAS)
+imgEditMaterial = ImageTk.PhotoImage(resizedMaterialEditIcon)
+editMaterialButton = Button(materialSettingsFrame, image=imgEditMaterial, borderwidth=0, command=editMaterialfun)
+editMaterialButton.pack(side= LEFT)
+editMaterialButton.place(x=table_place_x + material_tabel.winfo_reqwidth() - 45, y=table_place_y+15)
+
+#Create a button in the main Window to Delete record - material
+materialDeleteIcon = Image.open("‏‏deleteIcon.png")
+resizedMaterialDeleteIcon = materialDeleteIcon.resize((20, 20), Image.ANTIALIAS)
+imgDeleteMaterial = ImageTk.PhotoImage(resizedMaterialDeleteIcon)
+deleteMaterialButton = Button(materialSettingsFrame, image=imgDeleteMaterial, borderwidth=0, command=deleteMaterialfun)
+deleteMaterialButton.pack(side= LEFT)
+deleteMaterialButton.place(x=table_place_x + material_tabel.winfo_reqwidth() , y=table_place_y+15)
+
+
+##################### settings new - Hospitals #####################
+#hospital frame
+hospitalFrame = Frame(root)
+# hospitalFrame.pack(fill=X)
+
+# feed label - hospital
+feedLabel = Label(hospitalFrame, text = 'Settings ➝ ', font=label_font_flag,fg=label_color)
+PlaceLable_X=50
+PlaceLable_Y=10
+feedLabel.pack(side=LEFT)
+feedLabel.place(x=PlaceLable_X,y=PlaceLable_Y)
+
+feedLabeflag = Label(hospitalFrame, text = 'hospital', font=label_font_flag_on_page,fg=label_color)
+
+PlaceLable2_X=135
+feedLabeflag.pack(side=LEFT)
+feedLabeflag.place(x=PlaceLable2_X,y=PlaceLable_Y)
+
+
+# hospital Details label
+hospitalLabel = Label(hospitalFrame, text = 'Hospitals Details', font=sub_label_font,fg=label_color)
+# module_Lable_place_x=80
+# module_Lable_place_y=60
+
+hospitalLabel.pack(side=LEFT)
+hospitalLabel.place(x=Lable_place_x,y=Lable_place_y)
+
+
+#hospital table
+scroll_width=20
+tab_side=LEFT
+x=650
+y= 160
+frame=hospitalFrame
+list_height=30
+c = 80
+
+lable_place_x = 80
+lable_place_y=70
+
+columns_name_list=('        Name        ', 'Fixed Activity Level (mci)', 'Transport Time - min (minutes)', 'Transport Time - man (minutes)')
+
+hospital_query="SELECT * FROM hospital WHERE ISNULL(deleted)"
+
+hospital_tabel=table(frame,scroll_width,list_height,tab_side,x,y,lable_place_x,
+                     lable_place_y)
+hospital_tabel.create_fully_tabel( columns_name_list, hospital_query)
+
+hospitalFrame.pack(fill='both',expand=1)
+
+###hospital functions###
+def editHospitalfun():
+    selected_rec = hospital_tabel.selected()
+    selected_non = hospital_tabel.selected_is_non(selected_rec)
+    if not selected_non:
+        editHospitalPopup = Popup()
+        # popup_size = "800x450"
+        popup_size = "900x550"
+        editHospitalPopup.open_pop('Edit Hospital Details',popup_size)
+        table_name= 'hospital'
+        query = "UPDATE hospital SET Name = %s ,Fixed_activity_level= %s, Transport_time_min=%s ,Transport_time_max=%s WHERE idhospital = %s"
+
+        pk = selected_rec[4]
+
+        labels = (('Name', ''), ('Fixed activity level', '(mci/h)'),  ('Transport time - min', '(min)'),  ('Transport time - max', '(min)'))
+        save_title = "Save Changes"
+
+        editHospitalPopup.edit_popup(labels, selected_rec, save_title, query, pk, hospital_tabel,table_name)
+
+
+def addHospitalfun():
+    addHospitalPopup = Popup()
+    # popup_size = "800x450"
+    popup_size = "900x550"
+    addHospitalPopup.open_pop('Add Hospital Details',popup_size)
+    labels = (('Name', ''), ('Fixed activity level', '(mci/h)'), ('Transport time - min', '(min)'),('Transport time - max', '(min)'))
+    save_title = "Add Hospital"
+    insertQuery = "INSERT INTO hospital SET Name = %s ,Fixed_activity_level= %s,Transport_time_min=%s ,Transport_time_max=%s"
+    # selectIDquery = "SELECT MAX(idhospital) FROM hospital"
+    table_name = 'hospital'
+    addHospitalPopup.add_popup(labels, save_title, insertQuery, hospital_tabel, table_name)
+
+def deleteHospitalfun():
+    query = "DELETE FROM hospital WHERE idhospital = %s"
+    table_name= 'hospital'
+    hospital_tabel.delete_record(query,table_name)
+
+#hospital buttons
+
+#Create a button in the main Window to add record - hospital
+hospitalAddIcon = Image.open("addIcon.png")
+resizedHospitalAddIcon = hospitalAddIcon.resize((25, 25), Image.ANTIALIAS)
+imgAddHospital = ImageTk.PhotoImage(resizedHospitalAddIcon)
+addHospitalButton = Button(hospitalFrame, image=imgAddHospital, borderwidth=0, command=lambda : addHospitalfun())
+addHospitalButton.pack(side= LEFT)
+addHospitalButton.place(x=lable_place_x + hospital_tabel.winfo_reqwidth() - 100, y=lable_place_y+14)
+
+
+#Create a button in the main Window to edit  record (open the popup) - hospital
+hospitalEditIcon = Image.open("editIcon.jpg")
+resizedHospitalEditIcon = hospitalEditIcon.resize((20, 20), Image.ANTIALIAS)
+imgEditHospital = ImageTk.PhotoImage(resizedHospitalEditIcon)
+editHospitalButton = Button(hospitalFrame, image=imgEditHospital, borderwidth=0, command= lambda :editHospitalfun())
+
+editHospitalButton.pack(side= LEFT)
+editHospitalButton.place(x=lable_place_x + hospital_tabel.winfo_reqwidth() - 50, y=lable_place_y+15)
+
+
+# Create a button in the main Window to Delete record - hospital
+hospitalDeleteIcon = Image.open("‏‏deleteIcon.png")
+resizedHospitalDeleteIcon = hospitalDeleteIcon.resize((20, 20), Image.ANTIALIAS)
+imgDeleteHospital = ImageTk.PhotoImage(resizedHospitalDeleteIcon)
+deleteHospitalButton = Button(hospitalFrame, image=imgDeleteHospital, borderwidth=0, command=lambda : deleteHospitalfun())
+deleteHospitalButton.pack(side=LEFT)
+
+deleteHospitalButton.place(x=lable_place_x + hospital_tabel.winfo_reqwidth() , y=lable_place_y + 15)
+
+
+
+################work plan page###############################################################
+
+#################### Work Plan Page #####################
+#Work Plan frame
+WorkPlanFrame = Frame(root)
+# h = Scrollbar(WorkPlanFrame, orient='horizontal')
+WorkPlanFrame.pack(fill=X)
+
+##################### Work Plan #####################
+# Work Plan Details label
+WorkPlanLabel = Label(WorkPlanFrame, text = 'Work Plans', font='Helvetica',fg='#034672')
+Lable_place_x=80
+Lable_place_y=60
+
+WorkPlanLabel.pack(side=LEFT)
+WorkPlanLabel.place(x=Lable_place_x,y=Lable_place_y)
+
+###Work Plan tabel###
+scroll_width=20
+tab_side=LEFT
+x=330
+y= 140
+frame=WorkPlanFrame
+list_height=5
+table_place_x = 80
+table_place_y = 80
+columns_name_list=('    Date   ',' Material ' )
+query = "SELECT WP.idworkplan, WP.Date, m.materialName FROM workplan WP JOIN material M ON WP.materialID=M.idmaterial"
+
+wp_tabel=table(frame,scroll_width,list_height,tab_side,x,y,table_place_x,
+               table_place_y,)
+wp_tabel.create_fully_tabel( columns_name_list, query)
+
+
+# ###Work Plan functions###
+# def editWPfun():
+#     selected_rec = cyclo_tabel.selected()
+#     selected_non=cyclo_tabel.selected_is_non(selected_rec)
+#     if not selected_non:
+#         editCyclPopup = Popup()
+#         editCyclPopup.open_pop('Edit Cyclotron Details')
+#
+#         query = "UPDATE resourcecyclotron SET version = %s ,capacity= %s, constant_efficiency= %s,description=%s  WHERE idresourceCyclotron = %s"
+#         pk = selected_rec[4]
+#         table_name = 'resourcecyclotron'
+#         labels = (('Version', ''), ('Capacity', '(mci/h)'), ('Constant Efficiency', '(mCi/mA)'), ('Description', ''))
+#         save_title = "Save Changes"
+#
+#         editCyclPopup.edit_popup(labels, selected_rec, save_title, query, pk, cyclo_tabel,table_name)
+#
+#
+# def deleteCyclotronfun():
+#     query = "DELETE FROM resourcecyclotron WHERE idresourceCyclotron = %s"
+#     table_name='resourcecyclotron'
+#     cyclo_tabel.delete_record(query,table_name)
+#
+def addWPfun():
+    addWPPopup = Popup()
+    popup_size = "800x450"
+    addWPPopup.open_pop('Create Work Plan',popup_size)
+    addWPPopup.add_wp_popup()
+
+# #work plan buttons
+# #Create a button in the main Window to edit  record (open the popup) - work plan
+# wpEditIcon = Image.open("editIcon.jpg")
+# resizedWPEditIcon = wpEditIcon.resize((20, 20), Image.ANTIALIAS)
+# imgEditwp = ImageTk.PhotoImage(resizedWPEditIcon)
+# # editCyclotronButton = Button(ctcloSettingsFrame, image=imgEditCyclotron, borderwidth=0, command= lambda :editCyclotronfun())
+# editWPButton = Button(WorkPlanFrame, image=imgEditwp, borderwidth=0, command= lambda :editCyclotronfun())
+#
+# editWPButton.pack(side= LEFT)
+# editWPButton.place(x=table_place_x+450, y=table_place_y+15)
+#
+#Create a button in the main Window to add record - work plan
+wpAddIcon = Image.open("addIcon.png")
+resizedWPAddIcon = wpAddIcon.resize((25, 25), Image.ANTIALIAS)
+
+imgAddWP = ImageTk.PhotoImage(resizedWPAddIcon)
+addWPButton = Button(WorkPlanFrame, image=imgAddWP, borderwidth=0, command=lambda : addWPfun())
+addWPButton.pack(side= LEFT)
+addWPButton.place(x=table_place_x+160, y=table_place_y+14)
+#
+#
+# # Create a button in the main Window to Delete record - work plan
+# wpDeleteIcon = Image.open("‏‏deleteIcon.png")
+# resizedWPDeleteIcon = wpDeleteIcon.resize((20, 20), Image.ANTIALIAS)
+# imgDeleteWP = ImageTk.PhotoImage(resizedWPDeleteIcon)
+# deleteWPButton = Button(WorkPlanFrame, image=imgDeleteWP, borderwidth=0, command=lambda : deleteCyclotronfun())
+# deleteWPButton.pack(side=LEFT)
+# deleteWPButton.place(x=table_place_x + 500, y=table_place_y + 15)
+
+################### batches #################
+#################### batch Page #####################
+#batch frame
+batchFrame = Frame(root)
+# h = Scrollbar(batchFrame, orient='horizontal')
+batchFrame.pack(fill=X)
+
+# batch Details label
+BatchLabel = Label(batchFrame, text = 'Batches', font=sub_label_font,fg=label_color)
+Lable_place_x=80
+Lable_place_y=60
+
+BatchLabel.pack(side=LEFT)
+BatchLabel.place(x=Lable_place_x,y=Lable_place_y)
+
+#batches table
+scroll_width=20
+tab_side=LEFT
+x=650
+y= 160
+frame=batchFrame
+list_height=30
+c = 80
+
+lable_place_x = 80
+lable_place_y=70
+
+columns_name_list=('  Date  ', 'Batch Number','Material','TargetCurrentLB ', 'DecayCorrected_TTA (mci)', 'EOS_activity')
+
+batch_query="""SELECT  b.idbatch , wp.Date ,b.batchNumber, m.materialName, b.TargetCurrentLB ,b.DecayCorrected_TTA, b.EOS_activity 
+                FROM batch b 
+                JOIN workplan wp ON wp.idworkplan = b.workplanID 
+                JOIN material m ON m.idmaterial = wp.materialID"""
+
+batch_tabel=table(frame,scroll_width,list_height,tab_side,x,y,lable_place_x,
+                  lable_place_y)
+batch_tabel.create_fully_tabel( columns_name_list, batch_query)
+
+batchFrame.pack(fill='both',expand=1)
+
+###batch functions###
+def editBatchfun():
+    selected_rec = batch_tabel.selected()
+    selected_non = batch_tabel.selected_is_non(selected_rec)
+    if not selected_non:
+        editBatchPopup = Popup()
+        # popup_size = "800x450"
+        popup_size = "900x550"
+        editBatchPopup.open_pop('Edit Batch Details',popup_size)
+        table_name= 'batch'
+        query = "UPDATE batch SET TargetCurrentLB = %s ,DecayCorrected_TTA= %s, EOS_activity=%s  WHERE idbatch = %s"
+
+        pk = selected_rec[6]
+
+        labels = (('TargetCurrentLB', ''), ('DecayCorrected_TTA', '(mci/h)'),  ('EOS_activity', ''))
+        save_title = "Save Changes"
+
+        # def edit_popup(self, labels, valueList, save_title, *args, table_name):
+        editBatchPopup.edit_popup(labels, selected_rec, save_title, query, pk, batch_tabel,table_name)
+
+#batch buttons
+
+#Create a button in the main Window to edit  record (open the popup) - hospital
+batchEditIcon = Image.open("editIcon.jpg")
+resizedBatchEditIcon = batchEditIcon.resize((20, 20), Image.ANTIALIAS)
+imgEditBatch = ImageTk.PhotoImage(resizedBatchEditIcon)
+editBatchButton = Button(batchFrame, image=imgEditBatch, borderwidth=0, command= lambda :editBatchfun())
+
+editBatchButton.pack(side= LEFT)
+editBatchButton.place(x=lable_place_x + batch_tabel.winfo_reqwidth() - 50, y=lable_place_y+15)
+
+# workPlanButton.config(bg='#F0F0F0');  ##F0F0F0 is default color(gray)
+# ordersButton.config(bg='#F0F0F0');
+ordersFrame.forget();
+cycloSettingsFrame.forget()
+moduleSettingsFrame.forget()
+hospitalFrame.forget()
+WorkPlanFrame.forget()
+batchFrame.forget()
+################################and of work plan page###############################
+
+
+# #####################Old toolbar #####################
+# toolbarbgcolor = "white"
+# toolbar = Frame(root, bg=toolbarbgcolor)
+# #toolbar.grid(sticky='nesw')
+#
+# # add logo - toolbar
+# LogoImagePath = Image.open("D:\PythonProjects\Cyclotron\LogoImage.png")
+# LogoImageResize = LogoImagePath.resize((120, 57), Image.ANTIALIAS)
+# LogoImage = ImageTk.PhotoImage(LogoImageResize,master=toolbar)
+# Label(toolbar, image=LogoImage).pack(side=LEFT, padx=10, pady=6)
+#
+# # work plan button - toolbar
+# workPlanButton = Button(toolbar, text="Work Plans", font='Helvetica 11')
+# workPlanButton.pack(side=LEFT, padx=10, pady=3)
+#
+# # Hospitals button - toolbar
+# hospitalsButton = Button(toolbar, text="Hospitals",command=hospital_page,font='Helvetica 11', activebackground='red')
+# hospitalsButton.pack(side=LEFT, padx=10, pady=3)
+#
+# # Orders button - toolbar
+# ordersButton = Button(toolbar, text="Orders", font='Helvetica 11',command=Orders_page)
+# ordersButton.pack(side=LEFT, padx=10, pady=3)
+#
+# # Reports button - toolbar
+# reportsButton = Button(toolbar, text="Reports", font='Helvetica 11')
+# reportsButton.pack(side=LEFT, padx=10, pady=3)
+#
+
+#####################New toolbar #####################
+
 toolbarbgcolor = "white"
 toolbar = Frame(root, bg=toolbarbgcolor)
-#toolbar.grid(sticky='nesw')
+toolbar.grid(sticky='nesw')
 
-# add logo - toolbar
-LogoImagePath = Image.open("D:\PythonProjects\Cyclotron\LogoImage.png")
-LogoImageResize = LogoImagePath.resize((120, 57), Image.ANTIALIAS)
-LogoImage = ImageTk.PhotoImage(LogoImageResize,master=toolbar)
-Label(toolbar, image=LogoImage).pack(side=LEFT, padx=10, pady=6)
+# logo - toolbar
+LogoImagePath = Image.open("LogoImage.png")
+LogoImageResize = LogoImagePath.resize((120, 57),Image.ANTIALIAS)
+LogoImage = ImageTk.PhotoImage(LogoImageResize)
+Label(toolbar,image=LogoImage).pack(side=LEFT,padx=10,pady=6)
+
+
+#toolbar function
+def work_plan_page():
+    ordersButton.config(bg='#F0F0F0');# Orders uttun color default value
+    mbtn.config(bg='#F0F0F0'); ##F0F0F0 is default color(gray)
+    workPlanButton.config(bg="gray");
+    WorkPlanFrame.pack(fill=X);
+    ordersFrame.forget();
+    moduleSettingsFrame.forget();
+    materialSettingsFrame.forget();
+    hospitalFrame.forget();
+    cycloSettingsFrame.forget();
 
 # work plan button - toolbar
-workPlanButton = Button(toolbar, text="Work Plans", font='Helvetica 11')
-workPlanButton.pack(side=LEFT, padx=10, pady=3)
+workPlanButton = Button(toolbar, text="Work Plans",font='Helvetica 11',  command=lambda: work_plan_page())
+workPlanButton.pack(side=LEFT,padx=10,pady=3)
 
-# Hospitals button - toolbar
-hospitalsButton = Button(toolbar, text="Hospitals",command=hospital_page,font='Helvetica 11', activebackground='red')
-hospitalsButton.pack(side=LEFT, padx=10, pady=3)
 
 # Orders button - toolbar
-ordersButton = Button(toolbar, text="Orders", font='Helvetica 11',command=Orders_page)
-ordersButton.pack(side=LEFT, padx=10, pady=3)
+ordersButton = Button (toolbar, text="Orders", font='Helvetica 11',command=Orders_page)
+ordersButton.pack(side=LEFT,padx=10,pady=3)
+
+# # Batches button - toolbar
+# ordersButton = Button (toolbar, text="Batches", font='Helvetica 11')
+# ordersButton.pack(side=LEFT,padx=10,pady=3)
+
 
 # Reports button - toolbar
-reportsButton = Button(toolbar, text="Reports", font='Helvetica 11')
-reportsButton.pack(side=LEFT, padx=10, pady=3)
+reportsButton = Button (toolbar, text="Reports", font='Helvetica 11')
+reportsButton.pack(side=LEFT,padx=10,pady=3)
 
+# settings Icon - toolbar
+global imgSettings;
+settingsIcon = Image.open("D:\PythonProjects\Cyclotron\gearIcon.png")
+resizedSettingsIcon = settingsIcon.resize((35,35), Image.ANTIALIAS)
+imgSettings = ImageTk.PhotoImage(resizedSettingsIcon,master=toolbar)
+# Button(toolbar, image=imgSettings, borderwidth=0).pack(side=RIGHT,padx=10,pady=3)
+mbtn = Menubutton(toolbar, image=imgSettings, borderwidth=0)
+mbtn.pack(side=RIGHT,padx=10,pady=3)
+mbtn.menu = Menu(mbtn, tearoff = 0)
+mbtn["menu"] = mbtn.menu
+selected_settings_option = StringVar()
+
+def menu_item_selected(label):
+    mbtn.config(bg="gray");
+    ordersButton.config(bg='#F0F0F0');#Default value
+    workPlanButton.config(bg='#F0F0F0');#Default value
+    if label == 'Cyclotron':
+
+        cycloSettingsFrame.pack(fill=X);
+        ordersFrame.forget();
+        moduleSettingsFrame.forget()
+        materialSettingsFrame.forget()
+        hospitalFrame.forget()
+        WorkPlanFrame.forget()
+
+
+    elif label == 'Module':
+        moduleSettingsFrame.pack(fill=X);
+        ordersFrame.forget();
+        cycloSettingsFrame.forget();
+        materialSettingsFrame.forget();
+        hospitalFrame.forget();
+        WorkPlanFrame.forget();
+
+    elif label == 'Hospital':
+        hospitalFrame.pack(fill=X);
+        ordersFrame.forget();
+        cycloSettingsFrame.forget();
+        materialSettingsFrame.forget();
+        moduleSettingsFrame.forget();
+        WorkPlanFrame.forget();
+
+    else:
+        materialSettingsFrame.pack(fill=X);
+        ordersFrame.forget();
+        cycloSettingsFrame.forget()
+        moduleSettingsFrame.forget()
+        hospitalFrame.forget()
+        WorkPlanFrame.forget()
+
+
+selected_settings_option.trace("w", menu_item_selected)
+
+mbtn.menu.add_radiobutton(label="Cyclotron", command= lambda: menu_item_selected("Cyclotron"))
+mbtn.menu.add_radiobutton(label="Module", command= lambda: menu_item_selected("Module"))
+mbtn.menu.add_radiobutton(label="Material", command= lambda: menu_item_selected("Material"))
+mbtn.menu.add_radiobutton(label="Hospital", command= lambda: menu_item_selected("Hospital"))
+
+
+
+# print(mbtn.selection_get())
+toolbar.pack(side=TOP, fill=X)
+
+toolbar.grid_columnconfigure(1, weight=1)
 
 
 #########################################################################
-def setting_page():
-    """ this function is swap function for viewing setting frame/page"""
-    hospitalsButton.config(bg='#F0F0F0')
-    ordersButton.config(bg='#F0F0F0');
-    settingButton.config(bg="gray");
-    SettingsFrame.pack(fill='both',expand=1);
-    hospitalFrame.forget();
-    ordersFrame.forget();
+# def setting_page():
+#     """ this function is swap function for viewing setting frame/page"""
+#     #hospitalsButton.config(bg='#F0F0F0')
+#     #ordersButton.config(bg='#F0F0F0');
+#     #settingButton.config(bg="gray");
+#     #SettingsFrame.pack(fill='both',expand=1);
+#     hospitalFrame.forget();
+#     ordersFrame.forget();
 
 # settings Icon - toolbar
 
-settingsIcon = Image.open("D:\PythonProjects\Cyclotron\gearIcon.png")
-resizedSettingsIcon = settingsIcon.resize((35, 35), Image.ANTIALIAS)
-imgSettings = ImageTk.PhotoImage(resizedSettingsIcon,master=toolbar)
-settingButton=Button(toolbar,command=setting_page ,image=imgSettings,activebackground='red', borderwidth=0)
-settingButton.pack(side=RIGHT, padx=10, pady=3)
+# settingsIcon = Image.open("D:\PythonProjects\Cyclotron\gearIcon.png")
+# resizedSettingsIcon = settingsIcon.resize((35, 35), Image.ANTIALIAS)
+# imgSettings = ImageTk.PhotoImage(resizedSettingsIcon,master=toolbar)
+# settingButton=Button(toolbar,command=setting_page ,image=imgSettings,activebackground='red', borderwidth=0)
+# settingButton.pack(side=RIGHT, padx=10, pady=3)
 
 
 toolbar.pack(side=TOP, fill=X)
 
 toolbar.grid_columnconfigure(1, weight=1)
-#####################################Setting frame####################
 
-
-SettingsFrame = Frame(root)
-#h = Scrollbar(SettingsFrame, orient='horizontal')
-SettingsFrame.pack(fill='both',expand=1)
-
-# feed label
-feedLabel = Label(SettingsFrame, text='Settings', font=('Helvetica', 26, 'bold'), fg='#034672')
-PlaceLable_X = 50
-PlaceLable_Y = 10
-
-feedLabel.pack(side=LEFT)
-feedLabel.place(x=PlaceLable_X, y=PlaceLable_Y)
-
-# admin label
-AdminLabelSettingpage1 = Label(SettingsFrame, text=f"{Permission.ValidateTypeOfUser} connected:", font=('Helvetica', 13, 'bold'), fg='red')
-AdminLabelSettingpage1.pack();
-AdminLabelSettingpage1.place(x=350, y=20);
-
-# admin connected label
-NameOfAdminLabeLSettingspage2 = Label(SettingsFrame, text=Permission.user_verified, font=('Helvetica', 13, 'bold'), fg='red')
-NameOfAdminLabeLSettingspage2.pack();
-NameOfAdminLabeLSettingspage2.place(x=510, y=20);
-
-
-##################### Cyclotron #####################
-# Cyclotron Details label
-CyclotronLabel = Label(SettingsFrame, text='Cyclotron Details', font=('Helvetica', 15, 'bold'), fg='#034672')
-cyclo_Lable_place_x = 80
-cyclo_Lable_place_y = 70
-
-CyclotronLabel.pack(side=LEFT)
-CyclotronLabel.place(x=cyclo_Lable_place_x, y=cyclo_Lable_place_y)
-
-# scrollbar
-Cyclotron_scroll = Scrollbar(SettingsFrame, orient="vertical", width=20)
-Cyclotron_scroll.pack(side=LEFT)
-Cyclotron_scroll.place(x=613, y=160)
-
-cyclo_list = ttk.Treeview(SettingsFrame, yscrollcommand=Cyclotron_scroll.set, height=5)
-
-cyclo_list.pack(side=LEFT, padx=cyclo_Lable_place_x + 30, pady=cyclo_Lable_place_y + 50)
-
-# Cyclotron_scroll.config(command=cyclo_list.yview)
-# Cyclotron_scroll.config(command=cyclo_list.xview)
-
-# column define
-
-cyclo_list['columns'] = ('Version', 'Capacity (mci/h)', 'Constant Efficiency (mCi/mA)', 'Description')
-
-# column format
-width_Version = 90
-width_Capacity = 110
-width_Efficiency = 185
-width_Description = 110
-
-cyclo_list.column("#0", width=0, stretch=NO)
-cyclo_list.column("Version", anchor=CENTER, width=width_Version)
-cyclo_list.column("Capacity (mci/h)", anchor=CENTER, width=width_Capacity)
-cyclo_list.column("Constant Efficiency (mCi/mA)", anchor=CENTER, width=width_Efficiency)
-cyclo_list.column("Description", anchor=CENTER, width=width_Description)
-
-# Create Headings
-cyclo_list.heading("#0", text="", anchor=CENTER)
-cyclo_list.heading("Version", text="Version", anchor=CENTER)
-cyclo_list.heading("Capacity (mci/h)", text="Capacity (mci/h)", anchor=CENTER)
-cyclo_list.heading("Constant Efficiency (mCi/mA)", text="Constant Efficiency (mCi/mA)", anchor=CENTER)
-cyclo_list.heading("Description", text="Description", anchor=CENTER)
-
-# add data from db
-cursor = db.cursor()
-# Test to see if DB was created
-# cursor.execute("SHOW DATABASES")
-# for cyclotron in cursor:
-#     print(cyclotron)
-
-cursor.execute("SELECT * FROM resourcecyclotron");
-cyclotrons = cursor.fetchall();
-
-#Insert data of Settings page into My-SQl
-#The INSERT IGNORE statement will cause MySQL to do nothing when the insertion throws an error. If there’s no error, then a new row will be added to the table.
-cursor.execute("INSERT IGNORE INTO resourcecyclotron (idresourceCyclotron,version,capacity,constant_efficiency,description) VALUES (1,2.1,2000,220,'site1'),(2,2.2,1700,150,'site2');")
-#cleanup
-db.commit()
-# cursor.close()
-# db.close()
-
-
-iid = 0
-for cyclo in cyclotrons:
-    print(cyclo)
-    cyclo_list.insert(parent='', index='end', iid=iid, text='',
-                      values=(cyclo[1], cyclo[2], cyclo[3], cyclo[4]))
-    iid += 1
-
-cyclo_list.pack()
-
-# frame = Frame(root)
-# frame.pack()
-
-get_version = ""
-get_capacity = ""
-get_efficiency = ""
-get_description = ""
-
-
-class Cyclotron:
-    def _init_(self, version, capacity, constant_efficiency, description):
-        self.version = version
-        self.capacity = capacity
-        self.constant_efficiency = constant_efficiency
-        self.description = description
-
-    # def edit(self):
-    #    def update_record(get_version, get_capacity, get_efficiency, get_description):
-    #       selected = cyclo_list.focus()
-    #       # save new data
-    #       print("get_version" + get_version)
-    #       cyclo_list.item(selected, text="", values=(get_version, get_capacity, get_efficiency, get_description))
-    #
-    #       # # clear entry boxes
-    #       # Version_entry.delete(0, END)
-    #       # Capacity_entry.delete(0, END)
-    #       # Efficiency_entry.delete(0, END)
-
-
-def open_popup_cyclotron():
-    edit_popup = Toplevel(root)
-    edit_popup.geometry("900x400")
-    edit_popup.title("Edit Cyclotron Details")
-    Label(edit_popup, text="Edit Cyclotron Details", font=('Helvetica 17 bold'), fg='#034672').place(x=10, y=18)
-
-    # labels
-    popup_label_y = 80
-    Version = Label(edit_popup, text="Version")
-    Version.grid(row=1, column=1)
-    version_x = 20
-    Version.place(x=version_x, y=popup_label_y)
-
-    Capacity = Label(edit_popup, text="Capacity")
-    Capacity_units = Label(edit_popup, text="(mci/h)")
-    Capacity_units.config(font=("Courier", 9))
-    Capacity.grid(row=1, column=2)
-    capacity_x = version_x + Version.winfo_reqwidth() + 70
-    Capacity.place(x=capacity_x, y=popup_label_y)
-    capacity_units_x = capacity_x + Capacity.winfo_reqwidth()
-    Capacity_units.place(x=capacity_units_x, y=popup_label_y + 7)
-
-    Efficiency = Label(edit_popup, text="Constant Efficiency")
-    Efficiency_units = Label(edit_popup, text="(mCi/mA)")
-    Efficiency_units.config(font=("Courier", 9))
-    Efficiency.grid(row=1, column=3)
-    efficiency_x = capacity_units_x + Capacity_units.winfo_reqwidth() + 50
-    Efficiency.place(x=efficiency_x, y=popup_label_y)
-    efficiency_units_x = efficiency_x + Efficiency.winfo_reqwidth()
-    Efficiency_units.place(x=efficiency_units_x, y=popup_label_y + 7)
-
-    Description = Label(edit_popup, text="Description")
-    Description.grid(row=1, column=3)
-    description_x = efficiency_units_x + Efficiency_units.winfo_reqwidth() + 30
-    Description.place(x=description_x, y=popup_label_y)
-
-    # Entry boxes
-    Version_entry = Entry(edit_popup, width=10)
-    Version_entry.grid(row=2, column=1)
-    Version_entry.place(x=version_x + 3, y=popup_label_y + 30)
-
-    Capacity_entry = Entry(edit_popup, width=14)
-    Capacity_entry.grid(row=2, column=2)
-    Capacity_entry.place(x=capacity_x, y=popup_label_y + 30)
-
-    Efficiency_entry = Entry(edit_popup, width=15)
-    Efficiency_entry.grid(row=2, column=3)
-    Efficiency_entry.place(x=efficiency_x, y=popup_label_y + 30)
-
-    Description_entry = Entry(edit_popup, width=15)
-    Description_entry.grid(row=2, column=4)
-    Description_entry.place(x=description_x, y=popup_label_y + 30)
-
-    # # clear entry boxes
-    # Version_entry.delete(0, END)
-    # Capacity_entry.delete(0, END)
-    # Efficiency_entry.delete(0, END)
-
-    # grab record
-    selected = cyclo_list.focus()
-    # grab record values
-    values = cyclo_list.item(selected, 'values')
-    # temp_label.config(text=selected)
-
-    # insert cyclotron details from db to entry boxes
-    Version_entry.insert(0, values[0])
-    Capacity_entry.insert(0, values[1])
-    Efficiency_entry.insert(0, values[2])
-    Description_entry.insert(0, values[3])
-
-    # get_version = Version_entry.get()
-    # get_capacity = Capacity_entry.get()
-    # get_efficiency = Efficiency_entry.get()
-    # get_description = Description_entry.get()
-
-    select_button = Button(edit_popup, text="Save Changes",
-                           command=lambda: update_record(Version_entry.get(), Capacity_entry.get(),
-                                                         Efficiency_entry.get(), Description_entry.get()))
-    select_button.pack(side=LEFT)
-    select_button.place(x=370, y=250)
-
-
-# in the class?
-def update_record(get_version, get_capacity, get_efficiency, get_description):
-    print("get_version" + get_version)
-    selected = cyclo_list.focus()
-    print(cyclo_list.item(selected, 'values'))
-    # save new data
-    cyclo_list.item(selected, text="", values=(get_version, get_capacity, get_efficiency, get_description))
-
-    # # clear entry boxes
-    # Version_entry.delete(0, END)
-    # Capacity_entry.delete(0, END)
-    # Efficiency_entry.delete(0, END)
-
-
-# # save Record
-# def update_record():
-#     selected = cyclo_list.focus()
-#     # save new data
-#     cyclo_list.item(selected, text="", values=(Version_entry.get(), Capacity_entry.get(), Efficiency_entry.get()))
+#####################################Old Settings frame####################
 #
-#     # clear entry boxes
-#     Version_entry.delete(0, END)
-#     Capacity_entry.delete(0, END)
-#     Efficiency_entry.delete(0, END)
-
-
-# Create a button in the main Window to edit  record (open the popup) - cyclotron
-cyclotronEditIcon = Image.open("D:\PythonProjects\Cyclotron\editIcon.jpg")
-resizedCycloEditIcon = cyclotronEditIcon.resize((20, 20), Image.ANTIALIAS)
-imgEditCyclotron = ImageTk.PhotoImage(resizedCycloEditIcon,master=SettingsFrame)
-editCyclotronButton = Button(SettingsFrame, image=imgEditCyclotron, borderwidth=0, command=open_popup_cyclotron)
-editCyclotronButton.pack(side=LEFT)
-editCyclotronButton.place(x=cyclo_Lable_place_x + 450, y=cyclo_Lable_place_y + 15)
-
-# edit_button = Button(SettingsFrame, text= "Edit", command= open_popup_cyclotron, width=4, height=1)
-# edit_button.pack(side= LEFT)
-# edit_button.place(x=270, y=265)
-
-
-# Create a button in the main Window to Delete record - cyclotron
-cyclotronDeleteIcon = Image.open("D:\PythonProjects\Cyclotron\‏‏deleteIcon.png")
-resizedCycloDeleteIcon = cyclotronDeleteIcon.resize((20, 20), Image.ANTIALIAS)
-imgDeleteCyclotron = ImageTk.PhotoImage(resizedCycloDeleteIcon,master=SettingsFrame);
-deleteCyclotronButton = Button(SettingsFrame, image=imgDeleteCyclotron, borderwidth=0, command=open_popup_cyclotron)
-deleteCyclotronButton.pack(side=LEFT)
-deleteCyclotronButton.place(x=cyclo_Lable_place_x + 500, y=cyclo_Lable_place_y + 15)
-
-# Create a button in the main Window to add record - cyclotron
-cyclotronAddIcon = Image.open("D:/PythonProjects/Cyclotron/addIcon.png")
-resizedCycloAddIcon = cyclotronAddIcon.resize((25, 25), Image.ANTIALIAS)
-imgAddCyclotron = ImageTk.PhotoImage(resizedCycloAddIcon,master=SettingsFrame);
-addCyclotronButton = Button(SettingsFrame, image=imgAddCyclotron, borderwidth=0, command=open_popup_cyclotron)
-addCyclotronButton.pack(side=LEFT)
-addCyclotronButton.place(x=cyclo_Lable_place_x + 400, y=cyclo_Lable_place_y + 14)
-
-# add_button = Button(SettingsFrame, text="Add Cyclotron", command= open_popup_cyclotron, width = 4, height=1)
-# add_button.pack(side= LEFT)
-# add_button.place(x=370, y=265)
-
-
-
-
-##################### Module #####################
-# Module Details label
-moduleLabel = Label(SettingsFrame, text = 'Module Details', font=('Helvetica',15, 'bold'),fg='#034672')
-module_Lable_place_x=700
-module_Lable_place_y=70
-
-moduleLabel.pack(side=RIGHT)
-moduleLabel.place(x=module_Lable_place_x,y=module_Lable_place_y)
-
-
-# scrollbar
-Module_scroll = Scrollbar(SettingsFrame ,orient="vertical",width=20)
-Module_scroll.pack(side=RIGHT)
-Module_scroll.place(x=1035, y= 160)
-
-module_list = ttk.Treeview(SettingsFrame, yscrollcommand=Module_scroll.set,height=5)
-
-module_list.pack(side=LEFT, padx=0, pady=module_Lable_place_y+50)
-
-
-
-# Module_scroll.config(command=cyclo_list.yview)
-# Module_scroll.config(command=cyclo_list.xview)
-
-# column define
-
-module_list['columns'] = ('Version', 'Capacity (mci/h)', 'Description')
-
-
-module_list.column("#0", width=0, stretch=NO)
-module_list.column("Version", anchor=CENTER, width=width_Version)
-module_list.column("Capacity (mci/h)", anchor=CENTER, width=width_Capacity)
-module_list.column("Description", anchor=CENTER, width=width_Description)
-
-# Create Headings
-module_list.heading("#0", text="", anchor=CENTER)
-module_list.heading("Version", text="Version", anchor=CENTER)
-module_list.heading("Capacity (mci/h)", text="Capacity (mci/h)", anchor=CENTER)
-module_list.heading("Description", text="Description", anchor=CENTER)
-
-# add data from db
-cursor = db.cursor()
-cursor.execute("SELECT * FROM resourcemodule")
-modules = cursor.fetchall()
-
-iid=0
-for module in modules:
-    print(module)
-    cyclo_list.insert(parent='', index='end', iid=iid, text='',
-               values=(module[1], module[2], module[3]))
-    iid +=1
-
-module_list.pack()
-
-get_version=""
-get_capacity=""
-get_efficiency=""
-get_description=""
-
-def open_popup_module():
-   edit_popup= Toplevel(root)
-   edit_popup.geometry("900x400")
-   edit_popup.title("Edit Module Details")
-   Label(edit_popup, text= "Edit Module Details", font=('Helvetica 17 bold'), fg='#034672').place(x=10,y=18)
-
-   # labels
-   popup_label_y=80
-   Version = Label(edit_popup, text="Version")
-   Version.grid(row=1, column=1)
-   version_x = 20
-   Version.place(x=version_x, y=popup_label_y)
-
-
-   Capacity = Label(edit_popup, text="Capacity")
-   Capacity_units = Label(edit_popup, text="(mci/h)")
-   Capacity_units.config(font=("Courier", 9))
-   Capacity.grid(row=1, column=2)
-   capacity_x = version_x+Version.winfo_reqwidth()+70
-   Capacity.place(x=capacity_x, y=popup_label_y)
-   capacity_units_x=capacity_x + Capacity.winfo_reqwidth()
-   Capacity_units.place(x=capacity_units_x, y=popup_label_y+7)
-
-
-   Description = Label(edit_popup, text="Description")
-   Description.grid(row=1, column=3)
-   description_x = capacity_units_x + Capacity_units.winfo_reqwidth() + 50
-   Description.place(x=description_x, y=popup_label_y)
-
-   # Entry boxes
-   Version_entry = Entry(edit_popup, width=10)
-   Version_entry.grid(row=2, column=1)
-   Version_entry.place(x=version_x+3, y=popup_label_y+30)
-
-   Capacity_entry = Entry(edit_popup, width=14)
-   Capacity_entry.grid(row=2, column=2)
-   Capacity_entry.place(x=capacity_x, y=popup_label_y+30)
-
-
-   Description_entry = Entry(edit_popup,width=15)
-   Description_entry.grid(row=2, column=4)
-   Description_entry.place(x=description_x, y=popup_label_y+30)
-
-
-   # clear entry boxes
-   Version_entry.delete(0, END)
-   Capacity_entry.delete(0, END)
-   Description_entry.delete(0, END)
-
-   # grab record
-   selected = module_list.focus()
-   # grab record values
-   values = module_list.item(selected, 'values')
-   # temp_label.config(text=selected)
-
-   # output to entry boxes
-   Version_entry.insert(0, values[0])
-   Capacity_entry.insert(0, values[1])
-   Description_entry.insert(0, values[2])
-
-   get_version = Version_entry.get()
-   print(get_version)
-   get_capacity = Capacity_entry.get()
-   get_description = Description_entry.get()
-
-   select_button = Button(edit_popup, text="Save Changes", command=update_record)
-   select_button.pack(side=LEFT)
-   select_button.place(x=370, y=250)
-
-
-#Create a button in the main Window to edit  record (open the popup) - module
-moduleEditIcon = Image.open("D:\PythonProjects\Cyclotron\editIcon.jpg")
-resizedModuleEditIcon = moduleEditIcon.resize((20, 20), Image.ANTIALIAS)
-imgEditModule = ImageTk.PhotoImage(resizedModuleEditIcon,master=SettingsFrame);
-editModuleButton = Button(SettingsFrame, image=imgEditModule, borderwidth=0, command=open_popup_module)
-editModuleButton.pack(side= LEFT)
-editModuleButton.place(x=module_Lable_place_x+250, y=module_Lable_place_y+15)
-
-# edit_button = Button(SettingsFrame, text= "Edit", command= open_popup_module)
-# edit_button.pack(side= LEFT)
-# edit_button.place(x=790, y=270)
-
-#Create a button in the main Window to Delete record - module
-moduleDeleteIcon = Image.open("D:\PythonProjects\Cyclotron\‏‏deleteIcon.png")
-resizedModuleDeleteIcon = moduleDeleteIcon.resize((20, 20), Image.ANTIALIAS)
-imgDeleteModule = ImageTk.PhotoImage(resizedModuleDeleteIcon,master=SettingsFrame);
-deleteModuleButton = Button(SettingsFrame, image=imgDeleteModule, borderwidth=0, command=open_popup_module)
-deleteModuleButton.pack(side= LEFT)
-deleteModuleButton.place(x=module_Lable_place_x+300, y=module_Lable_place_y+15)
-
-#Create a button in the main Window to add record - module
-moduleAddIcon = Image.open("D:/PythonProjects/Cyclotron/addIcon.png")
-resizedModuleAddIcon = moduleAddIcon.resize((25, 25), Image.ANTIALIAS)
-imgAddModule = ImageTk.PhotoImage(resizedModuleAddIcon,master=SettingsFrame);
-addModuleButton = Button(SettingsFrame, image=imgAddModule, borderwidth=0, command=open_popup_cyclotron)
-addModuleButton.pack(side= LEFT)
-addModuleButton.place(x=module_Lable_place_x+200, y=module_Lable_place_y+14)
-
-# add_button = Button(SettingsFrame, text="Add", command= open_popup_cyclotron)
-# add_button.pack(side= LEFT)
-# add_button.place(x=890, y=270)
-
-def update_record():
-    selected = cyclo_list.focus()
-    # save new data
-    print("get_version"+get_version)
-    cyclo_list.item(selected, text="", values=(get_version, get_capacity, get_efficiency, get_description))
-
-    # # clear entry boxes
-    # Version_entry.delete(0, END)
-    # Capacity_entry.delete(0, END)
-    # Efficiency_entry.delete(0, END)
-
-
+#
+# SettingsFrame = Frame(root)
+# #h = Scrollbar(SettingsFrame, orient='horizontal')
+# SettingsFrame.pack(fill='both',expand=1)
+#
+# # feed label
+# feedLabel = Label(SettingsFrame, text='Settings', font=('Helvetica', 26, 'bold'), fg='#034672')
+# PlaceLable_X = 50
+# PlaceLable_Y = 10
+#
+# feedLabel.pack(side=LEFT)
+# feedLabel.place(x=PlaceLable_X, y=PlaceLable_Y)
+#
+# # admin label
+# AdminLabelSettingpage1 = Label(SettingsFrame, text=f"{Permission.ValidateTypeOfUser} connected:", font=('Helvetica', 13, 'bold'), fg='red')
+# AdminLabelSettingpage1.pack();
+# AdminLabelSettingpage1.place(x=350, y=20);
+#
+# # admin connected label
+# NameOfAdminLabeLSettingspage2 = Label(SettingsFrame, text=Permission.user_verified, font=('Helvetica', 13, 'bold'), fg='red')
+# NameOfAdminLabeLSettingspage2.pack();
+# NameOfAdminLabeLSettingspage2.place(x=510, y=20);
+#
+#
+# ##################### Cyclotron #####################
+# # Cyclotron Details label
+# CyclotronLabel = Label(SettingsFrame, text='Cyclotron Details', font=('Helvetica', 15, 'bold'), fg='#034672')
+# cyclo_Lable_place_x = 80
+# cyclo_Lable_place_y = 70
+#
+# CyclotronLabel.pack(side=LEFT)
+# CyclotronLabel.place(x=cyclo_Lable_place_x, y=cyclo_Lable_place_y)
+#
+# # scrollbar
+# Cyclotron_scroll = Scrollbar(SettingsFrame, orient="vertical", width=20)
+# Cyclotron_scroll.pack(side=LEFT)
+# Cyclotron_scroll.place(x=613, y=160)
+#
+# cyclo_list = ttk.Treeview(SettingsFrame, yscrollcommand=Cyclotron_scroll.set, height=5)
+#
+# cyclo_list.pack(side=LEFT, padx=cyclo_Lable_place_x + 30, pady=cyclo_Lable_place_y + 50)
+#
+# # Cyclotron_scroll.config(command=cyclo_list.yview)
+# # Cyclotron_scroll.config(command=cyclo_list.xview)
+#
+# # column define
+#
+# cyclo_list['columns'] = ('Version', 'Capacity (mci/h)', 'Constant Efficiency (mCi/mA)', 'Description')
+#
+# # column format
+# width_Version = 90
+# width_Capacity = 110
+# width_Efficiency = 185
+# width_Description = 110
+#
+# cyclo_list.column("#0", width=0, stretch=NO)
+# cyclo_list.column("Version", anchor=CENTER, width=width_Version)
+# cyclo_list.column("Capacity (mci/h)", anchor=CENTER, width=width_Capacity)
+# cyclo_list.column("Constant Efficiency (mCi/mA)", anchor=CENTER, width=width_Efficiency)
+# cyclo_list.column("Description", anchor=CENTER, width=width_Description)
+#
+# # Create Headings
+# cyclo_list.heading("#0", text="", anchor=CENTER)
+# cyclo_list.heading("Version", text="Version", anchor=CENTER)
+# cyclo_list.heading("Capacity (mci/h)", text="Capacity (mci/h)", anchor=CENTER)
+# cyclo_list.heading("Constant Efficiency (mCi/mA)", text="Constant Efficiency (mCi/mA)", anchor=CENTER)
+# cyclo_list.heading("Description", text="Description", anchor=CENTER)
+#
+# # add data from db
+# cursor = db.cursor()
+# # Test to see if DB was created
+# # cursor.execute("SHOW DATABASES")
+# # for cyclotron in cursor:
+# #     print(cyclotron)
+#
+# cursor.execute("SELECT * FROM resourcecyclotron");
+# cyclotrons = cursor.fetchall();
+#
+# #Insert data of Settings page into My-SQl
+# #The INSERT IGNORE statement will cause MySQL to do nothing when the insertion throws an error. If there’s no error, then a new row will be added to the table.
+# cursor.execute("INSERT IGNORE INTO resourcecyclotron (idresourceCyclotron,version,capacity,constant_efficiency,description) VALUES (1,2.1,2000,220,'site1'),(2,2.2,1700,150,'site2');")
+# #cleanup
+# db.commit()
+# # cursor.close()
+# # db.close()
+#
+#
+# iid = 0
+# for cyclo in cyclotrons:
+#     print(cyclo)
+#     cyclo_list.insert(parent='', index='end', iid=iid, text='',
+#                       values=(cyclo[1], cyclo[2], cyclo[3], cyclo[4]))
+#     iid += 1
+#
+# cyclo_list.pack()
+#
+# # frame = Frame(root)
+# # frame.pack()
+#
+# get_version = ""
+# get_capacity = ""
+# get_efficiency = ""
+# get_description = ""
+#
+#
+# class Cyclotron:
+#     def _init_(self, version, capacity, constant_efficiency, description):
+#         self.version = version
+#         self.capacity = capacity
+#         self.constant_efficiency = constant_efficiency
+#         self.description = description
+#
+#     # def edit(self):
+#     #    def update_record(get_version, get_capacity, get_efficiency, get_description):
+#     #       selected = cyclo_list.focus()
+#     #       # save new data
+#     #       print("get_version" + get_version)
+#     #       cyclo_list.item(selected, text="", values=(get_version, get_capacity, get_efficiency, get_description))
+#     #
+#     #       # # clear entry boxes
+#     #       # Version_entry.delete(0, END)
+#     #       # Capacity_entry.delete(0, END)
+#     #       # Efficiency_entry.delete(0, END)
+#
+#
+# def open_popup_cyclotron():
+#     edit_popup = Toplevel(root)
+#     edit_popup.geometry("900x400")
+#     edit_popup.title("Edit Cyclotron Details")
+#     Label(edit_popup, text="Edit Cyclotron Details", font=('Helvetica 17 bold'), fg='#034672').place(x=10, y=18)
+#
+#     # labels
+#     popup_label_y = 80
+#     Version = Label(edit_popup, text="Version")
+#     Version.grid(row=1, column=1)
+#     version_x = 20
+#     Version.place(x=version_x, y=popup_label_y)
+#
+#     Capacity = Label(edit_popup, text="Capacity")
+#     Capacity_units = Label(edit_popup, text="(mci/h)")
+#     Capacity_units.config(font=("Courier", 9))
+#     Capacity.grid(row=1, column=2)
+#     capacity_x = version_x + Version.winfo_reqwidth() + 70
+#     Capacity.place(x=capacity_x, y=popup_label_y)
+#     capacity_units_x = capacity_x + Capacity.winfo_reqwidth()
+#     Capacity_units.place(x=capacity_units_x, y=popup_label_y + 7)
+#
+#     Efficiency = Label(edit_popup, text="Constant Efficiency")
+#     Efficiency_units = Label(edit_popup, text="(mCi/mA)")
+#     Efficiency_units.config(font=("Courier", 9))
+#     Efficiency.grid(row=1, column=3)
+#     efficiency_x = capacity_units_x + Capacity_units.winfo_reqwidth() + 50
+#     Efficiency.place(x=efficiency_x, y=popup_label_y)
+#     efficiency_units_x = efficiency_x + Efficiency.winfo_reqwidth()
+#     Efficiency_units.place(x=efficiency_units_x, y=popup_label_y + 7)
+#
+#     Description = Label(edit_popup, text="Description")
+#     Description.grid(row=1, column=3)
+#     description_x = efficiency_units_x + Efficiency_units.winfo_reqwidth() + 30
+#     Description.place(x=description_x, y=popup_label_y)
+#
+#     # Entry boxes
+#     Version_entry = Entry(edit_popup, width=10)
+#     Version_entry.grid(row=2, column=1)
+#     Version_entry.place(x=version_x + 3, y=popup_label_y + 30)
+#
+#     Capacity_entry = Entry(edit_popup, width=14)
+#     Capacity_entry.grid(row=2, column=2)
+#     Capacity_entry.place(x=capacity_x, y=popup_label_y + 30)
+#
+#     Efficiency_entry = Entry(edit_popup, width=15)
+#     Efficiency_entry.grid(row=2, column=3)
+#     Efficiency_entry.place(x=efficiency_x, y=popup_label_y + 30)
+#
+#     Description_entry = Entry(edit_popup, width=15)
+#     Description_entry.grid(row=2, column=4)
+#     Description_entry.place(x=description_x, y=popup_label_y + 30)
+#
+#     # # clear entry boxes
+#     # Version_entry.delete(0, END)
+#     # Capacity_entry.delete(0, END)
+#     # Efficiency_entry.delete(0, END)
+#
+#     # grab record
+#     selected = cyclo_list.focus()
+#     # grab record values
+#     values = cyclo_list.item(selected, 'values')
+#     # temp_label.config(text=selected)
+#
+#     # insert cyclotron details from db to entry boxes
+#     Version_entry.insert(0, values[0])
+#     Capacity_entry.insert(0, values[1])
+#     Efficiency_entry.insert(0, values[2])
+#     Description_entry.insert(0, values[3])
+#
+#     # get_version = Version_entry.get()
+#     # get_capacity = Capacity_entry.get()
+#     # get_efficiency = Efficiency_entry.get()
+#     # get_description = Description_entry.get()
+#
+#     select_button = Button(edit_popup, text="Save Changes",
+#                            command=lambda: update_record(Version_entry.get(), Capacity_entry.get(),
+#                                                          Efficiency_entry.get(), Description_entry.get()))
+#     select_button.pack(side=LEFT)
+#     select_button.place(x=370, y=250)
+#
+#
+# # in the class?
+# def update_record(get_version, get_capacity, get_efficiency, get_description):
+#     print("get_version" + get_version)
+#     selected = cyclo_list.focus()
+#     print(cyclo_list.item(selected, 'values'))
+#     # save new data
+#     cyclo_list.item(selected, text="", values=(get_version, get_capacity, get_efficiency, get_description))
+#
+#     # # clear entry boxes
+#     # Version_entry.delete(0, END)
+#     # Capacity_entry.delete(0, END)
+#     # Efficiency_entry.delete(0, END)
+#
+#
 # # # save Record
 # # def update_record():
 # #     selected = cyclo_list.focus()
@@ -2569,8 +3215,229 @@ def update_record():
 # #     Version_entry.delete(0, END)
 # #     Capacity_entry.delete(0, END)
 # #     Efficiency_entry.delete(0, END)
-
-
-SettingsFrame.pack(fill='both',expand=1)
+#
+#
+# # Create a button in the main Window to edit  record (open the popup) - cyclotron
+# cyclotronEditIcon = Image.open("D:\PythonProjects\Cyclotron\editIcon.jpg")
+# resizedCycloEditIcon = cyclotronEditIcon.resize((20, 20), Image.ANTIALIAS)
+# imgEditCyclotron = ImageTk.PhotoImage(resizedCycloEditIcon,master=SettingsFrame)
+# editCyclotronButton = Button(SettingsFrame, image=imgEditCyclotron, borderwidth=0, command=open_popup_cyclotron)
+# editCyclotronButton.pack(side=LEFT)
+# editCyclotronButton.place(x=cyclo_Lable_place_x + 450, y=cyclo_Lable_place_y + 15)
+#
+# # edit_button = Button(SettingsFrame, text= "Edit", command= open_popup_cyclotron, width=4, height=1)
+# # edit_button.pack(side= LEFT)
+# # edit_button.place(x=270, y=265)
+#
+#
+# # Create a button in the main Window to Delete record - cyclotron
+# cyclotronDeleteIcon = Image.open("D:\PythonProjects\Cyclotron\‏‏deleteIcon.png")
+# resizedCycloDeleteIcon = cyclotronDeleteIcon.resize((20, 20), Image.ANTIALIAS)
+# imgDeleteCyclotron = ImageTk.PhotoImage(resizedCycloDeleteIcon,master=SettingsFrame);
+# deleteCyclotronButton = Button(SettingsFrame, image=imgDeleteCyclotron, borderwidth=0, command=open_popup_cyclotron)
+# deleteCyclotronButton.pack(side=LEFT)
+# deleteCyclotronButton.place(x=cyclo_Lable_place_x + 500, y=cyclo_Lable_place_y + 15)
+#
+# # Create a button in the main Window to add record - cyclotron
+# cyclotronAddIcon = Image.open("D:/PythonProjects/Cyclotron/addIcon.png")
+# resizedCycloAddIcon = cyclotronAddIcon.resize((25, 25), Image.ANTIALIAS)
+# imgAddCyclotron = ImageTk.PhotoImage(resizedCycloAddIcon,master=SettingsFrame);
+# addCyclotronButton = Button(SettingsFrame, image=imgAddCyclotron, borderwidth=0, command=open_popup_cyclotron)
+# addCyclotronButton.pack(side=LEFT)
+# addCyclotronButton.place(x=cyclo_Lable_place_x + 400, y=cyclo_Lable_place_y + 14)
+#
+# # add_button = Button(SettingsFrame, text="Add Cyclotron", command= open_popup_cyclotron, width = 4, height=1)
+# # add_button.pack(side= LEFT)
+# # add_button.place(x=370, y=265)
+#
+#
+#
+#
+# ##################### Module #####################
+# # Module Details label
+# moduleLabel = Label(SettingsFrame, text = 'Module Details', font=('Helvetica',15, 'bold'),fg='#034672')
+# module_Lable_place_x=700
+# module_Lable_place_y=70
+#
+# moduleLabel.pack(side=RIGHT)
+# moduleLabel.place(x=module_Lable_place_x,y=module_Lable_place_y)
+#
+#
+# # scrollbar
+# Module_scroll = Scrollbar(SettingsFrame ,orient="vertical",width=20)
+# Module_scroll.pack(side=RIGHT)
+# Module_scroll.place(x=1035, y= 160)
+#
+# module_list = ttk.Treeview(SettingsFrame, yscrollcommand=Module_scroll.set,height=5)
+#
+# module_list.pack(side=LEFT, padx=0, pady=module_Lable_place_y+50)
+#
+#
+#
+# # Module_scroll.config(command=cyclo_list.yview)
+# # Module_scroll.config(command=cyclo_list.xview)
+#
+# # column define
+#
+# module_list['columns'] = ('Version', 'Capacity (mci/h)', 'Description')
+#
+#
+# module_list.column("#0", width=0, stretch=NO)
+# module_list.column("Version", anchor=CENTER, width=width_Version)
+# module_list.column("Capacity (mci/h)", anchor=CENTER, width=width_Capacity)
+# module_list.column("Description", anchor=CENTER, width=width_Description)
+#
+# # Create Headings
+# module_list.heading("#0", text="", anchor=CENTER)
+# module_list.heading("Version", text="Version", anchor=CENTER)
+# module_list.heading("Capacity (mci/h)", text="Capacity (mci/h)", anchor=CENTER)
+# module_list.heading("Description", text="Description", anchor=CENTER)
+#
+# # add data from db
+# cursor = db.cursor()
+# cursor.execute("SELECT * FROM resourcemodule")
+# modules = cursor.fetchall()
+#
+# iid=0
+# for module in modules:
+#     print(module)
+#     cyclo_list.insert(parent='', index='end', iid=iid, text='',
+#                values=(module[1], module[2], module[3]))
+#     iid +=1
+#
+# module_list.pack()
+#
+# get_version=""
+# get_capacity=""
+# get_efficiency=""
+# get_description=""
+#
+# def open_popup_module():
+#    edit_popup= Toplevel(root)
+#    edit_popup.geometry("900x400")
+#    edit_popup.title("Edit Module Details")
+#    Label(edit_popup, text= "Edit Module Details", font=('Helvetica 17 bold'), fg='#034672').place(x=10,y=18)
+#
+#    # labels
+#    popup_label_y=80
+#    Version = Label(edit_popup, text="Version")
+#    Version.grid(row=1, column=1)
+#    version_x = 20
+#    Version.place(x=version_x, y=popup_label_y)
+#
+#
+#    Capacity = Label(edit_popup, text="Capacity")
+#    Capacity_units = Label(edit_popup, text="(mci/h)")
+#    Capacity_units.config(font=("Courier", 9))
+#    Capacity.grid(row=1, column=2)
+#    capacity_x = version_x+Version.winfo_reqwidth()+70
+#    Capacity.place(x=capacity_x, y=popup_label_y)
+#    capacity_units_x=capacity_x + Capacity.winfo_reqwidth()
+#    Capacity_units.place(x=capacity_units_x, y=popup_label_y+7)
+#
+#
+#    Description = Label(edit_popup, text="Description")
+#    Description.grid(row=1, column=3)
+#    description_x = capacity_units_x + Capacity_units.winfo_reqwidth() + 50
+#    Description.place(x=description_x, y=popup_label_y)
+#
+#    # Entry boxes
+#    Version_entry = Entry(edit_popup, width=10)
+#    Version_entry.grid(row=2, column=1)
+#    Version_entry.place(x=version_x+3, y=popup_label_y+30)
+#
+#    Capacity_entry = Entry(edit_popup, width=14)
+#    Capacity_entry.grid(row=2, column=2)
+#    Capacity_entry.place(x=capacity_x, y=popup_label_y+30)
+#
+#
+#    Description_entry = Entry(edit_popup,width=15)
+#    Description_entry.grid(row=2, column=4)
+#    Description_entry.place(x=description_x, y=popup_label_y+30)
+#
+#
+#    # clear entry boxes
+#    Version_entry.delete(0, END)
+#    Capacity_entry.delete(0, END)
+#    Description_entry.delete(0, END)
+#
+#    # grab record
+#    selected = module_list.focus()
+#    # grab record values
+#    values = module_list.item(selected, 'values')
+#    # temp_label.config(text=selected)
+#
+#    # output to entry boxes
+#    Version_entry.insert(0, values[0])
+#    Capacity_entry.insert(0, values[1])
+#    Description_entry.insert(0, values[2])
+#
+#    get_version = Version_entry.get()
+#    print(get_version)
+#    get_capacity = Capacity_entry.get()
+#    get_description = Description_entry.get()
+#
+#    select_button = Button(edit_popup, text="Save Changes", command=update_record)
+#    select_button.pack(side=LEFT)
+#    select_button.place(x=370, y=250)
+#
+#
+# #Create a button in the main Window to edit  record (open the popup) - module
+# moduleEditIcon = Image.open("D:\PythonProjects\Cyclotron\editIcon.jpg")
+# resizedModuleEditIcon = moduleEditIcon.resize((20, 20), Image.ANTIALIAS)
+# imgEditModule = ImageTk.PhotoImage(resizedModuleEditIcon,master=SettingsFrame);
+# editModuleButton = Button(SettingsFrame, image=imgEditModule, borderwidth=0, command=open_popup_module)
+# editModuleButton.pack(side= LEFT)
+# editModuleButton.place(x=module_Lable_place_x+250, y=module_Lable_place_y+15)
+#
+# # edit_button = Button(SettingsFrame, text= "Edit", command= open_popup_module)
+# # edit_button.pack(side= LEFT)
+# # edit_button.place(x=790, y=270)
+#
+# #Create a button in the main Window to Delete record - module
+# moduleDeleteIcon = Image.open("D:\PythonProjects\Cyclotron\‏‏deleteIcon.png")
+# resizedModuleDeleteIcon = moduleDeleteIcon.resize((20, 20), Image.ANTIALIAS)
+# imgDeleteModule = ImageTk.PhotoImage(resizedModuleDeleteIcon,master=SettingsFrame);
+# deleteModuleButton = Button(SettingsFrame, image=imgDeleteModule, borderwidth=0, command=open_popup_module)
+# deleteModuleButton.pack(side= LEFT)
+# deleteModuleButton.place(x=module_Lable_place_x+300, y=module_Lable_place_y+15)
+#
+# #Create a button in the main Window to add record - module
+# moduleAddIcon = Image.open("D:/PythonProjects/Cyclotron/addIcon.png")
+# resizedModuleAddIcon = moduleAddIcon.resize((25, 25), Image.ANTIALIAS)
+# imgAddModule = ImageTk.PhotoImage(resizedModuleAddIcon,master=SettingsFrame);
+# addModuleButton = Button(SettingsFrame, image=imgAddModule, borderwidth=0, command=open_popup_cyclotron)
+# addModuleButton.pack(side= LEFT)
+# addModuleButton.place(x=module_Lable_place_x+200, y=module_Lable_place_y+14)
+#
+# # add_button = Button(SettingsFrame, text="Add", command= open_popup_cyclotron)
+# # add_button.pack(side= LEFT)
+# # add_button.place(x=890, y=270)
+#
+# def update_record():
+#     selected = cyclo_list.focus()
+#     # save new data
+#     print("get_version"+get_version)
+#     cyclo_list.item(selected, text="", values=(get_version, get_capacity, get_efficiency, get_description))
+#
+#     # # clear entry boxes
+#     # Version_entry.delete(0, END)
+#     # Capacity_entry.delete(0, END)
+#     # Efficiency_entry.delete(0, END)
+#
+#
+# # # # save Record
+# # # def update_record():
+# # #     selected = cyclo_list.focus()
+# # #     # save new data
+# # #     cyclo_list.item(selected, text="", values=(Version_entry.get(), Capacity_entry.get(), Efficiency_entry.get()))
+# # #
+# # #     # clear entry boxes
+# # #     Version_entry.delete(0, END)
+# # #     Capacity_entry.delete(0, END)
+# # #     Efficiency_entry.delete(0, END)
+#
+#
+# SettingsFrame.pack(fill='both',expand=1)
 
 root.mainloop()
