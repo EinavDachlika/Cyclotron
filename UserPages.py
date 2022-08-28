@@ -45,15 +45,15 @@ PlaceLable_Y=10
 feedLabel.pack(side=LEFT)
 feedLabel.place(x=PlaceLable_X,y=PlaceLable_Y)
 
-# user label
-UserLabelHospitalpage1 = Label(hospitalFrame, text=f"{Permission.ValidateTypeOfUser} connected:", font=('Helvetica', 13, 'bold'), fg='red')
-UserLabelHospitalpage1.pack();
-UserLabelHospitalpage1.place(x=350, y=20);
-
-# user  connected label
-NameOfUserLabelHospitalpage2 = Label(hospitalFrame, text=Permission.user_verified, font=('Helvetica', 13, 'bold'), fg='red')
-NameOfUserLabelHospitalpage2.pack();
-NameOfUserLabelHospitalpage2.place(x=490, y=20);
+# # user label
+# UserLabelHospitalpage1 = Label(hospitalFrame, text=f"{Permission.ValidateTypeOfUser} connected:", font=('Helvetica', 13, 'bold'), fg='red')
+# UserLabelHospitalpage1.pack();
+# UserLabelHospitalpage1.place(x=350, y=20);
+#
+# # user  connected label
+# NameOfUserLabelHospitalpage2 = Label(hospitalFrame, text=Permission.user_verified, font=('Helvetica', 13, 'bold'), fg='red')
+# NameOfUserLabelHospitalpage2.pack();
+# NameOfUserLabelHospitalpage2.place(x=490, y=20);
 
 
 
@@ -162,23 +162,15 @@ feedLabel = Label(ordersFrame, text ='Orders', font=('Helvetica', 26, 'bold'), f
 feedLabel.pack(side=LEFT);
 feedLabel.place(x=50,y=10);
 
-# # admin label
-# AdminLabelOrderslpage1 = Label(ordersFrame, text=f"{Permission.ValidateTypeOfUser} Connected:", font=('Helvetica', 13, 'bold'), fg='red')
-# AdminLabelOrderslpage1.pack();
-# AdminLabelOrderslpage1.place(x=350, y=20);
-#
-# # admin connected label
-# NameOfAdminLabeLoRDERSpage2 = Label(ordersFrame, text=Permission.user_verified, font=('Helvetica', 13, 'bold'), fg='red')
-# NameOfAdminLabeLoRDERSpage2.pack();
-# NameOfAdminLabeLoRDERSpage2.place(x=510, y=20);
+
 
 # # user label
-UserLabelHospitalpage1 = Label(hospitalFrame, text=f"{Permission.ValidateTypeOfUser} connected:", font=('Helvetica', 13, 'bold'), fg='red')
+UserLabelHospitalpage1 = Label(ordersFrame, text=f"{Permission.ValidateTypeOfUser} connected:", font=('Helvetica', 13, 'bold'), fg='red')
 UserLabelHospitalpage1.pack();
 UserLabelHospitalpage1.place(x=350, y=20);
 #
 # # user  connected label
-NameOfUserLabelHospitalpage2 = Label(hospitalFrame, text=Permission.user_verified, font=('Helvetica', 13, 'bold'), fg='red')
+NameOfUserLabelHospitalpage2 = Label(ordersFrame, text=Permission.user_verified, font=('Helvetica', 13, 'bold'), fg='red')
 NameOfUserLabelHospitalpage2.pack();
 NameOfUserLabelHospitalpage2.place(x=490, y=20);
 
@@ -2683,6 +2675,16 @@ deleteHospitalButton.place(x=lable_place_x + hospital_tabel.winfo_reqwidth() , y
 WorkPlanFrame = Frame(root)
 # h = Scrollbar(WorkPlanFrame, orient='horizontal')
 WorkPlanFrame.pack(fill=X)
+
+# user label
+UserLabelWorkPlanpage1 = Label(WorkPlanFrame, text=f"{Permission.ValidateTypeOfUser} connected:", font=('Helvetica', 13, 'bold'), fg='red')
+UserLabelWorkPlanpage1.pack();
+UserLabelWorkPlanpage1.place(x=350, y=20);
+
+# user  connected label
+NameOfUserLabelWorkPlanpage2 = Label(WorkPlanFrame, text=Permission.user_verified, font=('Helvetica', 13, 'bold'), fg='red')
+NameOfUserLabelWorkPlanpage2.pack();
+NameOfUserLabelWorkPlanpage2.place(x=490, y=20);
 
 ##################### Work Plan #####################
 # Work Plan Details label

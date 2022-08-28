@@ -38,19 +38,19 @@ red_color =  '#f5bfbf'
 try:
 
     # # Maor local DB Mysql
-    db = mysql.connector.connect(
-        host="localhost",
-        port=3308,
-        user="root",
-        password="root",
-        database="cyclotron")
+    # db = mysql.connector.connect(
+    #     host="localhost",
+    #     port=3308,
+    #     user="root",
+    #     password="root",
+    #     database="cyclotron")
 
     # Einav local DB-Mysql
-    # db = mysql.connector.connect(
-    #   host="localhost",
-    #   user="root",
-    #   password="Cyclotron2022@?%",
-    #   database= "cyclotron")
+    db = mysql.connector.connect(
+      host="localhost",
+      user="root",
+      password="Cyclotron2022@?%",
+      database= "cyclotron")
 
     if db.is_connected():
         # db_Info = db.get_server_info()
@@ -64,7 +64,6 @@ except Error as e:
     print("Error while connecting to MySQL", e)
 
 cursor = db.cursor()
-
 #toolbar function
 def work_plan_page():
     WorkPlanFrame.pack(fill=X)

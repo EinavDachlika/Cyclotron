@@ -2199,6 +2199,16 @@ cycloSettingsFrame = Frame(root)
 # h = Scrollbar(cycloSettingsFrame, orient='horizontal')
 # cycloSettingsFrame.pack(fill=X)
 
+# admin label
+AdminLabelCycloSettignspage1 = Label(cycloSettingsFrame, text=f"{Permission.ValidateTypeOfUser} connected:", font=('Helvetica', 13, 'bold'), fg='red')
+AdminLabelCycloSettignspage1.pack();
+AdminLabelCycloSettignspage1.place(x=350, y=20);
+
+# admin connected label
+NameOfAdminLabelCycloSettingspage2 = Label(cycloSettingsFrame, text=Permission.user_verified, font=('Helvetica', 13, 'bold'), fg='red')
+NameOfAdminLabelCycloSettingspage2.pack();
+NameOfAdminLabelCycloSettingspage2.place(x=510, y=20);
+
 # feed label - cyclotron
 feedLabel = Label(cycloSettingsFrame, text = 'Settings ➝ ', font=label_font_flag,fg=label_color)
 PlaceLable_X=50
@@ -2309,6 +2319,17 @@ deleteCyclotronButton.place(x=table_place_x + cyclo_tabel.winfo_reqwidth(), y=ta
 moduleSettingsFrame = Frame(root)
 # h = Scrollbar(moduleSettingsFrame, orient='horizontal')
 # moduleSettingsFrame.pack(fill=X)
+
+# admin label
+AdminLabelModuleSettingspage1 = Label(moduleSettingsFrame, text=f"{Permission.ValidateTypeOfUser} connected:", font=('Helvetica', 13, 'bold'), fg='red')
+AdminLabelModuleSettingspage1.pack();
+AdminLabelModuleSettingspage1.place(x=350, y=20);
+
+# admin connected label
+NameOfAdminLabelModuleSettingspage2 = Label(moduleSettingsFrame, text=Permission.user_verified, font=('Helvetica', 13, 'bold'), fg='red')
+NameOfAdminLabelModuleSettingspage2 .pack();
+NameOfAdminLabelModuleSettingspage2 .place(x=510, y=20);
+
 
 # feed label - module
 feedLabel = Label(moduleSettingsFrame, text = 'Settings ➝ ', font=label_font_flag,fg=label_color)
@@ -2425,6 +2446,16 @@ deleteModuleButton.place(x=table_place_x+module_tabel.winfo_reqwidth(), y=table_
 materialSettingsFrame = Frame(root)
 # h = Scrollbar(materialSettingsFrame, orient='horizontal')
 # materialSettingsFrame.pack(fill=X)
+
+# admin label
+AdminLabelMaterialSettingspage1 = Label(materialSettingsFrame, text=f"{Permission.ValidateTypeOfUser} connected:", font=('Helvetica', 13, 'bold'), fg='red')
+AdminLabelMaterialSettingspage1.pack();
+AdminLabelMaterialSettingspage1.place(x=350, y=20);
+
+# admin connected label
+NameOfAdminLabelMaterialSettingspage2 = Label(materialSettingsFrame, text=Permission.user_verified, font=('Helvetica', 13, 'bold'), fg='red')
+NameOfAdminLabelMaterialSettingspage2 .pack();
+NameOfAdminLabelMaterialSettingspage2 .place(x=510, y=20);
 
 # feed label - material
 feedLabelmaterial = Label(materialSettingsFrame, text = 'Settings ➝ ', font=label_font_flag,fg=label_color)
@@ -2665,6 +2696,16 @@ Lable_place_y=60
 
 WorkPlanLabel.pack(side=LEFT)
 WorkPlanLabel.place(x=Lable_place_x,y=Lable_place_y)
+
+# admin label
+AdminLabelWorkPlanpage1 = Label(WorkPlanFrame, text=f"{Permission.ValidateTypeOfUser} connected:", font=('Helvetica', 13, 'bold'), fg='red')
+AdminLabelWorkPlanpage1.pack();
+AdminLabelWorkPlanpage1.place(x=350, y=20);
+
+# admin connected label
+NameOfAdminLabelWorkPlanpage2 = Label(WorkPlanFrame, text=Permission.user_verified, font=('Helvetica', 13, 'bold'), fg='red')
+NameOfAdminLabelWorkPlanpage2.pack();
+NameOfAdminLabelWorkPlanpage2.place(x=510, y=20);
 
 ###Work Plan tabel###
 scroll_width=20
