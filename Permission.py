@@ -66,7 +66,7 @@ def validateLogin(username, password):
         print("Login successful",dataFromDb);
 
     else:
-        messagebox.showerror("Error message","There is no user or password that fit the DB,please try again!");
+        messagebox.showerror("Error message","Wrong user or password,please try again!");
         raise Exception("There is no user or password contain in DB");
 
     db.commit();
@@ -118,7 +118,7 @@ topPermissionScreen=Frame();
 topPermissionScreen.configure(bg='white');
 
 Photocanvas= Canvas(topPermissionScreen,width=400,height=250);
-SheriLogoImg=(Image.open("./Images/logoSheri2.png"))
+SheriLogoImg=(Image.open("D:\PythonProjects\Cyclotron\Images\logoSheri2.png"))
 resizedSheriLogoimage= SheriLogoImg.resize((400,250), Image.ANTIALIAS)
 ResizedSheriImage=ImageTk.PhotoImage(resizedSheriLogoimage);
 Photocanvas.create_image(0,0,image=ResizedSheriImage,anchor="nw");
