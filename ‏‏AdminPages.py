@@ -2059,14 +2059,16 @@ editButton.place(x=100, y=65);
 
 ##############end of Orders page#########################################
 
-def Orders_page():
+def SwipeToOrdersPage():
     """ this function is swap function for Orders frame/page"""
     workPlanButton.config(bg='#F0F0F0');  ##F0F0F0 is default color(gray)
     mbtn.config(bg='#F0F0F0'); ##F0F0F0 is default color(gray)
+    BatchButton.config(bg='#F0F0F0'); ##F0F0F0 is default color(gray)
     ordersButton.config(bg="gray");
     ordersFrame.pack(fill='both',expand=1);
     WorkPlanFrame.forget();
     hospitalFrame.forget();
+    batchFrame.forget();
     moduleSettingsFrame.forget()
     materialSettingsFrame.forget()
     hospitalFrame.forget()
@@ -3756,7 +3758,6 @@ addWPButton.place(x=table_place_x+160, y=table_place_y+14)
 # deleteWPButton = Button(WorkPlanFrame, image=imgDeleteWP, borderwidth=0, command=lambda : deleteCyclotronfun())
 # deleteWPButton.pack(side=LEFT)
 # deleteWPButton.place(x=table_place_x + 500, y=table_place_y + 15)
-
 ################### batches #################
 #################### batch Page #####################
 #batch frame
@@ -3775,8 +3776,8 @@ BatchLabel.place(x=Lable_place_x,y=Lable_place_y)
 #batches table
 scroll_width=20
 tab_side=LEFT
-x=650
-y= 160
+x=1050
+y= 130
 frame=batchFrame
 list_height=30
 c = 80
@@ -3784,9 +3785,9 @@ c = 80
 lable_place_x = 80
 lable_place_y=70
 
-columns_name_list=('  Date  ', 'Batch Number','Material','TargetCurrentLB ', 'DecayCorrected_TTA (mci)', 'EOS_activity')
+columns_name_list=('  Date  ','Material', 'Batch Number','Time leaves Hadassah','Total EOS (mCi)',' EOS Time ','TargetCurrentLB ', 'DecayCorrected_TTA (mCi)')
 
-batch_query="""SELECT  b.idbatch , wp.Date ,b.batchNumber, m.materialName, b.TargetCurrentLB ,b.DecayCorrected_TTA, b.EOS_activity 
+batch_query="""SELECT  b.idbatch , wp.Date ,m.materialName,b.batchNumber,b.Time_leaves_Hadassah,b.Total_eos,b.EOS_TIME, b.TargetCurrentLB ,b.DecayCorrected_TTA
                 FROM batch b 
                 JOIN workplan wp ON wp.idworkplan = b.workplanID 
                 JOIN material m ON m.idmaterial = wp.materialID"""
@@ -3797,6 +3798,7 @@ batch_tabel.create_fully_tabel( columns_name_list, batch_query)
 
 batchFrame.pack(fill='both',expand=1)
 
+
 ###batch functions###
 def editBatchfun():
     selected_rec = batch_tabel.selected()
@@ -3804,14 +3806,14 @@ def editBatchfun():
     if not selected_non:
         editBatchPopup = Popup()
         # popup_size = "800x450"
-        popup_size = "900x550"
+        popup_size = "900x570"
         editBatchPopup.open_pop('Edit Batch Details',popup_size)
         table_name= 'batch'
-        query = "UPDATE batch SET TargetCurrentLB = %s ,DecayCorrected_TTA= %s, EOS_activity=%s  WHERE idbatch = %s"
+        query = "UPDATE batch SET Time_leaves_Hadassah=%s,Total_eos=%s ,EOS_TIME = $s,TargetCurrentLB = %s ,DecayCorrected_TTA= %s  WHERE idbatch = %s"
 
-        pk = selected_rec[6]
+        pk = selected_rec[7]
 
-        labels = (('TargetCurrentLB', ''), ('DecayCorrected_TTA', '(mci/h)'),  ('EOS_activity', ''))
+        labels = ( ('Time leaves Hadassah',''),('Total EOS', '(mCi/h)'),('EOS Time',''),('TargetCurrentLB', ''), ('Decay Corrected TTA', '(mCi/h)'))
         save_title = "Save Changes"
 
         # def edit_popup(self, labels, valueList, save_title, *args, table_name):
@@ -3820,7 +3822,7 @@ def editBatchfun():
 #batch buttons
 
 #Create a button in the main Window to edit  record (open the popup) - hospital
-batchEditIcon = Image.open("D:\PythonProjects\Cyclotron\editIcon.jpg")
+batchEditIcon = Image.open("editIcon.jpg")
 resizedBatchEditIcon = batchEditIcon.resize((20, 20), Image.ANTIALIAS)
 imgEditBatch = ImageTk.PhotoImage(resizedBatchEditIcon)
 editBatchButton = Button(batchFrame, image=imgEditBatch, borderwidth=0, command= lambda :editBatchfun())
@@ -3828,14 +3830,13 @@ editBatchButton = Button(batchFrame, image=imgEditBatch, borderwidth=0, command=
 editBatchButton.pack(side= LEFT)
 editBatchButton.place(x=lable_place_x + batch_tabel.winfo_reqwidth() - 50, y=lable_place_y+15)
 
-# workPlanButton.config(bg='#F0F0F0');  ##F0F0F0 is default color(gray)
-# ordersButton.config(bg='#F0F0F0');
-ordersFrame.forget();
+
 cycloSettingsFrame.forget()
 moduleSettingsFrame.forget()
 hospitalFrame.forget()
 WorkPlanFrame.forget()
 batchFrame.forget()
+
 ################################and of work plan page###############################
 
 
@@ -3853,11 +3854,14 @@ Label(toolbar,image=LogoImage).pack(side=LEFT,padx=10,pady=6)
 
 
 #toolbar function
-def work_plan_page():
+def SwipeToWorkPlanPage():
+
     ordersButton.config(bg='#F0F0F0');# Orders uttun color default value
     mbtn.config(bg='#F0F0F0'); ##F0F0F0 is default color(gray)
+    BatchButton.config(bg='#F0F0F0'); ##F0F0F0 is default color(gray)
     workPlanButton.config(bg="gray");
     WorkPlanFrame.pack(fill=X);
+    batchFrame.forget();
     ordersFrame.forget();
     moduleSettingsFrame.forget();
     materialSettingsFrame.forget();
@@ -3865,17 +3869,30 @@ def work_plan_page():
     cycloSettingsFrame.forget();
 
 # work plan button - toolbar
-workPlanButton = Button(toolbar, text="Work Plans",font='Helvetica 11',  command=lambda: work_plan_page())
+workPlanButton = Button(toolbar, text="Work Plans", font='Helvetica 11', command=lambda: SwipeToWorkPlanPage())
 workPlanButton.pack(side=LEFT,padx=10,pady=3)
 
 
 # Orders button - toolbar
-ordersButton = Button (toolbar, text="Orders", font='Helvetica 11',command=Orders_page)
+ordersButton = Button (toolbar, text="Orders", font='Helvetica 11', command=SwipeToOrdersPage)
 ordersButton.pack(side=LEFT,padx=10,pady=3)
 
-# # Batches button - toolbar
-# ordersButton = Button (toolbar, text="Batches", font='Helvetica 11')
-# ordersButton.pack(side=LEFT,padx=10,pady=3)
+def SwipeToBatchPage():
+    ordersButton.config(bg='#F0F0F0');# Orders uttun color default value
+    mbtn.config(bg='#F0F0F0'); ##F0F0F0 is default color(gray)
+    workPlanButton.config(bg="#F0F0F0");
+    BatchButton.config(bg="gray");
+    batchFrame.pack(fill=X);
+    ordersFrame.forget();
+    moduleSettingsFrame.forget();
+    materialSettingsFrame.forget();
+    hospitalFrame.forget();
+    cycloSettingsFrame.forget();
+    WorkPlanFrame.forget();
+# Batches button - toolbar
+BatchButton = Button (toolbar, text="Batches", font='Helvetica 11', command=lambda: SwipeToBatchPage())
+BatchButton.pack(side=LEFT,padx=10,pady=3)
+
 
 
 # Reports button - toolbar
@@ -3898,15 +3915,17 @@ def menu_item_selected(label):
     mbtn.config(bg="gray");
     ordersButton.config(bg='#F0F0F0');#Default value
     workPlanButton.config(bg='#F0F0F0');#Default value
+    BatchButton.config(bg='#F0F0F0');#Default value
+
     if label == 'Cyclotron':
 
         cycloSettingsFrame.pack(fill=X);
         ordersFrame.forget();
-        moduleSettingsFrame.forget()
-        materialSettingsFrame.forget()
-        hospitalFrame.forget()
-        WorkPlanFrame.forget()
-
+        moduleSettingsFrame.forget();
+        materialSettingsFrame.forget();
+        hospitalFrame.forget();
+        WorkPlanFrame.forget();
+        batchFrame.forget();
 
     elif label == 'Module':
         moduleSettingsFrame.pack(fill=X);
@@ -3915,6 +3934,7 @@ def menu_item_selected(label):
         materialSettingsFrame.forget();
         hospitalFrame.forget();
         WorkPlanFrame.forget();
+        batchFrame.forget();
 
     elif label == 'Hospital':
         hospitalFrame.pack(fill=X);
@@ -3923,6 +3943,7 @@ def menu_item_selected(label):
         materialSettingsFrame.forget();
         moduleSettingsFrame.forget();
         WorkPlanFrame.forget();
+        batchFrame.forget();
 
     else:
         materialSettingsFrame.pack(fill=X);
@@ -3931,6 +3952,7 @@ def menu_item_selected(label):
         moduleSettingsFrame.forget()
         hospitalFrame.forget()
         WorkPlanFrame.forget()
+        batchFrame.forget();
 
 
 selected_settings_option.trace("w", menu_item_selected)
