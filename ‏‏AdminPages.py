@@ -6,7 +6,7 @@ import mysql.connector
 from mysql.connector import Error
 import pandas as pd
 from docx.api import Document
-#import aspose.words as aw
+import aspose.words as aw
 from tkinter import filedialog as fd
 from tkcalendar import DateEntry
 from datetime import date,timedelta,datetime

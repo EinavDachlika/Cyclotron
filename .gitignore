@@ -3,3 +3,7 @@
 ./‏‏settingsTest.py
 ./‏‏‏‏settingsTest1.py
 .DB_tables_test.py
+./dist
+./__pycache__
+./build
+.main.spec
