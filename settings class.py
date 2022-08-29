@@ -26,6 +26,7 @@ root.title("Settings")
 #defult font
 root.option_add("*Font", "Helvetica")
 
+
 #general
 label_font = ('Helvetica',26, 'bold')
 label_font_flag_on_page = ('Helvetica 12 bold underline')
@@ -71,8 +72,15 @@ def work_plan_page():
     materialSettingsFrame.forget()
     hospitalFrame.forget()
     cycloSettingsFrame.forget()
+    batchFrame.forget()
 
-
+def batch_page():
+    batchFrame.pack(fill=X)
+    moduleSettingsFrame.forget()
+    materialSettingsFrame.forget()
+    hospitalFrame.forget()
+    cycloSettingsFrame.forget()
+    WorkPlanFrame.forget()
 ##################### toolbar #####################
 
 toolbarbgcolor = "white"
@@ -95,7 +103,7 @@ ordersButton = Button (toolbar, text="Orders", font='Helvetica 11')
 ordersButton.pack(side=LEFT,padx=10,pady=3)
 
 # Batches button - toolbar
-ordersButton = Button (toolbar, text="Batches", font='Helvetica 11')
+ordersButton = Button (toolbar, text="Batches", font='Helvetica 11',command=lambda: batch_page())
 ordersButton.pack(side=LEFT,padx=10,pady=3)
 
 
@@ -122,6 +130,7 @@ def menu_item_selected(label):
         materialSettingsFrame.forget()
         hospitalFrame.forget()
         WorkPlanFrame.forget()
+        batchFrame.forget()
 
 
     elif label == 'Module':
@@ -130,6 +139,7 @@ def menu_item_selected(label):
         materialSettingsFrame.forget()
         hospitalFrame.forget()
         WorkPlanFrame.forget()
+        batchFrame.forget()
 
     elif label == 'Hospital':
         hospitalFrame.pack(fill=X)
@@ -137,6 +147,7 @@ def menu_item_selected(label):
         materialSettingsFrame.forget()
         moduleSettingsFrame.forget()
         WorkPlanFrame.forget()
+        batchFrame.forget()
 
     else:
         materialSettingsFrame.pack(fill=X)
@@ -144,6 +155,7 @@ def menu_item_selected(label):
         moduleSettingsFrame.forget()
         hospitalFrame.forget()
         WorkPlanFrame.forget()
+        batchFrame.forget()
 
 
 selected_settings_option.trace("w", menu_item_selected)
@@ -237,6 +249,10 @@ fk = cursor.fetchall()
 # print(fk)
 # print([data for data in fk if data[3]=='idworkplan'])
 
+query = "SELECT materialName,idmaterial FROM material"
+cursor.execute(query)
+material_options_list = cursor.fetchall()
+
 
 def NOT_NULL_DataType_col(table_name):
     # column that define as NOT NULL in db
@@ -259,6 +275,7 @@ def warning_message(text):
 def YES_NO_message(title_tab, text):
     return messagebox.askyesno(title_tab,text)
 
+
 #algorithm functions
 lamda = ln(2) / 109.6
 max_activity_batch=7300
@@ -267,44 +284,42 @@ max_activity_batch=7300
 def sortByTout(hospital):
     return hospital["tout_required"]
 
+def sortByToutActually(hospital):
+    return hospital["Tout_actually"]
+
 def sortByTeos(hospital):
     return hospital["eos_req"]
 
-def change_eos_for_tout(hospital_data, diff):
-    Subtract_from_eos = timedelta(minutes=diff)
-    last_eos = hospital_data[0]["eos_req"]
-    update_eos = last_eos - Subtract_from_eos
-    hospital_data[0]["eos_req"] = update_eos
+# def change_eos_for_tout(hospital_data, diff,hospitals_output):
+#     # print(timedelta(minutes=diff))
+#     Subtract_from_eos = timedelta(minutes=diff)
+#     last_eos = hospital_data[0]["eos_req"]
+#     update_eos = last_eos - Subtract_from_eos
+#     hospital_data[0]["eos_req"] = update_eos
+#     print(update_eos)
+#
+#     recursion_for_tout(hospital_data,hospitals_output)
 
-    recursion_for_tout(hospital_data)
-
-def recursion_for_tout(hospital_data,hospitals_output):
-    min_to_add = 0
-    add_to_tout = timedelta(minutes=min_to_add)
-    first_tout = hospital_data[0]["tout_required"]
-    # print('hospital_data(recursion_for_tout): ',hospital_data)
+def recursion_for_tout(hospital_data):
+    min_to_add = 15
+    add_to_teos = timedelta(minutes=min_to_add)
+    first_teos = hospital_data[0]["eos_req"]
     for h in hospital_data:
-        if h["delivery_order"] == 2:  # secound is will be after QC1 - needed 5 min more
-            min_to_add += 5
-            add_to_tout = timedelta(minutes=min_to_add)
-
-        Tout_actually = first_tout + add_to_tout
+        Tout_actually = first_teos + add_to_teos
         if Tout_actually > h["tout_required"]:
-            if  h["delivery_order"]>1:
-                h["delivery_order"]=h["delivery_order"]-1
-
-                recursion_for_tout(hospital_data)
-            else: #change eos req
                 diff = Tout_actually - h["tout_required"]
-                change_eos_for_tout(hospital_data, diff)
-
+                diff_to_int = diff.seconds / 60
+                Subtract_from_eos = timedelta(minutes=diff_to_int)
+                last_eos = hospital_data[0]["eos_req"]
+                updated_eos = last_eos - Subtract_from_eos
+                hospital_data[0]["eos_req"] = updated_eos
+                recursion_for_tout(hospital_data)
 
         h["Tout_actually"] = Tout_actually
         min_to_add += 5
-        add_to_tout = timedelta(minutes=min_to_add)
+        add_to_teos = timedelta(minutes=min_to_add)
 
-        hospital_record = next(hospital for hospital in hospitals_output if hospital["Name"] == h['hospital_name'] and hospital['Batch'] == h['batch'] )
-        hospital_record['delivery_order'] = h["delivery_order"]
+
 
 def main_algorithm_calculation(batches,hospitals_output,batches_general_data):
     for b in batches: #calculate T1,Tout, Tcal,Teos, delivery_order, activity
@@ -332,22 +347,18 @@ def main_algorithm_calculation(batches,hospitals_output,batches_general_data):
                     else:
                         tout_temp = order['injection_time'] - timedelta(minutes=(order['Transport_time_min'])) #T1-Transport_time
                         hospital_data.append({'hospital_name':hospital_name,'batch':index+1, "injection_time": order['injection_time'], "Transport_time": order['Transport_time_min'], "tout_required": tout_temp})
-
+                    # print(hospital_name, " req: ", tout_temp)
             hospital_data.sort( key=sortByTout) #sort hospital_data by tout_temp
-
-            #insert Tout
-            Tout_key = "Tout"
-            i = len(hospital_data[0]) - 1  # last index in the list (Tout_req)
-            t_out_final = hospital_data[0]["tout_required"]  # first tout_temp
-            batches_general_data[index][Tout_key] = t_out_final
 
             Hospital_delivery_order=1
             interval_5 = 15
             minutes_for_eos_cal = timedelta(minutes=interval_5)
-
             for h in hospital_data:
                 #delivery_order
                 h["delivery_order"] = Hospital_delivery_order
+                hospital_record = next(hospital for hospital in hospitals_output if
+                                       hospital["Name"] == h['hospital_name'] and hospital['Batch'] == h['batch'])
+                hospital_record['delivery_order'] = Hospital_delivery_order
                 Hospital_delivery_order+=1
 
                 eos_req = h["tout_required"] - minutes_for_eos_cal  # tout - intervals consider the order
@@ -357,14 +368,27 @@ def main_algorithm_calculation(batches,hospitals_output,batches_general_data):
                 # hospital_data.sort(key=sortBy)  # sort hospital_data by tout_eos
 
             hospital_data.sort(key=sortByTeos)  # sort hospital_data by tout_eos
-            recursion_for_tout(hospital_data,hospitals_output)
+            # print(hospital_data)
+            recursion_for_tout(hospital_data)
 
+            #save tout actual for each hospital
+            for h in hospital_data:
+                hospital_record = next(hospital for hospital in hospitals_output if
+                                       hospital["Name"] == h['hospital_name'] and hospital['Batch'] == h['batch'])
+                hospital_record['Tout_actually'] = h['Tout_actually']
+                # print(h["hospital_name"] , " actually: ", h['Tout_actually'])
 
             # insert Teos - new module
             Teos_key = "Teos"
             t_eos_final = hospital_data[0]["eos_req"] #first index in the list is the shortest time of eos (because it's sorted)
             batches_general_data[index][Teos_key] = t_eos_final
 
+            # insert Tout
+            Tout_key = "Tout"
+            hospital_data.sort(key=sortByToutActually)
+            last_index = len(hospital_data)-1
+            t_out_final = hospital_data[last_index]['Tout_actually'] #last tout actually
+            batches_general_data[index][Tout_key] = t_out_final
 
             #insert Tcal - new module
             Tcal_key = "Tcal"
@@ -373,9 +397,9 @@ def main_algorithm_calculation(batches,hospitals_output,batches_general_data):
             batches_general_data[index][Tcal_key] = t_cal
 
 
-            # bottles_b = len(hospitals) + 2
-            # bottels_key = "bottles_mum"
-            # batches_general_data[index][bottels_key] = bottles_b
+            bottles_b = len(hospitals)
+            bottels_key = "bottles_mum"
+            batches_general_data[index][bottels_key] = bottles_b
 
             batches_general_data[index]["Activity"] = 0  # define the key
             for order in b:
@@ -391,6 +415,7 @@ def main_algorithm_calculation(batches,hospitals_output,batches_general_data):
 
                 if batches_general_data[index]["Activity"] + A_Tcal >= max_activity_batch:
                     batches[index+1].append(order)
+                    batches[index].remove(order)
                     main_algorithm_calculation(batches,hospitals_output,batches_general_data)
 
                 else:
@@ -401,9 +426,9 @@ def main_algorithm_calculation(batches,hospitals_output,batches_general_data):
                     hospital = next(h for h in hospitals_output if h["Name"] == order["Name"] and h["Batch"] == index + 1)
                     order[A_Tcal_key] = A_Tcal
                     order['diff_Tcal_injectionT'] = diff
-                    hospital["Activity"] +=A_Tcal # Hagai - calculate for each bath and hospital separately??
+                    hospital["Activity"] +=A_Tcal
 
-                    batches_general_data[index]["Activity"] += A_Tcal
+                    batches_general_data[index]["Activity"] += A_Tcal*1.05
 
 def export_WP_Excel( selected_material, selected_date, all_batches_output, hospitals_output, batches_general_data):
     FilePath = "FDG format.xlsx"
@@ -488,7 +513,7 @@ def export_WP_Excel( selected_material, selected_date, all_batches_output, hospi
                 col_num = 14
 
             sheet.cell(row=1, column=col_num).value = b['Tout']
-            # sheet.cell(row=3, column=col_num).value =  #number of hospitals
+            sheet.cell(row=3, column=col_num).value = b["bottles_mum"] #number of hospitals
             sheet.cell(row=4, column=col_num).value = b['Tcal']
             sheet.cell(row=5, column=col_num).value = b['Teos']
             sheet.cell(row=7, column=col_num).value = b['Activity']
@@ -503,17 +528,19 @@ def export_WP_Excel( selected_material, selected_date, all_batches_output, hospi
                 row_num=2
                 b=1
         elif hb['Batch']==2:
-            col_num = 3
+            col_num = 4
             if not b==2:
                 row_num=2
                 b=2
         else:
-            col_num = 5
+            col_num = 6
             if not b==3:
                 row_num=2
                 b=3
+        # print(hb['delivery_order'], " ",hb['Name'], " ",hb['Tout_actually'] )
         sheet2.cell(row=row_num, column=col_num).value =hb['delivery_order']
         sheet2.cell(row=row_num, column=col_num+1).value = hb['Name']
+        sheet2.cell(row=row_num, column=col_num+2).value = hb['Tout_actually']
         row_num+=1
 
     downloads_path = str(Path.home() / "Downloads") + '/'
@@ -550,7 +577,7 @@ class Popup(Toplevel):
         # self.geometry("900x550")
         self.geometry(geometry)
         self.title(title)
-        Label(self, text=title, font=('Helvetica 17 bold'), fg='#034672').place(x=10, y=18)
+        Label(self, text=title, font=('Helvetica 17 bold'), fg='#034672').place( x=10, y=18)
 
         ## in line
         # #labels and entry box
@@ -701,8 +728,8 @@ class Popup(Toplevel):
                                command=lambda: on_click_save_fun(*args))
 
         save_button.pack(side=LEFT)
-        save_button_position_x = self.winfo_screenheight() / 2 - save_button.winfo_reqwidth()/2
-        save_button_position_y = 450
+        save_button_position_x = self.winfo_screenheight() / 2 - save_button.winfo_reqwidth()/2 +20
+        save_button_position_y = 485
         # save_button_position_y = self.winfo_screenheight() *0.6 - save_button.winfo_reqheight()/2
 
 
@@ -748,24 +775,19 @@ class Popup(Toplevel):
 
         # prevented 'Date', 'Batch Number','Material' show as entry box
         if args[len(args) - 1] == 'batch' :
-            label_text = valueList [2] + '  -  Batch Number: '+ valueList[1] + '  -  '+ valueList[0]
-            p_label = Label(self, text=label_text, font=('Helvetica 14 bold underline'))
+            label_text = valueList [0] + '  |  '+ valueList[1]  +'  |  Batch Number: '+ valueList[2]
+            p_label = Label(self, text=label_text, font=('Helvetica 14 bold '), fg=label_color)
             p_label.grid(row=row_num, column=1)
+            p_last_label_y-=18
             p_label.place(x=p_last_label_x, y=p_last_label_y)
             valueList=valueList[3:]
-            p_last_label_y += 18*3
+            p_last_label_y += 33
             p_last_label_x+=10
-
-
 
 
         entries = []
         error_labels_list=[]
         for lab in labels:
-            # if args[len(args)-1] == 'batch' and lab[0] in  ('Date', 'Batch Number','Material'):
-            #     p_last_label_y += 18
-            #     continue
-
             p_label = Label(self, text=lab[0])
             p_label.grid(row=row_num, column=1)
             p_label.place(x=p_last_label_x, y=p_last_label_y)
@@ -782,6 +804,10 @@ class Popup(Toplevel):
             value_index += 1
             entries.append(entry_box)
 
+            if args[len(args) - 1] == 'batch' and lab[0] in ('Time leaves Hadassah','Total EOS','EOS Time'):
+                entry_box.config(state='disabled')
+                p_last_label_y+=entry_box.winfo_reqheight()
+
             if lab[1] != '':
                 p_label_units = Label(self, text=lab[1])
                 font = ("Courier", 9)
@@ -789,18 +815,21 @@ class Popup(Toplevel):
                 p_label_units_x = p_last_label_x + p_label.winfo_reqwidth()
                 p_label_units.place(x=p_label_units_x, y=p_last_label_y + 5)
 
+
             # p_last_label_y += entry_box.winfo_reqheight() + 35 + p_label.winfo_reqheight()
             # row_num += 1
 
             p_last_label_y += entry_box.winfo_reqheight() + p_label.winfo_reqheight()
+            if args[len(args) - 1] == 'batch' and lab[0] in ('Time leaves Hadassah','Total EOS','EOS Time'):
+                pass
+            else:
+                # error labels
+                error_label = Label(self, text='', font=('Courier', 8), fg='red')
+                error_label.place(x=p_last_label_x + 1, y=p_last_label_y+6)
+                error_labels_list.append(error_label)
 
-            # error labels
-            error_label = Label(self, text='', font=('Courier', 8), fg='red')
-            error_label.place(x=p_last_label_x + 1, y=p_last_label_y+6)
-            error_labels_list.append(error_label)
+                p_last_label_y += 18 + error_label.winfo_reqheight()
             row_num += 1
-
-            p_last_label_y += 18 + error_label.winfo_reqheight()
 
         self.save_cancel_button(save_title, self.update_if_selected, *args, entries,error_labels_list)
 
@@ -819,6 +848,7 @@ class Popup(Toplevel):
                 cursor.execute(selectMaxIDquery2)
                 data = cursor.fetchall()
                 input_values_list.append(data[0][0])
+
                 list.insert(parent='', index='end', iid=None, text='',
                             values=input_values_list)
 
@@ -887,8 +917,14 @@ class Popup(Toplevel):
     #     webbrowser.open(downloads_path)
 
 
-    def legal_wp(self,selected_material,selected_date,error_labels_list, data):
+    def legal_wp(self,selected_material,selected_date,error_labels_list,selected_material_ID,dataLen ):
         legal = True
+
+        exist_wp_query = "SELECT * FROM workplan WHERE Date= '" +selected_date+ """'
+                            AND ISNULL(deleted) AND materialID=""" + str(selected_material_ID)
+        cursor.execute(exist_wp_query)
+        exist_wp_data = cursor.fetchall()
+
         for error_lab in error_labels_list: #inite error labeles (for more than one tries)
             error_lab['text'] = ""
 
@@ -897,8 +933,15 @@ class Popup(Toplevel):
             # entries[0].config(bg=red_color)
             error_labels_list[0]['text'] = "Please select a material"
             legal = False
+
+        elif len(exist_wp_data)!=0:
+            error_text = "There is a work plan for " + selected_material + " for date " + selected_date + " in the system. Identical work plans cannot be created."
+            error_message(error_text)
+            self.lift()
+            return False
+
         else:
-            if len(data) == 0:
+            if dataLen == 0:
                 error_text = "There are no orders for material " + selected_material + " for date " + selected_date + " in the system. Please change your selection"
                 error_message(error_text)
                 self.lift()
@@ -975,53 +1018,16 @@ class Popup(Toplevel):
 
 
     def create_wp_popup(self,  selected_date, selected_material):
-        # def create_wp_popup(self, rec_var_list,selected_date, selected_material, data, error_labels_list,OptionMenu):
-
-        # #validation - selected recourcrs
-        # legal = True
-        #
-        # i=0
-        # for rec in rec_var_list:
-        #     error_labels_list[i]['text'] =""
-        #     selected_rec = rec.get()
-        #     # if selected_rec[:8] == "Select a":
-        #     #     error_labels_list[i]
-        #     #     error_labels_list[i]['text'] = "Please select a resource"
-        #     #     legal = False
-        #     i+=1
-        #
-        # if not legal :
-        #     error_message('Please select a resources')
-        #     self.lift()
-        #
-        # else:
-        #     selected_cyclotron =rec_var_list[0].get()
-        #     #excel
-        #     excelIcon = Image.open("excelIcon.png")
-        #     resizedExcelIcon = excelIcon.resize((40, 40), Image.ANTIALIAS)
-        #     imgExcel = ImageTk.PhotoImage(resizedExcelIcon)
-        #     ExcelButton = Button(self, image=imgExcel, borderwidth=0,
-        #                          command=lambda: self.export_WP_To_Excel(selected_date, selected_material, data))
-        #     # ExcelButton.pack(side=LEFT)
-        #     ExcelButton.place(x=70, y=90)
-        #
-        #     Label(self, text='Export to Excel File', font=('Helvetica 12'), fg='grey').place(
-        #         x=60 - ExcelButton.winfo_reqwidth() / 2, y=90 + ExcelButton.winfo_reqheight())
-        # root.mainloop()
-
         # algorithm
-        query = """SELECT h.Name,o.DoseNumber,h.Fixed_activity_level*o.amount as Fixed_activity_level, o.injection_time,o.amount,h.Transport_time_min,h.Transport_time_max
+        query = """SELECT o.idorders, h.Name,o.DoseNumber,h.Fixed_activity_level*o.amount as Fixed_activity_level, o.injection_time,o.amount,h.Transport_time_min,h.Transport_time_max
                 FROM hospital h INNER JOIN orders o ON  h.idhospital=o.hospitalID INNER JOIN material m ON m.idmaterial=o.materialID
                 where Date = '""" + str(selected_date) + """ ' and m.materialName= '""" +str(selected_material)+ """' ORDER BY injection_time """
-        # print(query)
-        # query = "SELECT Date FROM orders "
-        # cursor = db.cursor (db.cursors.DictCursor)
 
         cursor = db.cursor(dictionary=True)
         cursor.execute(query)
         data = cursor.fetchall()
-
         print('date: ', data)
+        cursor = db.cursor(dictionary=False)
 
         batch1 = []
         batch2 = []
@@ -1033,7 +1039,7 @@ class Popup(Toplevel):
             if order_time < datetime.strptime('15:00:00', '%H:%M:%S').time():  # batch 1
                 batch1.append(order)
 
-            elif order_time < datetime.strptime('21:00:00', '%H:%M:%S').time():  # batch 2
+            elif order_time < datetime.strptime('23:00:00', '%H:%M:%S').time():  # batch 2
                 batch2.append(order)
             else:  # batch 3
                 batch3.append(order)
@@ -1053,8 +1059,75 @@ class Popup(Toplevel):
         print("batches_general_data: ",batches_general_data)
         all_batches_output = flat_list(batches)
         all_batches_output.sort(key=itemgetter('Name'))
+        cursor = db.cursor()
 
-        # print(all_batches_output)
+        selected_material_ID = next(m[1] for m in material_options_list if m[0]==selected_material)
+
+        #create wp record
+        new_wp_list =(str(selected_date),selected_material_ID)
+        work_plan_query = "INSERT INTO workplan (Date, materialID) VALUES " + str(new_wp_list)
+        cursor.execute(work_plan_query)
+        db.commit()
+
+        #get workplanID (for batch records)
+        workplanID_Query = "SELECT MAX(idworkplan) FROM workplan "
+        cursor.execute(workplanID_Query)
+        workplanID_list = cursor.fetchall()
+        workplanID = workplanID_list[0][0]
+
+        batch_input_values_list=[]
+        index=1
+        for batch in batches_general_data:
+            if len(batch)!=0:
+                values= (workplanID,index,str(batch['Tout']), batch['Activity'] ,str(batch['Teos']))
+                create_batch_query="INSERT INTO batch (workplanID, batchNumber, Time_leaves_Hadassah,Total_eos,EOS_TIME) VALUES " + str(values)
+
+                cursor.execute(create_batch_query)
+                db.commit()
+
+                #for ui table - in batch page
+                list = [str(selected_date),selected_material,index,str(batch['Tout']),batch['Activity'],batch['Teos'],None,None]
+                batch_input_values_list.append(list)
+            index+=1
+
+        i=1
+        for b in batches:
+            if len(b)!=0:
+                # get batchID (for orders records)
+                batchID_Query = "SELECT idbatch FROM batch WHERE workplanID= " + str(workplanID) + """
+                                AND batchNumber = """ + str(i)
+                cursor.execute(batchID_Query)
+                batchID_list = cursor.fetchall()
+                batchID = batchID_list[0][0]
+
+                #for ui table - in batch page
+                batch_input_values_list[i-1].append(batchID)
+
+                for order in b:
+                    values= (batchID,float(order['Activity_Tcal']))
+                    update_rec_query = """UPDATE orders SET batchID= %s,DecayCorrected= %s
+                                         WHERE idorders = """ + str(order['idorders'])
+
+                    cursor.execute(update_rec_query, values)
+                    db.commit()
+            i+=1
+
+        # insert the id from db to values list (not in table) to allow deleting the record without refreshing the page
+        wp_input_values_list=[str(selected_date),selected_material]
+        selectMaxIDquery = """SELECT MAX(idworkplan) FROM workplan"""
+        cursor.execute(selectMaxIDquery)
+        data = cursor.fetchall()
+        wp_input_values_list.append(data[0][0])
+
+        #add to wp table (show to user)
+        wp_tabel.insert(parent='', index='end', iid=None, text='',
+                    values=wp_input_values_list)
+
+
+        # add to batch table (show to user)
+        for b_r in batch_input_values_list:
+            batch_tabel.insert(parent='', index='end', iid=None, text='',
+                           values=b_r)
 
         #excel
         excelIcon = Image.open("excelIcon.png")
@@ -1065,10 +1138,10 @@ class Popup(Toplevel):
         ExcelButton = Button(self, image=imgExcel, borderwidth=0,
                              command=lambda: export_WP_Excel(selected_material,selected_date,all_batches_output,hospitals_output,batches_general_data))
         # ExcelButton.pack(side=LEFT)
-        ExcelButton.place(x=70, y=90)
+        ExcelButton.place(x=90, y=90 )
 
         Label(self, text='Export to Excel File', font=('Helvetica 12'), fg='grey').place(
-            x=60 - ExcelButton.winfo_reqwidth() / 2, y=90 + ExcelButton.winfo_reqheight())
+            x=70 - ExcelButton.winfo_reqwidth() / 2, y=90 + ExcelButton.winfo_reqheight())
 
         root.mainloop()
 
@@ -1077,16 +1150,20 @@ class Popup(Toplevel):
 
         selected_date = cal.get()
         selected_material = material_var.get()
+        cursor = db.cursor()
+
+        selected_material_ID = next(m[1] for m in material_options_list if m[0]==selected_material)
 
         ordersQuery = """SELECT h.Name,h.Fixed_activity_level , o.injection_time,o.amount, m.materialName, o.Date
                                                           FROM hospital h INNER JOIN orders o ON  h.idhospital=o.hospitalID INNER JOIN material m ON m.idmaterial=o.materialID
-                                                          where Date = '""" + selected_date + """' and m.materialName= '""" + selected_material + "' ORDER BY hospitalID, injection_time "
+                                                          where Date = '""" + selected_date + """' and o.materialID= '""" + str(selected_material_ID) + "' ORDER BY hospitalID, injection_time "
 
         cursor.execute(ordersQuery)
         data = cursor.fetchall()
         popup_size= "850x550"
+        dataLen=len(data)
 
-        legal = self.legal_wp(selected_material,selected_date,error_labels_list, data)
+        legal = self.legal_wp(selected_material,selected_date,error_labels_list, selected_material_ID,dataLen)
         if legal:
             self.destroy()
             # export_popup=Popup()
@@ -1122,9 +1199,7 @@ class Popup(Toplevel):
                 material_var = StringVar(self)
                 material_var.set("Select a material")  # default value
 
-                query= "SELECT materialName,idmaterial FROM material"
-                cursor.execute(query)
-                material_options_list = cursor.fetchall()
+
 
                 materialname = [m[0] for m in material_options_list ]
                 material_dropdown = OptionMenu(self, material_var, *materialname)
@@ -1147,7 +1222,7 @@ class Popup(Toplevel):
             p_last_label_y += 18 + error_label.winfo_reqheight()
 
             #buttons
-            next_button = Button(self, text='Next',
+            next_button = Button(self, text='Create work plan',
                                  command=lambda: self.wp_validation_plus( material_var,cal,error_labels_list ))
 
             next_button.pack(side=LEFT)
@@ -1226,9 +1301,10 @@ class table(ttk.Treeview):
         scroll = Scrollbar(frame, orient="vertical", width=scroll_width)
         scroll.pack(side=side)
         scroll.place(x=x_crol, y=y_crol)
+
         ttk.Treeview.__init__(self,frame, yscrollcommand=scroll.set, height=list_height)
         self.pack(side=LEFT, padx=lable_place_x + 30, pady=lable_place_y + 50)
-        scroll.config(command=self.yview)
+        scroll.config(command=self.yview )
 
         # list = self.(frame, yscrollcommand=scroll.set, height=list_height)
 
@@ -1288,6 +1364,7 @@ class table(ttk.Treeview):
         else:
             return False
 
+
     def fk_rec_is_exist(self,query,table_name, pk_delected_record ):
         fk_list = [rec for rec in fk if rec[2]== table_name]
         if len(fk_list) != 0:
@@ -1329,8 +1406,58 @@ class table(ttk.Treeview):
                     query2 = "UPDATE " + table_name +" SET deleted = True " +"WHERE " + pk_name + "=" + pk_delected_record
                     cursor.execute(query2)
                     db.commit()
+                # self.delete(self.selection()[0])
+                print(self.selection()[0])
+
+    def delete_WP_record(self):
+        selected_rec = self.selected()
+        item_in_string= ', '.join([ item for item in selected_rec[:selected_rec.__len__()-1]])
+        is_non=self.selected_is_non(selected_rec)
+        if not is_non:
+            len = selected_rec.__len__()
+            pk_delected_record = selected_rec[len-1]
+            title_tab = "Delete Record"
+            text_mess= "Are you sure you want to delete " + item_in_string + " ?"
+            if YES_NO_message(title_tab, text_mess):
+                try:
+                    # hide work plan
+                    hide_wp_query = "UPDATE workplan SET deleted = True WHERE idworkplan=" +  pk_delected_record
+                    cursor.execute(hide_wp_query)
+                    db.commit()
+                except:
+                    raise TypeError("update work plan error")
+
+                try:
+                    # update orders
+                    update_orders_query = """UPDATE orders SET batchID=NULL,DecayCorrected=NULL WHERE batchID  IN
+                                          (SELECT idbatch FROM batch WHERE workplanID=""" + pk_delected_record +")"
+                    cursor.execute(update_orders_query)
+                    db.commit()
+                except:
+                    raise TypeError("update orders error")
+
+                try:
+                    #for deleting rows from table
+                    delete_table_batch_query = "SELECT idbatch FROM batch WHERE workplanID=" + pk_delected_record
+                    cursor.execute(delete_table_batch_query)
+                    to_delete_list_idbatch = cursor.fetchall()
+                    to_delete_batches_list =  [b[0] for b in to_delete_list_idbatch]
+
+                    # delete batch
+                    delete_batch_query = "DELETE FROM batch WHERE workplanID=" + pk_delected_record
+                    cursor.execute(delete_batch_query)
+                    db.commit()
+                except:
+                    raise TypeError("update batch error")
+
                 self.delete(self.selection()[0])
 
+                # delete from batch table (show to user)
+                children = batch_tabel.get_children()
+                batch_table_index = [b for b in children if batch_tabel.item(b)['values'][7] in to_delete_batches_list]
+
+                for b_index in batch_table_index:
+                    batch_tabel.delete(b_index)
 
 ##################### settings - cyclotron #####################
 #cyclotron frame
@@ -1591,14 +1718,14 @@ materialLabel.place(x=Lable_place_x,y=Lable_place_y)
 ###material tabel###
 scroll_width=20
 tab_side=LEFT
-x=420
+x=250
 y= 150
 frame=materialSettingsFrame
 list_height=5
 # table_place_x = 80
 # table_place_y=80
 
-columns_name_list=[' Material ']
+columns_name_list=['    Material   ']
 
 queryMaterial = "SELECT * FROM material WHERE ISNULL(deleted)"
 
@@ -1650,7 +1777,7 @@ resizedMaterialAddIcon = materialAddIcon.resize((25, 25), Image.ANTIALIAS)
 imgAddMaterial = ImageTk.PhotoImage(resizedMaterialAddIcon)
 addMaterialButton = Button(materialSettingsFrame, image=imgAddModule, borderwidth=0, command=addMaterialfun)
 addMaterialButton.pack(side= LEFT)
-addMaterialButton.place(x=table_place_x + material_tabel.winfo_reqwidth() - 95, y=table_place_y+14)
+addMaterialButton.place(x=table_place_x + material_tabel.winfo_reqwidth() - 70, y=table_place_y+20)
 
 #Create a button in the main Window to edit  record (open the popup) - material
 materialEditIcon = Image.open("editIcon.jpg")
@@ -1658,7 +1785,7 @@ resizedMaterialEditIcon = materialEditIcon.resize((20, 20), Image.ANTIALIAS)
 imgEditMaterial = ImageTk.PhotoImage(resizedMaterialEditIcon)
 editMaterialButton = Button(materialSettingsFrame, image=imgEditMaterial, borderwidth=0, command=editMaterialfun)
 editMaterialButton.pack(side= LEFT)
-editMaterialButton.place(x=table_place_x + material_tabel.winfo_reqwidth() - 45, y=table_place_y+15)
+editMaterialButton.place(x=table_place_x + material_tabel.winfo_reqwidth() - 30, y=table_place_y+22)
 
 #Create a button in the main Window to Delete record - material
 materialDeleteIcon = Image.open("‏‏deleteIcon.png")
@@ -1666,7 +1793,7 @@ resizedMaterialDeleteIcon = materialDeleteIcon.resize((20, 20), Image.ANTIALIAS)
 imgDeleteMaterial = ImageTk.PhotoImage(resizedMaterialDeleteIcon)
 deleteMaterialButton = Button(materialSettingsFrame, image=imgDeleteMaterial, borderwidth=0, command=deleteMaterialfun)
 deleteMaterialButton.pack(side= LEFT)
-deleteMaterialButton.place(x=table_place_x + material_tabel.winfo_reqwidth() , y=table_place_y+15)
+deleteMaterialButton.place(x=table_place_x + material_tabel.winfo_reqwidth() +7, y=table_place_y+22)
 
 
 ##################### settings - Hospitals #####################
@@ -1700,8 +1827,8 @@ hospitalLabel.place(x=Lable_place_x,y=Lable_place_y)
 #hospital table
 scroll_width=20
 tab_side=LEFT
-x=650
-y= 160
+x=895
+y= 130
 frame=hospitalFrame
 list_height=30
 c = 80
@@ -1804,18 +1931,98 @@ WorkPlanLabel.place(x=Lable_place_x,y=Lable_place_y)
 ###Work Plan tabel###
 scroll_width=20
 tab_side=LEFT
-x=330
+x=310
 y= 140
 frame=WorkPlanFrame
-list_height=5
+list_height=50
 table_place_x = 80
 table_place_y = 80
 columns_name_list=('    Date   ',' Material ' )
-query = "SELECT WP.idworkplan, WP.Date, m.materialName FROM workplan WP JOIN material M ON WP.materialID=M.idmaterial"
+query = "SELECT WP.idworkplan, WP.Date, m.materialName FROM workplan WP JOIN material M ON WP.materialID=M.idmaterial WHERE ISNULL(WP.deleted) "
 
 wp_tabel=table(frame,scroll_width,list_height,tab_side,x,y,table_place_x,
                   table_place_y,)
 wp_tabel.create_fully_tabel( columns_name_list, query)
+
+
+def show_wp(evet):
+    selected_rec = wp_tabel.selected()
+    pk = selected_rec[2]
+    query_hospital = """SELECT DISTINCT(b.idbatch + b.batchNumber),b.batchNumber, h.Name
+            FROM batch b 
+            LEFT JOIN orders o ON o.batchID = b.idbatch
+            JOIN hospital h ON h.idhospital = o.hospitalID
+             WHERE b.workplanID = """ + str(pk) + " ORDER BY b.batchNumber"
+    cursor.execute(query_hospital)
+    data_h = cursor.fetchall()
+    show_wp_popup = Popup()
+
+    query_batches = """SELECT b.idbatch , b.batchNumber,b.EOS_TIME, b.Total_eos
+                FROM batch b WHERE b.workplanID = """ + str(pk) + " ORDER BY b.batchNumber"
+    cursor.execute(query_batches)
+    data_b = cursor.fetchall()
+
+    title = selected_rec[0] + '  |  ' + selected_rec[1]
+    geo = "800x450"
+    show_wp_popup.open_pop(title, geo)
+
+    res_table = table(show_wp_popup, 20,15,LEFT,505,100,90,30)
+
+    columns_name_list = ('    #    ','  Batch 1  ', '  Batch 2  ', '  Batch 3  ')
+    res_table['columns'] = columns_name_list
+
+    res_table.column("#0", width=0, stretch=NO)
+    res_table.heading("#0", text="", anchor=CENTER)
+
+    i = 0
+    len_of_col = len(columns_name_list)
+    for column_name in columns_name_list:
+        # column format
+        if i == 0 or i == len_of_col - 2:
+            width = len(column_name) * 6 + 30
+        else:
+            width = len(column_name) * 6
+
+        res_table.column(column_name, anchor=CENTER, width=width)
+        # # Create Headings
+        res_table.heading(column_name, text=column_name, anchor=CENTER)
+
+    val_eos = ['EOS Time']
+    val_activity = ['Activity']
+    iid_eos=0
+    iid_activity=1
+    for recorf in data_b:
+        val_eos.append(recorf[2])
+        val_activity.append(recorf[3])
+
+    res_table.insert(parent='', index='end', iid=iid_eos, text='',
+                    values=val_eos)
+    res_table.insert(parent='', index='end', iid=iid_activity, text='',
+                     values=val_activity)
+    res_table.pack()
+
+    val = ['Hospitals']
+    batch=[]
+    h_b=""
+    iid_hospitals = 2
+    for recor in data_h:
+
+        if recor[1] in batch:
+            h_b += recor[2] +'\n'
+            if recor==data_h[len(data_h)-1]:  #if its the last record (for append the hospitals to the list)
+                val.append(h_b)
+        else:
+            if len(batch)!=0:
+                val.append(h_b)
+            h_b = recor[2] +'\n'
+            batch.append(recor[1])
+
+    res_table.insert(parent='', index='end', iid=iid_hospitals, text='',
+                     values=val)
+    res_table.pack()
+
+
+wp_tabel.bind('<Double-1>', show_wp)
 
 
 # ###Work Plan functions###
@@ -1835,11 +2042,11 @@ wp_tabel.create_fully_tabel( columns_name_list, query)
 #         editCyclPopup.edit_popup(labels, selected_rec, save_title, query, pk, cyclo_tabel,table_name)
 #
 #
-# def deleteCyclotronfun():
-#     query = "DELETE FROM resourcecyclotron WHERE idresourceCyclotron = %s"
-#     table_name='resourcecyclotron'
-#     cyclo_tabel.delete_record(query,table_name)
-#
+def deleteWPfun():
+    query = "DELETE FROM workplan WHERE idworkplan = %s"
+    table_name='workplan'
+    wp_tabel.delete_WP_record()
+
 def addWPfun():
     addWPPopup = Popup()
     popup_size = "800x450"
@@ -1864,16 +2071,16 @@ resizedWPAddIcon = wpAddIcon.resize((25, 25), Image.ANTIALIAS)
 imgAddWP = ImageTk.PhotoImage(resizedWPAddIcon)
 addWPButton = Button(WorkPlanFrame, image=imgAddWP, borderwidth=0, command=lambda : addWPfun())
 addWPButton.pack(side= LEFT)
-addWPButton.place(x=table_place_x+160, y=table_place_y+14)
-#
-#
-# # Create a button in the main Window to Delete record - work plan
-# wpDeleteIcon = Image.open("‏‏deleteIcon.png")
-# resizedWPDeleteIcon = wpDeleteIcon.resize((20, 20), Image.ANTIALIAS)
-# imgDeleteWP = ImageTk.PhotoImage(resizedWPDeleteIcon)
-# deleteWPButton = Button(WorkPlanFrame, image=imgDeleteWP, borderwidth=0, command=lambda : deleteCyclotronfun())
-# deleteWPButton.pack(side=LEFT)
-# deleteWPButton.place(x=table_place_x + 500, y=table_place_y + 15)
+addWPButton.place(x=table_place_x + wp_tabel.winfo_reqwidth() - 45, y=table_place_y+15)
+
+
+# Create a button in the main Window to Delete record - work plan
+wpDeleteIcon = Image.open("‏‏deleteIcon.png")
+resizedWPDeleteIcon = wpDeleteIcon.resize((20, 20), Image.ANTIALIAS)
+imgDeleteWP = ImageTk.PhotoImage(resizedWPDeleteIcon)
+deleteWPButton = Button(WorkPlanFrame, image=imgDeleteWP, borderwidth=0, command=lambda : deleteWPfun())
+deleteWPButton.pack(side=LEFT)
+deleteWPButton.place(x=table_place_x + wp_tabel.winfo_reqwidth() , y=table_place_y+15)
 
 ################### batches #################
 #################### batch Page #####################
@@ -1893,8 +2100,8 @@ BatchLabel.place(x=Lable_place_x,y=Lable_place_y)
 #batches table
 scroll_width=20
 tab_side=LEFT
-x=650
-y= 160
+x=1050
+y= 130
 frame=batchFrame
 list_height=30
 c = 80
@@ -1902,9 +2109,9 @@ c = 80
 lable_place_x = 80
 lable_place_y=70
 
-columns_name_list=('  Date  ', 'Batch Number','Material','TargetCurrentLB ', 'DecayCorrected_TTA (mci)', 'EOS_activity')
+columns_name_list=('  Date  ','Material', 'Batch Number','Time leaves Hadassah','Total EOS (mCi)',' EOS Time ','TargetCurrentLB ', 'DecayCorrected_TTA (mCi)')
 
-batch_query="""SELECT  b.idbatch , wp.Date ,b.batchNumber, m.materialName, b.TargetCurrentLB ,b.DecayCorrected_TTA, b.EOS_activity 
+batch_query="""SELECT  b.idbatch , wp.Date ,m.materialName,b.batchNumber,b.Time_leaves_Hadassah,b.Total_eos,b.EOS_TIME, b.TargetCurrentLB ,b.DecayCorrected_TTA
                 FROM batch b 
                 JOIN workplan wp ON wp.idworkplan = b.workplanID 
                 JOIN material m ON m.idmaterial = wp.materialID"""
@@ -1915,6 +2122,7 @@ batch_tabel.create_fully_tabel( columns_name_list, batch_query)
 
 batchFrame.pack(fill='both',expand=1)
 
+
 ###batch functions###
 def editBatchfun():
     selected_rec = batch_tabel.selected()
@@ -1922,14 +2130,14 @@ def editBatchfun():
     if not selected_non:
         editBatchPopup = Popup()
         # popup_size = "800x450"
-        popup_size = "900x550"
+        popup_size = "900x570"
         editBatchPopup.open_pop('Edit Batch Details',popup_size)
         table_name= 'batch'
-        query = "UPDATE batch SET TargetCurrentLB = %s ,DecayCorrected_TTA= %s, EOS_activity=%s  WHERE idbatch = %s"
+        query = "UPDATE batch SET Time_leaves_Hadassah=%s,Total_eos=%s ,EOS_TIME = $s,TargetCurrentLB = %s ,DecayCorrected_TTA= %s  WHERE idbatch = %s"
 
-        pk = selected_rec[6]
+        pk = selected_rec[7]
 
-        labels = (('TargetCurrentLB', ''), ('DecayCorrected_TTA', '(mci/h)'),  ('EOS_activity', ''))
+        labels = ( ('Time leaves Hadassah',''),('Total EOS', '(mCi/h)'),('EOS Time',''),('TargetCurrentLB', ''), ('Decay Corrected TTA', '(mCi/h)'))
         save_title = "Save Changes"
 
         # def edit_popup(self, labels, valueList, save_title, *args, table_name):
