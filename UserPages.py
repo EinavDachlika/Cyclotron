@@ -2099,12 +2099,106 @@ def SwipeToOrdersPage():
 #start Einav code-Settings & Workplane&Batches
 
 #general
+
 label_font = ('Helvetica',26, 'bold')
 label_font_flag_on_page = ('Helvetica 12 bold underline')
 label_font_flag = ('Helvetica 12')
 sub_label_font = ('Helvetica',18, 'bold')
 label_color = '#034672'
 red_color =  '#f5bfbf'
+
+dict_input_column = { 'hospital':('Name', 'Fixed_activity_level', 'Transport_time_min', 'Transport_time_max') ,
+                      'resourcecyclotron':('version', 'capacity', 'constant_efficiency', 'description') ,
+                      'resourcemodule': ('version', 'capacity', 'description' ) ,
+                      'material':('materialName'),
+                      'batch': ('TargetCurrentLB','DecayCorrected_TTA' , 'EOS_activity')}
+
+#Einav
+query_index_col = """select 
+        col.table_name as 'table',
+        col.ordinal_position as col_id,
+        col.column_name as column_name
+        from information_schema.columns col
+        where  TABLE_SCHEMA='cyclotron'
+         order by col.table_name, col.ordinal_position """
+cursor.execute(query_index_col)
+dic_metadata = cursor.fetchall()
+#end Einav
+
+dataType_col = """SELECT table_name,column_name, DATA_TYPE
+                FROM INFORMATION_SCHEMA.COLUMNS where TABLE_SCHEMA='cyclotron' """
+
+cursor.execute(dataType_col)
+dataType_col_list = cursor.fetchall()
+
+
+table_pk_list = """select 
+        # sta.index_name as pk_name,
+        tab.table_name,
+        sta.column_name,
+        sta.seq_in_index as column_id
+    from information_schema.tables as tab
+    inner join information_schema.statistics as sta
+            on sta.table_schema = tab.table_schema
+            and sta.table_name = tab.table_name
+            and sta.index_name = 'primary'
+    where tab.table_schema = 'cyclotron'
+        and tab.table_type = 'BASE TABLE'
+    order by tab.table_name,
+        column_id;"""
+cursor.execute(table_pk_list)
+table_pk_list = cursor.fetchall()
+
+
+fk_query = """select 
+       col.table_name as 'table',
+       kcu.constraint_name as fk_constraint_name,
+       # col.ordinal_position as col_id,
+       # col.column_name as column_name,
+       # case when kcu.referenced_table_schema is null
+       #      then null
+       #      else '>-' end as rel,
+       kcu.referenced_table_name as primary_table,
+       kcu.referenced_column_name as pk_column_name
+from information_schema.columns col
+join information_schema.tables tab
+     on col.table_schema = tab.table_schema
+     and col.table_name = tab.table_name
+left join information_schema.key_column_usage kcu
+     on col.table_schema = kcu.table_schema
+     and col.table_name = kcu.table_name
+     and col.column_name = kcu.column_name
+     and kcu.referenced_table_schema is not null
+where col.table_schema not in('information_schema','sys',
+                              'mysql', 'performance_schema')
+      and tab.table_type = 'BASE TABLE'
+--    and fks.constraint_schema = 'cyclotron'
+      and col.table_schema = 'cyclotron'
+      and kcu.constraint_name is not null
+order by col.table_schema,
+         col.table_name,
+         col.ordinal_position;"""
+cursor.execute(fk_query)
+fk = cursor.fetchall()
+# print(fk)
+# print([data for data in fk if data[3]=='idworkplan'])
+
+query = "SELECT materialName,idmaterial FROM material"
+cursor.execute(query)
+material_options_list = cursor.fetchall()
+
+
+def NOT_NULL_DataType_col(table_name):
+    # column that define as NOT NULL in db
+    # query = "select TABLE_NAME, COLUMN_NAME, IS_NULLABLE from information_schema.COLUMNS where TABLE_SCHEMA='cyclotron'and IS_NULLABLE='NO'order by ordinal_position "
+
+    query = """SELECT table_name,column_name, DATA_TYPE , IS_NULLABLE
+                    FROM INFORMATION_SCHEMA.COLUMNS where TABLE_SCHEMA='cyclotron' and table_name= '"""
+    query = query+table_name +"'"
+    cursor.execute(query)
+    data = cursor.fetchall()
+    return data
+
 
 def error_message(text):
     messagebox.showerror("Error",text)
@@ -2406,7 +2500,7 @@ class Popup(Toplevel):
         # self.geometry("900x550")
         self.geometry(geometry)
         self.title(title)
-        Label(self, text=title, font=('Helvetica 17 bold'), fg='#034672').place(x=10, y=18)
+        Label(self, text=title, font=('Helvetica 17 bold'), fg='#034672').place( x=10, y=18)
 
         ## in line
         # #labels and entry box
@@ -2557,8 +2651,8 @@ class Popup(Toplevel):
                              command=lambda: on_click_save_fun(*args))
 
         save_button.pack(side=LEFT)
-        save_button_position_x = self.winfo_screenheight() / 2 - save_button.winfo_reqwidth()/2
-        save_button_position_y = 450
+        save_button_position_x = self.winfo_screenheight() / 2 - save_button.winfo_reqwidth()/2 +20
+        save_button_position_y = 485
         # save_button_position_y = self.winfo_screenheight() *0.6 - save_button.winfo_reqheight()/2
 
 
@@ -2604,24 +2698,19 @@ class Popup(Toplevel):
 
         # prevented 'Date', 'Batch Number','Material' show as entry box
         if args[len(args) - 1] == 'batch' :
-            label_text = valueList [2] + '  -  Batch Number: '+ valueList[1] + '  -  '+ valueList[0]
-            p_label = Label(self, text=label_text, font=('Helvetica 14 bold underline'))
+            label_text = valueList [0] + '  |  '+ valueList[1]  +'  |  Batch Number: '+ valueList[2]
+            p_label = Label(self, text=label_text, font=('Helvetica 14 bold '), fg=label_color)
             p_label.grid(row=row_num, column=1)
+            p_last_label_y-=18
             p_label.place(x=p_last_label_x, y=p_last_label_y)
             valueList=valueList[3:]
-            p_last_label_y += 18*3
+            p_last_label_y += 33
             p_last_label_x+=10
-
-
 
 
         entries = []
         error_labels_list=[]
         for lab in labels:
-            # if args[len(args)-1] == 'batch' and lab[0] in  ('Date', 'Batch Number','Material'):
-            #     p_last_label_y += 18
-            #     continue
-
             p_label = Label(self, text=lab[0])
             p_label.grid(row=row_num, column=1)
             p_label.place(x=p_last_label_x, y=p_last_label_y)
@@ -2638,6 +2727,10 @@ class Popup(Toplevel):
             value_index += 1
             entries.append(entry_box)
 
+            if args[len(args) - 1] == 'batch' and lab[0] in ('Time leaves Hadassah','Total EOS','EOS Time'):
+                entry_box.config(state='disabled')
+                p_last_label_y+=entry_box.winfo_reqheight()
+
             if lab[1] != '':
                 p_label_units = Label(self, text=lab[1])
                 font = ("Courier", 9)
@@ -2645,18 +2738,21 @@ class Popup(Toplevel):
                 p_label_units_x = p_last_label_x + p_label.winfo_reqwidth()
                 p_label_units.place(x=p_label_units_x, y=p_last_label_y + 5)
 
+
             # p_last_label_y += entry_box.winfo_reqheight() + 35 + p_label.winfo_reqheight()
             # row_num += 1
 
             p_last_label_y += entry_box.winfo_reqheight() + p_label.winfo_reqheight()
+            if args[len(args) - 1] == 'batch' and lab[0] in ('Time leaves Hadassah','Total EOS','EOS Time'):
+                pass
+            else:
+                # error labels
+                error_label = Label(self, text='', font=('Courier', 8), fg='red')
+                error_label.place(x=p_last_label_x + 1, y=p_last_label_y+6)
+                error_labels_list.append(error_label)
 
-            # error labels
-            error_label = Label(self, text='', font=('Courier', 8), fg='red')
-            error_label.place(x=p_last_label_x + 1, y=p_last_label_y+6)
-            error_labels_list.append(error_label)
+                p_last_label_y += 18 + error_label.winfo_reqheight()
             row_num += 1
-
-            p_last_label_y += 18 + error_label.winfo_reqheight()
 
         self.save_cancel_button(save_title, self.update_if_selected, *args, entries,error_labels_list)
 
@@ -2675,6 +2771,7 @@ class Popup(Toplevel):
                 cursor.execute(selectMaxIDquery2)
                 data = cursor.fetchall()
                 input_values_list.append(data[0][0])
+
                 list.insert(parent='', index='end', iid=None, text='',
                             values=input_values_list)
 
@@ -2743,8 +2840,14 @@ class Popup(Toplevel):
     #     webbrowser.open(downloads_path)
 
 
-    def legal_wp(self,selected_material,selected_date,error_labels_list, data):
+    def legal_wp(self,selected_material,selected_date,error_labels_list,selected_material_ID,dataLen ):
         legal = True
+
+        exist_wp_query = "SELECT * FROM workplan WHERE Date= '" +selected_date+ """'
+                            AND ISNULL(deleted) AND materialID=""" + str(selected_material_ID)
+        cursor.execute(exist_wp_query)
+        exist_wp_data = cursor.fetchall()
+
         for error_lab in error_labels_list: #inite error labeles (for more than one tries)
             error_lab['text'] = ""
 
@@ -2753,8 +2856,15 @@ class Popup(Toplevel):
             # entries[0].config(bg=red_color)
             error_labels_list[0]['text'] = "Please select a material"
             legal = False
+
+        elif len(exist_wp_data)!=0:
+            error_text = "There is a work plan for " + selected_material + " for date " + selected_date + " in the system. Identical work plans cannot be created."
+            error_message(error_text)
+            self.lift()
+            return False
+
         else:
-            if len(data) == 0:
+            if dataLen == 0:
                 error_text = "There are no orders for material " + selected_material + " for date " + selected_date + " in the system. Please change your selection"
                 error_message(error_text)
                 self.lift()
@@ -2831,53 +2941,16 @@ class Popup(Toplevel):
 
 
     def create_wp_popup(self,  selected_date, selected_material):
-        # def create_wp_popup(self, rec_var_list,selected_date, selected_material, data, error_labels_list,OptionMenu):
-
-        # #validation - selected recourcrs
-        # legal = True
-        #
-        # i=0
-        # for rec in rec_var_list:
-        #     error_labels_list[i]['text'] =""
-        #     selected_rec = rec.get()
-        #     # if selected_rec[:8] == "Select a":
-        #     #     error_labels_list[i]
-        #     #     error_labels_list[i]['text'] = "Please select a resource"
-        #     #     legal = False
-        #     i+=1
-        #
-        # if not legal :
-        #     error_message('Please select a resources')
-        #     self.lift()
-        #
-        # else:
-        #     selected_cyclotron =rec_var_list[0].get()
-        #     #excel
-        #     excelIcon = Image.open("excelIcon.png")
-        #     resizedExcelIcon = excelIcon.resize((40, 40), Image.ANTIALIAS)
-        #     imgExcel = ImageTk.PhotoImage(resizedExcelIcon)
-        #     ExcelButton = Button(self, image=imgExcel, borderwidth=0,
-        #                          command=lambda: self.export_WP_To_Excel(selected_date, selected_material, data))
-        #     # ExcelButton.pack(side=LEFT)
-        #     ExcelButton.place(x=70, y=90)
-        #
-        #     Label(self, text='Export to Excel File', font=('Helvetica 12'), fg='grey').place(
-        #         x=60 - ExcelButton.winfo_reqwidth() / 2, y=90 + ExcelButton.winfo_reqheight())
-        # root.mainloop()
-
         # algorithm
-        query = """SELECT h.Name,o.DoseNumber,h.Fixed_activity_level*o.amount as Fixed_activity_level, o.injection_time,o.amount,h.Transport_time_min,h.Transport_time_max
+        query = """SELECT o.idorders, h.Name,o.DoseNumber,h.Fixed_activity_level*o.amount as Fixed_activity_level, o.injection_time,o.amount,h.Transport_time_min,h.Transport_time_max
                 FROM hospital h INNER JOIN orders o ON  h.idhospital=o.hospitalID INNER JOIN material m ON m.idmaterial=o.materialID
                 where Date = '""" + str(selected_date) + """ ' and m.materialName= '""" +str(selected_material)+ """' ORDER BY injection_time """
-        # print(query)
-        # query = "SELECT Date FROM orders "
-        # cursor = db.cursor (db.cursors.DictCursor)
 
         cursor = db.cursor(dictionary=True)
         cursor.execute(query)
         data = cursor.fetchall()
-
         print('date: ', data)
+        cursor = db.cursor(dictionary=False)
 
         batch1 = []
         batch2 = []
@@ -2889,7 +2962,7 @@ class Popup(Toplevel):
             if order_time < datetime.strptime('15:00:00', '%H:%M:%S').time():  # batch 1
                 batch1.append(order)
 
-            elif order_time < datetime.strptime('21:00:00', '%H:%M:%S').time():  # batch 2
+            elif order_time < datetime.strptime('23:00:00', '%H:%M:%S').time():  # batch 2
                 batch2.append(order)
             else:  # batch 3
                 batch3.append(order)
@@ -2909,8 +2982,75 @@ class Popup(Toplevel):
         print("batches_general_data: ",batches_general_data)
         all_batches_output = flat_list(batches)
         all_batches_output.sort(key=itemgetter('Name'))
+        cursor = db.cursor()
 
-        # print(all_batches_output)
+        selected_material_ID = next(m[1] for m in material_options_list if m[0]==selected_material)
+
+        #create wp record
+        new_wp_list =(str(selected_date),selected_material_ID)
+        work_plan_query = "INSERT INTO workplan (Date, materialID) VALUES " + str(new_wp_list)
+        cursor.execute(work_plan_query)
+        db.commit()
+
+        #get workplanID (for batch records)
+        workplanID_Query = "SELECT MAX(idworkplan) FROM workplan "
+        cursor.execute(workplanID_Query)
+        workplanID_list = cursor.fetchall()
+        workplanID = workplanID_list[0][0]
+
+        batch_input_values_list=[]
+        index=1
+        for batch in batches_general_data:
+            if len(batch)!=0:
+                values= (workplanID,index,str(batch['Tout']), batch['Activity'] ,str(batch['Teos']))
+                create_batch_query="INSERT INTO batch (workplanID, batchNumber, Time_leaves_Hadassah,Total_eos,EOS_TIME) VALUES " + str(values)
+
+                cursor.execute(create_batch_query)
+                db.commit()
+
+                #for ui table - in batch page
+                list = [str(selected_date),selected_material,index,str(batch['Tout']),batch['Activity'],batch['Teos'],None,None]
+                batch_input_values_list.append(list)
+            index+=1
+
+        i=1
+        for b in batches:
+            if len(b)!=0:
+                # get batchID (for orders records)
+                batchID_Query = "SELECT idbatch FROM batch WHERE workplanID= " + str(workplanID) + """
+                                AND batchNumber = """ + str(i)
+                cursor.execute(batchID_Query)
+                batchID_list = cursor.fetchall()
+                batchID = batchID_list[0][0]
+
+                #for ui table - in batch page
+                batch_input_values_list[i-1].append(batchID)
+
+                for order in b:
+                    values= (batchID,float(order['Activity_Tcal']))
+                    update_rec_query = """UPDATE orders SET batchID= %s,DecayCorrected= %s
+                                         WHERE idorders = """ + str(order['idorders'])
+
+                    cursor.execute(update_rec_query, values)
+                    db.commit()
+            i+=1
+
+        # insert the id from db to values list (not in table) to allow deleting the record without refreshing the page
+        wp_input_values_list=[str(selected_date),selected_material]
+        selectMaxIDquery = """SELECT MAX(idworkplan) FROM workplan"""
+        cursor.execute(selectMaxIDquery)
+        data = cursor.fetchall()
+        wp_input_values_list.append(data[0][0])
+
+        #add to wp table (show to user)
+        wp_tabel.insert(parent='', index='end', iid=None, text='',
+                        values=wp_input_values_list)
+
+
+        # add to batch table (show to user)
+        for b_r in batch_input_values_list:
+            batch_tabel.insert(parent='', index='end', iid=None, text='',
+                               values=b_r)
 
         #excel
         excelIcon = Image.open("excelIcon.png")
@@ -2921,10 +3061,10 @@ class Popup(Toplevel):
         ExcelButton = Button(self, image=imgExcel, borderwidth=0,
                              command=lambda: export_WP_Excel(selected_material,selected_date,all_batches_output,hospitals_output,batches_general_data))
         # ExcelButton.pack(side=LEFT)
-        ExcelButton.place(x=70, y=90)
+        ExcelButton.place(x=90, y=90 )
 
         Label(self, text='Export to Excel File', font=('Helvetica 12'), fg='grey').place(
-            x=60 - ExcelButton.winfo_reqwidth() / 2, y=90 + ExcelButton.winfo_reqheight())
+            x=70 - ExcelButton.winfo_reqwidth() / 2, y=90 + ExcelButton.winfo_reqheight())
 
         root.mainloop()
 
@@ -2933,16 +3073,20 @@ class Popup(Toplevel):
 
         selected_date = cal.get()
         selected_material = material_var.get()
+        cursor = db.cursor()
+
+        selected_material_ID = next(m[1] for m in material_options_list if m[0]==selected_material)
 
         ordersQuery = """SELECT h.Name,h.Fixed_activity_level , o.injection_time,o.amount, m.materialName, o.Date
                                                           FROM hospital h INNER JOIN orders o ON  h.idhospital=o.hospitalID INNER JOIN material m ON m.idmaterial=o.materialID
-                                                          where Date = '""" + selected_date + """' and m.materialName= '""" + selected_material + "' ORDER BY hospitalID, injection_time "
+                                                          where Date = '""" + selected_date + """' and o.materialID= '""" + str(selected_material_ID) + "' ORDER BY hospitalID, injection_time "
 
         cursor.execute(ordersQuery)
         data = cursor.fetchall()
         popup_size= "850x550"
+        dataLen=len(data)
 
-        legal = self.legal_wp(selected_material,selected_date,error_labels_list, data)
+        legal = self.legal_wp(selected_material,selected_date,error_labels_list, selected_material_ID,dataLen)
         if legal:
             self.destroy()
             # export_popup=Popup()
@@ -2978,9 +3122,7 @@ class Popup(Toplevel):
                 material_var = StringVar(self)
                 material_var.set("Select a material")  # default value
 
-                query= "SELECT materialName,idmaterial FROM material"
-                cursor.execute(query)
-                material_options_list = cursor.fetchall()
+
 
                 materialname = [m[0] for m in material_options_list ]
                 material_dropdown = OptionMenu(self, material_var, *materialname)
@@ -3003,7 +3145,7 @@ class Popup(Toplevel):
             p_last_label_y += 18 + error_label.winfo_reqheight()
 
             #buttons
-            next_button = Button(self, text='Next',
+            next_button = Button(self, text='Create work plan',
                                  command=lambda: self.wp_validation_plus( material_var,cal,error_labels_list ))
 
             next_button.pack(side=LEFT)
@@ -3073,6 +3215,7 @@ class Popup(Toplevel):
 
             p_last_label_y += 18  + error_label.winfo_reqheight()
         self.save_cancel_button(save_title, self.Add_if_legal,*args, entries,error_labels_list ) # will add save.cancel buttons (and click on functions)
+
 
 
 
@@ -3746,12 +3889,25 @@ addWPButton.place(x=table_place_x+160, y=table_place_y+14)
 # deleteWPButton = Button(WorkPlanFrame, image=imgDeleteWP, borderwidth=0, command=lambda : deleteCyclotronfun())
 # deleteWPButton.pack(side=LEFT)
 # deleteWPButton.place(x=table_place_x + 500, y=table_place_y + 15)
+
+
 ################### batches #################
-#################### batch Page #####################
+#################### batch Page #########################################################
 #batch frame
 batchFrame = Frame(root)
 # h = Scrollbar(batchFrame, orient='horizontal')
 batchFrame.pack(fill=X)
+
+# # user label
+UserLabelBatchpage1 = Label(batchFrame, text=f"{Permission.ValidateTypeOfUser} connected:", font=('Helvetica', 13, 'bold'), fg='red')
+UserLabelBatchpage1.pack();
+UserLabelBatchpage1.place(x=350, y=20);
+
+# # user  connected label
+NameOfUserLabelBatchpage2 = Label(batchFrame, text=Permission.user_verified, font=('Helvetica', 13, 'bold'), fg='red')
+NameOfUserLabelBatchpage2.pack();
+NameOfUserLabelBatchpage2.place(x=490, y=20);
+
 
 # batch Details label
 BatchLabel = Label(batchFrame, text = 'Batches', font=sub_label_font,fg=label_color)
