@@ -2356,7 +2356,7 @@ def main_algorithm_calculation(batches,hospitals_output,batches_general_data):
                     batches_general_data[index]["Activity"] += A_Tcal
 
 def export_WP_Excel( selected_material, selected_date, all_batches_output, hospitals_output, batches_general_data):
-    FilePath = "FDG format.xlsx"
+    FilePath = "D:\PythonProjects\Cyclotron\FDG format.xlsx"
 
     wb = load_workbook(FilePath)
 
@@ -3053,7 +3053,7 @@ class Popup(Toplevel):
                                values=b_r)
 
         #excel
-        excelIcon = Image.open("excelIcon.png")
+        excelIcon = Image.open("D:\PythonProjects\Cyclotron\excelIcon.png")
         resizedExcelIcon = excelIcon.resize((40, 40), Image.ANTIALIAS)
         imgExcel = ImageTk.PhotoImage(resizedExcelIcon)
         # ExcelButton = Button(self, image=imgExcel, borderwidth=0,
@@ -3966,7 +3966,7 @@ def editBatchfun():
 #batch buttons
 
 #Create a button in the main Window to edit  record (open the popup) - hospital
-batchEditIcon = Image.open("editIcon.jpg")
+batchEditIcon = Image.open("D:\PythonProjects\Cyclotron\editIcon.jpg")
 resizedBatchEditIcon = batchEditIcon.resize((20, 20), Image.ANTIALIAS)
 imgEditBatch = ImageTk.PhotoImage(resizedBatchEditIcon)
 editBatchButton = Button(batchFrame, image=imgEditBatch, borderwidth=0, command= lambda :editBatchfun())
