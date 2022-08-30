@@ -241,7 +241,7 @@ def updateOrdersTreeMainPageOutputOnly():
 
     #Show output to Order main page tree-id,date,sum of doses,and last updated
     #cursor.execute("SELECT hospitalID,Date,SUM(amount) FROM orders GROUP BY Date,hospitalID;");
-    cursor.execute("SELECT hospital.Name,orders.Date,SUM(orders.amount),MAX(updated_at) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID  where orders.deleted=0 GROUP BY orders.Date,orders.hospitalID;");
+    cursor.execute("SELECT hospital.Name,orders.Date,SUM(orders.amount),MAX(updated_at) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID  GROUP BY orders.Date,orders.hospitalID;");
     SumOFAmount1 = cursor.fetchall();
     print(SumOFAmount1);
     # for x in SumOFAmount1:
@@ -286,7 +286,7 @@ def SearchOutpout(data):
 
     #Show output to Order main page tree-id,date,sum of doses
     #cursor.execute("SELECT hospitalID,Date,SUM(amount) FROM orders GROUP BY Date,hospitalID;");
-    cursor.execute(f'SELECT hospital.Name,orders.Date,SUM(orders.amount),MAX(updated_at) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID where orders.deleted=0 GROUP BY orders.Date,orders.hospitalID;');
+    cursor.execute(f'SELECT hospital.Name,orders.Date,SUM(orders.amount),MAX(updated_at) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID GROUP BY orders.Date,orders.hospitalID;');
     DataAchievedBtSearch = cursor.fetchall();
     for x in DataAchievedBtSearch:
         print(x);
@@ -343,7 +343,7 @@ def SearchComponent(event):
 
     #Show output to Order main page tree-id,date,sum of doses
     #cursor.execute("SELECT hospitalID,Date,SUM(amount) FROM orders GROUP BY Date,hospitalID;");
-    cursor.execute("SELECT hospital.Name,orders.Date,SUM(orders.amount),MAX(updated_at) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID  where orders.deleted=0 GROUP BY orders.Date,orders.hospitalID;");
+    cursor.execute("SELECT hospital.Name,orders.Date,SUM(orders.amount),MAX(updated_at) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID  GROUP BY orders.Date,orders.hospitalID;");
     SumOFAmount1 = cursor.fetchall();
     print(SumOFAmount1);
     ListofCurrnetHospitalOrderMainPage=[];
@@ -401,10 +401,10 @@ def updateOrdersTreeByMaterialFiltering(materialSelData):
     cursor = db.cursor();
     if materialSelData=='A':
         #Show output to Order main page tree-id,date,sum of doses
-        cursor.execute(f"SELECT hospital.Name,orders.Date,SUM(orders.amount),MAX(updated_at) FROM orders  INNER JOIN hospital ON hospital.idhospital = orders.hospitalID where orders.deleted=0 GROUP BY orders.Date,orders.hospitalID ;");
+        cursor.execute(f"SELECT hospital.Name,orders.Date,SUM(orders.amount),MAX(updated_at) FROM orders  INNER JOIN hospital ON hospital.idhospital = orders.hospitalID GROUP BY orders.Date,orders.hospitalID ;");
     else:
         #Show output to Order main page tree-id,date,sum of doses filtering by Material ID
-        cursor.execute(f"SELECT hospital.Name,orders.Date,SUM(orders.amount),MAX(updated_at) FROM orders  INNER JOIN hospital ON hospital.idhospital = orders.hospitalID WHERE materialID={materialSelData} and orders.deleted=0 GROUP BY orders.Date,orders.hospitalID ;");
+        cursor.execute(f"SELECT hospital.Name,orders.Date,SUM(orders.amount),MAX(updated_at) FROM orders  INNER JOIN hospital ON hospital.idhospital = orders.hospitalID WHERE materialID={materialSelData}  GROUP BY orders.Date,orders.hospitalID ;");
 
     filteringRowsFromDB = cursor.fetchall();
     print(filteringRowsFromDB);
