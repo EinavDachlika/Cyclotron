@@ -1406,8 +1406,8 @@ class table(ttk.Treeview):
                     query2 = "UPDATE " + table_name +" SET deleted = True " +"WHERE " + pk_name + "=" + pk_delected_record
                     cursor.execute(query2)
                     db.commit()
-                # self.delete(self.selection()[0])
-                print(self.selection()[0])
+                self.delete(self.selection()[0])
+
 
     def delete_WP_record(self):
         selected_rec = self.selected()
