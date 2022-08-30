@@ -3213,9 +3213,10 @@ class table(ttk.Treeview):
         scroll = Scrollbar(frame, orient="vertical", width=scroll_width)
         scroll.pack(side=side)
         scroll.place(x=x_crol, y=y_crol)
+
         ttk.Treeview.__init__(self,frame, yscrollcommand=scroll.set, height=list_height)
         self.pack(side=LEFT, padx=lable_place_x + 30, pady=lable_place_y + 50)
-        scroll.config(command=self.yview)
+        scroll.config(command=self.yview )
 
         # list = self.(frame, yscrollcommand=scroll.set, height=list_height)
 
@@ -3275,6 +3276,7 @@ class table(ttk.Treeview):
         else:
             return False
 
+
     def fk_rec_is_exist(self,query,table_name, pk_delected_record ):
         fk_list = [rec for rec in fk if rec[2]== table_name]
         if len(fk_list) != 0:
@@ -3316,7 +3318,58 @@ class table(ttk.Treeview):
                     query2 = "UPDATE " + table_name +" SET deleted = True " +"WHERE " + pk_name + "=" + pk_delected_record
                     cursor.execute(query2)
                     db.commit()
+                # self.delete(self.selection()[0])
+                print(self.selection()[0])
+
+    def delete_WP_record(self):
+        selected_rec = self.selected()
+        item_in_string= ', '.join([ item for item in selected_rec[:selected_rec.__len__()-1]])
+        is_non=self.selected_is_non(selected_rec)
+        if not is_non:
+            len = selected_rec.__len__()
+            pk_delected_record = selected_rec[len-1]
+            title_tab = "Delete Record"
+            text_mess= "Are you sure you want to delete " + item_in_string + " ?"
+            if YES_NO_message(title_tab, text_mess):
+                try:
+                    # hide work plan
+                    hide_wp_query = "UPDATE workplan SET deleted = True WHERE idworkplan=" +  pk_delected_record
+                    cursor.execute(hide_wp_query)
+                    db.commit()
+                except:
+                    raise TypeError("update work plan error")
+
+                try:
+                    # update orders
+                    update_orders_query = """UPDATE orders SET batchID=NULL,DecayCorrected=NULL WHERE batchID  IN
+                                          (SELECT idbatch FROM batch WHERE workplanID=""" + pk_delected_record +")"
+                    cursor.execute(update_orders_query)
+                    db.commit()
+                except:
+                    raise TypeError("update orders error")
+
+                try:
+                    #for deleting rows from table
+                    delete_table_batch_query = "SELECT idbatch FROM batch WHERE workplanID=" + pk_delected_record
+                    cursor.execute(delete_table_batch_query)
+                    to_delete_list_idbatch = cursor.fetchall()
+                    to_delete_batches_list =  [b[0] for b in to_delete_list_idbatch]
+
+                    # delete batch
+                    delete_batch_query = "DELETE FROM batch WHERE workplanID=" + pk_delected_record
+                    cursor.execute(delete_batch_query)
+                    db.commit()
+                except:
+                    raise TypeError("update batch error")
+
                 self.delete(self.selection()[0])
+
+                # delete from batch table (show to user)
+                children = batch_tabel.get_children()
+                batch_table_index = [b for b in children if batch_tabel.item(b)['values'][7] in to_delete_batches_list]
+
+                for b_index in batch_table_index:
+                    batch_tabel.delete(b_index)
 
 
 ##################### settings new - cyclotron #####################
@@ -3816,38 +3869,108 @@ WorkPlanFrame.pack(fill=X)
 
 ##################### Work Plan #####################
 # Work Plan Details label
-WorkPlanLabel = Label(WorkPlanFrame, text = 'Work Plans', font='Helvetica',fg='#034672')
+WorkPlanLabel = Label(WorkPlanFrame, text = 'Work Plans', font=sub_label_font,fg=label_color)
 Lable_place_x=80
 Lable_place_y=60
 
 WorkPlanLabel.pack(side=LEFT)
 WorkPlanLabel.place(x=Lable_place_x,y=Lable_place_y)
 
-# admin label
-AdminLabelWorkPlanpage1 = Label(WorkPlanFrame, text=f"{Permission.ValidateTypeOfUser} connected:", font=('Helvetica', 13, 'bold'), fg='red')
-AdminLabelWorkPlanpage1.pack();
-AdminLabelWorkPlanpage1.place(x=350, y=20);
-
-# admin connected label
-NameOfAdminLabelWorkPlanpage2 = Label(WorkPlanFrame, text=Permission.user_verified, font=('Helvetica', 13, 'bold'), fg='red')
-NameOfAdminLabelWorkPlanpage2.pack();
-NameOfAdminLabelWorkPlanpage2.place(x=510, y=20);
-
 ###Work Plan tabel###
 scroll_width=20
 tab_side=LEFT
-x=330
+x=310
 y= 140
 frame=WorkPlanFrame
-list_height=5
+list_height=50
 table_place_x = 80
 table_place_y = 80
 columns_name_list=('    Date   ',' Material ' )
-query = "SELECT WP.idworkplan, WP.Date, m.materialName FROM workplan WP JOIN material M ON WP.materialID=M.idmaterial"
+query = "SELECT WP.idworkplan, WP.Date, m.materialName FROM workplan WP JOIN material M ON WP.materialID=M.idmaterial WHERE ISNULL(WP.deleted) "
 
 wp_tabel=table(frame,scroll_width,list_height,tab_side,x,y,table_place_x,
                table_place_y,)
 wp_tabel.create_fully_tabel( columns_name_list, query)
+
+
+def show_wp(evet):
+    selected_rec = wp_tabel.selected()
+    pk = selected_rec[2]
+    query_hospital = """SELECT DISTINCT(b.idbatch + b.batchNumber),b.batchNumber, h.Name
+            FROM batch b 
+            LEFT JOIN orders o ON o.batchID = b.idbatch
+            JOIN hospital h ON h.idhospital = o.hospitalID
+             WHERE b.workplanID = """ + str(pk) + " ORDER BY b.batchNumber"
+    cursor.execute(query_hospital)
+    data_h = cursor.fetchall()
+    show_wp_popup = Popup()
+
+    query_batches = """SELECT b.idbatch , b.batchNumber,b.EOS_TIME, b.Total_eos
+                FROM batch b WHERE b.workplanID = """ + str(pk) + " ORDER BY b.batchNumber"
+    cursor.execute(query_batches)
+    data_b = cursor.fetchall()
+
+    title = selected_rec[0] + '  |  ' + selected_rec[1]
+    geo = "800x450"
+    show_wp_popup.open_pop(title, geo)
+
+    res_table = table(show_wp_popup, 20,15,LEFT,505,100,90,30)
+
+    columns_name_list = ('    #    ','  Batch 1  ', '  Batch 2  ', '  Batch 3  ')
+    res_table['columns'] = columns_name_list
+
+    res_table.column("#0", width=0, stretch=NO)
+    res_table.heading("#0", text="", anchor=CENTER)
+
+    i = 0
+    len_of_col = len(columns_name_list)
+    for column_name in columns_name_list:
+        # column format
+        if i == 0 or i == len_of_col - 2:
+            width = len(column_name) * 6 + 30
+        else:
+            width = len(column_name) * 6
+
+        res_table.column(column_name, anchor=CENTER, width=width)
+        # # Create Headings
+        res_table.heading(column_name, text=column_name, anchor=CENTER)
+
+    val_eos = ['EOS Time']
+    val_activity = ['Activity']
+    iid_eos=0
+    iid_activity=1
+    for recorf in data_b:
+        val_eos.append(recorf[2])
+        val_activity.append(recorf[3])
+
+    res_table.insert(parent='', index='end', iid=iid_eos, text='',
+                     values=val_eos)
+    res_table.insert(parent='', index='end', iid=iid_activity, text='',
+                     values=val_activity)
+    res_table.pack()
+
+    val = ['Hospitals']
+    batch=[]
+    h_b=""
+    iid_hospitals = 2
+    for recor in data_h:
+
+        if recor[1] in batch:
+            h_b += recor[2] +'\n'
+            if recor==data_h[len(data_h)-1]:  #if its the last record (for append the hospitals to the list)
+                val.append(h_b)
+        else:
+            if len(batch)!=0:
+                val.append(h_b)
+            h_b = recor[2] +'\n'
+            batch.append(recor[1])
+
+    res_table.insert(parent='', index='end', iid=iid_hospitals, text='',
+                     values=val)
+    res_table.pack()
+
+
+wp_tabel.bind('<Double-1>', show_wp)
 
 
 # ###Work Plan functions###
@@ -3867,11 +3990,11 @@ wp_tabel.create_fully_tabel( columns_name_list, query)
 #         editCyclPopup.edit_popup(labels, selected_rec, save_title, query, pk, cyclo_tabel,table_name)
 #
 #
-# def deleteCyclotronfun():
-#     query = "DELETE FROM resourcecyclotron WHERE idresourceCyclotron = %s"
-#     table_name='resourcecyclotron'
-#     cyclo_tabel.delete_record(query,table_name)
-#
+def deleteWPfun():
+    query = "DELETE FROM workplan WHERE idworkplan = %s"
+    table_name='workplan'
+    wp_tabel.delete_WP_record()
+
 def addWPfun():
     addWPPopup = Popup()
     popup_size = "800x450"
@@ -3890,42 +4013,29 @@ def addWPfun():
 # editWPButton.place(x=table_place_x+450, y=table_place_y+15)
 #
 #Create a button in the main Window to add record - work plan
-wpAddIcon = Image.open("D:/PythonProjects/Cyclotron/addIcon.png")
+wpAddIcon = Image.open("addIcon.png")
 resizedWPAddIcon = wpAddIcon.resize((25, 25), Image.ANTIALIAS)
 
 imgAddWP = ImageTk.PhotoImage(resizedWPAddIcon)
 addWPButton = Button(WorkPlanFrame, image=imgAddWP, borderwidth=0, command=lambda : addWPfun())
 addWPButton.pack(side= LEFT)
-addWPButton.place(x=table_place_x+160, y=table_place_y+14)
-#
-#
-# # Create a button in the main Window to Delete record - work plan
-# wpDeleteIcon = Image.open("‏‏deleteIcon.png")
-# resizedWPDeleteIcon = wpDeleteIcon.resize((20, 20), Image.ANTIALIAS)
-# imgDeleteWP = ImageTk.PhotoImage(resizedWPDeleteIcon)
-# deleteWPButton = Button(WorkPlanFrame, image=imgDeleteWP, borderwidth=0, command=lambda : deleteCyclotronfun())
-# deleteWPButton.pack(side=LEFT)
-# deleteWPButton.place(x=table_place_x + 500, y=table_place_y + 15)
+addWPButton.place(x=table_place_x + wp_tabel.winfo_reqwidth() - 45, y=table_place_y+15)
 
+
+# Create a button in the main Window to Delete record - work plan
+wpDeleteIcon = Image.open("‏‏deleteIcon.png")
+resizedWPDeleteIcon = wpDeleteIcon.resize((20, 20), Image.ANTIALIAS)
+imgDeleteWP = ImageTk.PhotoImage(resizedWPDeleteIcon)
+deleteWPButton = Button(WorkPlanFrame, image=imgDeleteWP, borderwidth=0, command=lambda : deleteWPfun())
+deleteWPButton.pack(side=LEFT)
+deleteWPButton.place(x=table_place_x + wp_tabel.winfo_reqwidth() , y=table_place_y+15)
 
 ################### batches #################
-#################### batch Page ###########################################################
+#################### batch Page #####################
 #batch frame
 batchFrame = Frame(root)
 # h = Scrollbar(batchFrame, orient='horizontal')
 batchFrame.pack(fill=X)
-
-# admin label
-AdminLabelbatchpage1 = Label(batchFrame, text=f"{Permission.ValidateTypeOfUser} connected:", font=('Helvetica', 13, 'bold'), fg='red')
-AdminLabelbatchpage1.pack();
-AdminLabelbatchpage1.place(x=350, y=20);
-
-# admin connected label
-NameOfAdminLabelBatchpage2 = Label(batchFrame, text=Permission.user_verified, font=('Helvetica', 13, 'bold'), fg='red')
-NameOfAdminLabelBatchpage2.pack();
-NameOfAdminLabelBatchpage2.place(x=510, y=20);
-
-
 
 # batch Details label
 BatchLabel = Label(batchFrame, text = 'Batches', font=sub_label_font,fg=label_color)

@@ -51,10 +51,10 @@ dbCursor.execute("CREATE TABLE IF NOT EXISTS material("
 #Create table of workplan
 dbCursor.execute("CREATE TABLE IF NOT EXISTS workplan ("
                  "idworkplan int(255) NOT NULL AUTO_INCREMENT"
-                 ",Date date not null"
+                 ",Date date not null,"
+                 "materialID int(255) not null"
                  ",Cyclotron_activation_time time DEFAULT NULL,"
-                 "materialID int(255),"
-                 "deleted BOOLEAN DEFAULT FALSE,"
+                 "deleted VARCHAR(45) DEFAULT NULL,"
                  "PRIMARY KEY(idworkplan),"
                  "FOREIGN KEY (materialID) REFERENCES material(idmaterial))");
 
