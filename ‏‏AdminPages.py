@@ -689,7 +689,7 @@ def importFileFunc():
     #Create hospital drop-down
     # Absorb hosital list data from db
     cursor = db.cursor();
-    cursor.execute("SELECT idhospital,Name FROM hospital");
+    cursor.execute("SELECT Name FROM hospital");
     hospitals_in_db = cursor.fetchall();
     HospitalList2 = hospitals_in_db;
 
@@ -697,17 +697,16 @@ def importFileFunc():
     def HospitalChooseImportFile(HospitalSelectedEvent):
         """Function for create Hospital Drop-Down menu -absorb data from DB"""
         ChoosenHospitalNewOrder=HospitalSelectedImportFile.get();
-        print(ChoosenHospitalNewOrder);
+        print("Choosen hospital:",ChoosenHospitalNewOrder);
+        cursor.execute(f'SELECT CAST(idhospital AS SIGNED) FROM hospital WHERE Name="{ChoosenHospitalNewOrder}"');
+        IDofHospitalSelected1 = cursor.fetchall();
+        print(IDofHospitalSelected1);
+        TempID=[i[0] for i in IDofHospitalSelected1];#find index number in a list of tuple
+        IDofHospitalSelected2=int(TempID[0]);
+        print(f'{IDofHospitalSelected2} : {ChoosenHospitalNewOrder}');
 
-        #loop for findinf Id number in the string
-        HospitalIDFromChoosenHospital = "";
-        for index in ChoosenHospitalNewOrder:
-            if index.isdigit():
-                HospitalIDFromChoosenHospital = HospitalIDFromChoosenHospital + index;
-
-
-        TempList[0]=HospitalIDFromChoosenHospital;#HospitalID
-        print(TempList[0]);
+        TempList[0]=IDofHospitalSelected2;#HospitalID
+        print("Hospital ID selected-import file",TempList[0]);
 
 
 

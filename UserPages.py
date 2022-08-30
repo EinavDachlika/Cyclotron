@@ -499,11 +499,11 @@ def deleteOrderfunc():
 
 
 # Remove button (Icon) -Delete Order
-global imgDelete2;
+global imgOrderDelete;
 deleteIcon = Image.open("D:\PythonProjects\Cyclotron\‏‏deleteIcon.png")
 resizedDeleteIcon = deleteIcon.resize((20,20), Image.ANTIALIAS)
-imgDelete2 = ImageTk.PhotoImage(resizedDeleteIcon)
-deleteButton=Button(ordersFrame, image=imgDelete2, borderwidth=0,command=deleteOrderfunc)
+imgOrderDelete = ImageTk.PhotoImage(resizedDeleteIcon,master=ordersFrame)
+deleteButton=Button(ordersFrame, image=imgOrderDelete, borderwidth=0,command=deleteOrderfunc)
 deleteButton.pack()
 deleteButton.place(x=560, y=65)
 
@@ -680,7 +680,7 @@ def importFileFunc():
     #Create hospital drop-down
     # Absorb hosital list data from db
     cursor = db.cursor();
-    cursor.execute("SELECT idhospital,Name FROM hospital");
+    cursor.execute("SELECT Name FROM hospital");
     hospitals_in_db = cursor.fetchall();
     HospitalList2 = hospitals_in_db;
 
@@ -688,17 +688,16 @@ def importFileFunc():
     def HospitalChooseImportFile(HospitalSelectedEvent):
         """Function for create Hospital Drop-Down menu -absorb data from DB"""
         ChoosenHospitalNewOrder=HospitalSelectedImportFile.get();
-        print(ChoosenHospitalNewOrder);
+        print("Choosen hospital:",ChoosenHospitalNewOrder);
+        cursor.execute(f'SELECT CAST(idhospital AS SIGNED) FROM hospital WHERE Name="{ChoosenHospitalNewOrder}"');
+        IDofHospitalSelected1 = cursor.fetchall();
+        print(IDofHospitalSelected1);
+        TempID=[i[0] for i in IDofHospitalSelected1];#find index number in a list of tuple
+        IDofHospitalSelected2=int(TempID[0]);
+        print(f'{IDofHospitalSelected2} : {ChoosenHospitalNewOrder}');
 
-        #loop for findinf Id number in the string
-        HospitalIDFromChoosenHospital = "";
-        for index in ChoosenHospitalNewOrder:
-            if index.isdigit():
-                HospitalIDFromChoosenHospital = HospitalIDFromChoosenHospital + index;
-
-
-        TempList[0]=HospitalIDFromChoosenHospital;#HospitalID
-        print(TempList[0]);
+        TempList[0]=IDofHospitalSelected2;#HospitalID
+        print("Hospital ID selected-import file",TempList[0]);
 
 
 
@@ -1686,7 +1685,7 @@ def UpdateOrder():
     print("Activity of Hospital selected:",ActivitiyBySpecificOrder2);
 
 
-    SearchSpecOrderQueryByDoubleclick=f'SELECT DoseNumber,amount,Injection_time FROM orders where hospitalID="{hospitalId}" AND Date="{DateSelected}"';
+    SearchSpecOrderQueryByDoubleclick=f'SELECT DoseNumber,amount,Injection_time FROM orders where hospitalID="{hospitalId}" AND Date="{DateSelected}"  ORDER BY Injection_time ASC';
     cursor.execute(SearchSpecOrderQueryByDoubleclick);
     OrderDatatoSpecificOrder = cursor.fetchall();
     print(f"order selected: {OrderDatatoSpecificOrder}");
@@ -1937,7 +1936,11 @@ def UpdateOrder():
             messagebox.showerror("Error message","Error !");
             print("Error-Order was not updated-please check MySQL")
 
-
+        # cursor = db.cursor(buffered=True);
+        # SortQuery="with my_cte as (select DoseNumber, Injection_time, row_number() over(order by Injection_time asc) rn from orders) update orders set DoseNumber = (select  min(rn) from my_cte where orders.DoseNumber = my_cte.DoseNumber and orders.Injection_time=my_cte.Injection_time)";
+        # cursor.execute(SortQuery);
+        # db.commit();
+        # cursor.close();
         #Function to insert data into My-SQL Db
         #EditPage.destroy();#Close import file-manual window
         updateOrdersTreeMainPageOutputOnly();#Refresh/Update Main page

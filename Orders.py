@@ -383,7 +383,7 @@ def MaterialsSelectedeFilteringFunc(event):
 
 
 MaterialsDropDownFilteringMainPage = ttk.Combobox(ordersFrame,state="readonly",value=Material_in_db,width=9);
-MaterialsDropDownFilteringMainPage.current(2);
+MaterialsDropDownFilteringMainPage.current(0);
 
 MaterialsDropDownFilteringMainPage.bind("<<ComboboxSelected>>",MaterialsSelectedeFilteringFunc)
 MaterialsDropDownFilteringMainPage.pack();
@@ -633,7 +633,7 @@ def importFileFunc():
     #Create hospital drop-down
     # Absorb hosital list data from db
     cursor = db.cursor();
-    cursor.execute("SELECT idhospital,Name FROM hospital");
+    cursor.execute("SELECT Name FROM hospital");
     hospitals_in_db = cursor.fetchall();
     HospitalList2 = hospitals_in_db;
 
@@ -641,17 +641,16 @@ def importFileFunc():
     def HospitalChooseImportFile(HospitalSelectedEvent):
         """Function for create Hospital Drop-Down menu -absorb data from DB"""
         ChoosenHospitalNewOrder=HospitalSelectedImportFile.get();
-        print(ChoosenHospitalNewOrder);
+        print("Choosen hospital:",ChoosenHospitalNewOrder);
+        cursor.execute(f'SELECT CAST(idhospital AS SIGNED) FROM hospital WHERE Name="{ChoosenHospitalNewOrder}"');
+        IDofHospitalSelected1 = cursor.fetchall();
+        print(IDofHospitalSelected1);
+        TempID=[i[0] for i in IDofHospitalSelected1];#find index number in a list of tuple
+        IDofHospitalSelected2=int(TempID[0]);
+        print(f'{IDofHospitalSelected2} : {ChoosenHospitalNewOrder}');
 
-        #loop for findinf Id number in the string
-        HospitalIDFromChoosenHospital = "";
-        for index in ChoosenHospitalNewOrder:
-            if index.isdigit():
-                HospitalIDFromChoosenHospital = HospitalIDFromChoosenHospital + index;
-
-
-        TempList[0]=HospitalIDFromChoosenHospital;#HospitalID
-        print(TempList[0]);
+        TempList[0]=IDofHospitalSelected2;#HospitalID
+        print("Hospital ID selected-import file",TempList[0]);
 
 
 
@@ -739,8 +738,8 @@ def importFileFunc():
         if AmountListFromDoc:
             try:
                for i in range(1,len(AmountListFromDoc)):
-                ValuseTuple=(counterOrderId,i,TempList[1],InjectionTImeListFromdoc[i],AmountListFromDoc[i], TempList[0],TempList[2],0);#BatchId=null
-                cursor.execute("INSERT INTO orders (idorders,DoseNumber,Date,injection_time,amount,hospitalID,materialID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);#BatchId=null
+                ValuseTuple=(i,TempList[1],InjectionTImeListFromdoc[i],AmountListFromDoc[i], TempList[0],TempList[2]);#BatchId=null
+                cursor.execute("INSERT INTO orders (DoseNumber,Date,injection_time,amount,hospitalID,materialID) VALUES (%s,%s,%s,%s,%s,%s);",ValuseTuple);#BatchId=null
                 counterOrderId=counterOrderId+1;
                #updateOrdersTreeMainPageOutputOnly();##update orders tree main page
             except Exception as e:
@@ -1328,10 +1327,10 @@ def PopUpForNewOrder():
 
             cursor = db.cursor(buffered=True);
             for i in range(1,ListofVal[4]+1):
-                ValuseTuple=(counterOrderId,i, ChoosenDateForManaulOrder, ListofTimeIntervals[i-1], ListofVal[1], ListofVal[5],ListofVal[7],0);#BatchId=null
+                ValuseTuple=(i, ChoosenDateForManaulOrder, ListofTimeIntervals[i-1], ListofVal[1], ListofVal[5],ListofVal[7]);#BatchId=null
                 print("order trying to get in DB-Add pressed");
                 try:
-                    UpdateSQlQuery="INSERT INTO orders (idorders,DoseNumber,Date,injection_time,amount,hospitalID,materialID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);";#BatchId=null
+                    UpdateSQlQuery="INSERT INTO orders (DoseNumber,Date,injection_time,amount,hospitalID,materialID) VALUES (%s,%s,%s,%s,%s,%s);";#BatchId=null
                     cursor.execute(UpdateSQlQuery,ValuseTuple);
                     counterOrderId=counterOrderId+1;
                     print("DB updated successfully ");
@@ -1627,6 +1626,7 @@ def UpdateOrder():
     ActivitiyBySpecificOrder = cursor.fetchall();
     TempID=[i[0] for i in ActivitiyBySpecificOrder];#find index number in a list of tuple
     ActivitiyBySpecificOrder2=TempID[0];
+
     print("Activity of Hospital selected:",ActivitiyBySpecificOrder2);
 
 
@@ -1915,7 +1915,11 @@ def UpdateOrder():
             messagebox.showerror("Error message","Error !");
             print("Error-Order was not updated-please check MySQL")
 
-
+        cursor = db.cursor(buffered=True);
+        SortQuery="with my_cte as (select DoseNumber, Injection_time, row_number() over(order by Injection_time asc) rn from orders) update orders set DoseNumber = (select  min(rn) from my_cte where orders.DoseNumber = my_cte.DoseNumber and orders.Injection_time=my_cte.Injection_time)";
+        cursor.execute(SortQuery);
+        db.commit();
+        cursor.close();
         #Function to insert data into My-SQL Db
         #EditPage.destroy();#Close import file-manual window
         updateOrdersTreeMainPageOutputOnly();#Refresh/Update Main page
