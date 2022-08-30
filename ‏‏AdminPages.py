@@ -6,7 +6,7 @@ import mysql.connector
 from mysql.connector import Error
 import pandas as pd
 from docx.api import Document
-import aspose.words as aw
+#import aspose.words as aw
 from tkinter import filedialog as fd
 from tkcalendar import DateEntry
 from datetime import date,timedelta,datetime
@@ -249,7 +249,7 @@ def updateOrdersTreeMainPageOutputOnly():
 
     #Show output to Order main page tree-id,date,sum of doses,and last updated
     #cursor.execute("SELECT hospitalID,Date,SUM(amount) FROM orders GROUP BY Date,hospitalID;");
-    cursor.execute("SELECT hospital.Name,orders.Date,SUM(orders.amount),MAX(updated_at) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID  GROUP BY orders.Date,orders.hospitalID;");
+    cursor.execute("SELECT hospital.Name,orders.Date,SUM(orders.amount),MAX(updated_at) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID GROUP BY orders.Date,orders.hospitalID;");
     SumOFAmount1 = cursor.fetchall();
     print(SumOFAmount1);
     # for x in SumOFAmount1:
@@ -294,7 +294,7 @@ def SearchOutpout(data):
 
     #Show output to Order main page tree-id,date,sum of doses
     #cursor.execute("SELECT hospitalID,Date,SUM(amount) FROM orders GROUP BY Date,hospitalID;");
-    cursor.execute(f'SELECT hospital.Name,orders.Date,SUM(orders.amount),MAX(updated_at) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID GROUP BY orders.Date,orders.hospitalID;');
+    cursor.execute(f'SELECT hospital.Name,orders.Date,SUM(orders.amount),MAX(updated_at) FROM orders INNER JOIN hospital ON hospital.idhospital = orders.hospitalID  GROUP BY orders.Date,orders.hospitalID;');
     DataAchievedBtSearch = cursor.fetchall();
     for x in DataAchievedBtSearch:
         print(x);
@@ -319,14 +319,14 @@ def SearchOutpout(data):
 
 #########################Orders main pages buttons###############################
 
-#Create Refresh(DB) button
-global reafreahImg;
-reafreshIcon = Image.open("D:/PythonProjects/Cyclotron/Images/regreshButton.png");
-resizedReafreshEditIcon = reafreshIcon.resize((23,23), Image.ANTIALIAS);
-reafreahImg = ImageTk.PhotoImage(resizedReafreshEditIcon);
-ReafrshButton=Button(ordersFrame, image=reafreahImg, borderwidth=0,command=updateOrdersTreeMainPageOutputOnly)
-ReafrshButton.pack();
-ReafrshButton.place(x=530, y=63);
+# #Create Refresh(DB) button
+# global reafreahImg;
+# reafreshIcon = Image.open("D:/PythonProjects/Cyclotron/Images/regreshButton.png");
+# resizedReafreshEditIcon = reafreshIcon.resize((23,23), Image.ANTIALIAS);
+# reafreahImg = ImageTk.PhotoImage(resizedReafreshEditIcon);
+# ReafrshButton=Button(ordersFrame, image=reafreahImg, borderwidth=0,command=updateOrdersTreeMainPageOutputOnly)
+# ReafrshButton.pack();
+# ReafrshButton.place(x=530, y=63);
 
 
 #Create Search window
@@ -412,7 +412,7 @@ def updateOrdersTreeByMaterialFiltering(materialSelData):
         cursor.execute(f"SELECT hospital.Name,orders.Date,SUM(orders.amount),MAX(updated_at) FROM orders  INNER JOIN hospital ON hospital.idhospital = orders.hospitalID GROUP BY orders.Date,orders.hospitalID ;");
     else:
         #Show output to Order main page tree-id,date,sum of doses filtering by Material ID
-        cursor.execute(f"SELECT hospital.Name,orders.Date,SUM(orders.amount),MAX(updated_at) FROM orders  INNER JOIN hospital ON hospital.idhospital = orders.hospitalID WHERE materialID={materialSelData}  GROUP BY orders.Date,orders.hospitalID ;");
+        cursor.execute(f"SELECT hospital.Name,orders.Date,SUM(orders.amount),MAX(updated_at) FROM orders  INNER JOIN hospital ON hospital.idhospital = orders.hospitalID WHERE materialID={materialSelData}   GROUP BY orders.Date,orders.hospitalID ;");
 
     filteringRowsFromDB = cursor.fetchall();
     print(filteringRowsFromDB);
@@ -438,7 +438,7 @@ def MaterialsSelectedeFilteringFunc(event):
 
 
 MaterialsDropDownFilteringMainPage = ttk.Combobox(ordersFrame,state="readonly",value=Material_in_db,width=9);
-MaterialsDropDownFilteringMainPage.current(2);
+MaterialsDropDownFilteringMainPage.current(0);
 
 MaterialsDropDownFilteringMainPage.bind("<<ComboboxSelected>>",MaterialsSelectedeFilteringFunc)
 MaterialsDropDownFilteringMainPage.pack();
@@ -541,14 +541,14 @@ cursor.execute("SELECT * FROM orders");
 ordersTable_in_db = cursor.fetchall();
 
 #Create Export to Excel buttton
-global ExportToCSVImg;
-
-ExportCSVIcon = Image.open("D:\PythonProjects\Cyclotron\Images\ExportExcel.png");
-resizedExportCSVIcon = ExportCSVIcon.resize((23,23), Image.ANTIALIAS);
-ExportToCSVImg = ImageTk.PhotoImage(resizedExportCSVIcon);
-ExportToCSVImgicon=Button(ordersFrame, image=ExportToCSVImg, borderwidth=0,command=lambda : WriteToCsv(ordersTable_in_db))
-ExportToCSVImgicon.pack();
-ExportToCSVImgicon.place(x=585, y=63);
+# global ExportToCSVImg;
+#
+# ExportCSVIcon = Image.open("D:\PythonProjects\Cyclotron\Images\ExportExcel.png");
+# resizedExportCSVIcon = ExportCSVIcon.resize((23,23), Image.ANTIALIAS);
+# ExportToCSVImg = ImageTk.PhotoImage(resizedExportCSVIcon);
+# ExportToCSVImgicon=Button(ordersFrame, image=ExportToCSVImg, borderwidth=0,command=lambda : WriteToCsv(ordersTable_in_db))
+# ExportToCSVImgicon.pack();
+# ExportToCSVImgicon.place(x=585, y=63);
 
 #Create edit icon
 # global imgEdit;
@@ -1608,7 +1608,7 @@ def PopUpForNewOrder():
 # ####################end of page number 2 -New order #######################################################################
 
 ################################Edit/Update Order main page###################################################################
-def UpdateOrder(event):
+def UpdateOrder():
     global hospitalId;
     curItem = OrdersTree.focus();
     DataOfRowSelectedDic=OrdersTree.item(curItem);
@@ -2032,7 +2032,15 @@ def UpdateOrder(event):
     AddRowButton.place(x=250, y=98);
 
 #Double click on  main order page tree event
-OrdersTree.bind('<<TreeviewOpen>>', UpdateOrder)
+#OrdersTree.bind('<<TreeviewOpen>>', UpdateOrder);
+
+global imgEditOrders;
+EditOrdersIcon = Image.open("D:\PythonProjects\Cyclotron\editIcon.jpg");
+resizedOrdersEditIcon = EditOrdersIcon.resize((20, 20), Image.ANTIALIAS);
+imgEditOrders = ImageTk.PhotoImage(resizedOrdersEditIcon,master=ordersFrame);
+editOrdersButton = Button(ordersFrame, image=imgEditOrders, borderwidth=0,command=UpdateOrder);
+editOrdersButton.pack();
+editOrdersButton.place(x=587, y=66);
 
 ###############################End of update page#################################################
 

@@ -21,7 +21,7 @@ from ConnectToDB import *          #connect to mysql DB
 
 #import DB_tables_test
 # def UsersFunction():
-spec = importlib.util.spec_from_file_location("module.name", "D:\PythonProjects\Cyclotron\‏‏DB_tables_test.py")
+spec = importlib.util.spec_from_file_location("module.name", "D:\PythonProjects\Cyclotron\DB_tables.py")
 foo = importlib.util.module_from_spec(spec)
 sys.modules["module.name"] = foo
 spec.loader.exec_module(foo)
