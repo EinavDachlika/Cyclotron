@@ -4007,8 +4007,8 @@ def addWPfun():
 # editWPButton.place(x=table_place_x+450, y=table_place_y+15)
 #
 #Create a button in the main Window to add record - work plan
-wpAddIcon = Image.open("addIcon.png")
-resizedWPAddIcon = wpAddIcon.resize((25, 25), Image.ANTIALIAS)
+wpAddIcon = Image.open("D:/PythonProjects/Cyclotron/addIcon.png");
+resizedWPAddIcon = wpAddIcon.resize((25, 25), Image.ANTIALIAS);
 
 imgAddWP = ImageTk.PhotoImage(resizedWPAddIcon)
 addWPButton = Button(WorkPlanFrame, image=imgAddWP, borderwidth=0, command=lambda : addWPfun())
@@ -4017,12 +4017,12 @@ addWPButton.place(x=table_place_x + wp_tabel.winfo_reqwidth() - 45, y=table_plac
 
 
 # Create a button in the main Window to Delete record - work plan
-wpDeleteIcon = Image.open("‏‏deleteIcon.png")
-resizedWPDeleteIcon = wpDeleteIcon.resize((20, 20), Image.ANTIALIAS)
-imgDeleteWP = ImageTk.PhotoImage(resizedWPDeleteIcon)
-deleteWPButton = Button(WorkPlanFrame, image=imgDeleteWP, borderwidth=0, command=lambda : deleteWPfun())
-deleteWPButton.pack(side=LEFT)
-deleteWPButton.place(x=table_place_x + wp_tabel.winfo_reqwidth() , y=table_place_y+15)
+wpDeleteIcon = Image.open("D:\PythonProjects\Cyclotron\‏‏deleteIcon.png");
+resizedWPDeleteIcon = wpDeleteIcon.resize((20, 20), Image.ANTIALIAS);
+imgDeleteWP = ImageTk.PhotoImage(resizedWPDeleteIcon);
+deleteWPButton = Button(WorkPlanFrame, image=imgDeleteWP, borderwidth=0, command=lambda : deleteWPfun());
+deleteWPButton.pack(side=LEFT);
+deleteWPButton.place(x=table_place_x + wp_tabel.winfo_reqwidth() , y=table_place_y+15);
 
 ################### batches #################
 #################### batch Page #####################
