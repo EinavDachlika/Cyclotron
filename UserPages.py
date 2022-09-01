@@ -171,14 +171,14 @@ feedLabel.place(x=50,y=10);
 
 
 # # user label
-UserLabelHospitalpage1 = Label(ordersFrame, text=f"{Permission.ValidateTypeOfUser} connected:", font=('Helvetica', 13, 'bold'), fg='red')
-UserLabelHospitalpage1.pack();
-UserLabelHospitalpage1.place(x=350, y=20);
+UserLabelOrdersPage1 = Label(ordersFrame, text=f"{Permission.ValidateTypeOfUser} connected:", font=('Helvetica', 13, 'bold'), fg='red')
+UserLabelOrdersPage1.pack();
+UserLabelOrdersPage1.place(x=350, y=20);
 #
 # # user  connected label
-NameOfUserLabelHospitalpage2 = Label(ordersFrame, text=Permission.user_verified, font=('Helvetica', 13, 'bold'), fg='red')
-NameOfUserLabelHospitalpage2.pack();
-NameOfUserLabelHospitalpage2.place(x=490, y=20);
+NameOfUserLabelOrdrsPage2 = Label(ordersFrame, text=Permission.user_verified, font=('Helvetica', 13, 'bold'), fg='red')
+NameOfUserLabelOrdrsPage2.pack();
+NameOfUserLabelOrdrsPage2.place(x=490, y=20);
 
 
 #my_label=Label(root,text='');
@@ -3860,6 +3860,16 @@ WorkPlanFrame = Frame(root)
 # h = Scrollbar(WorkPlanFrame, orient='horizontal')
 WorkPlanFrame.pack(fill=X)
 
+# # user label
+UserLabelWorkPlanPage1 = Label(WorkPlanFrame, text=f"{Permission.ValidateTypeOfUser} connected:", font=('Helvetica', 13, 'bold'), fg='red')
+UserLabelWorkPlanPage1.pack();
+UserLabelWorkPlanPage1.place(x=350, y=20);
+#
+# # user  connected label
+UserLabelWorkPlan2 = Label(WorkPlanFrame, text=Permission.user_verified, font=('Helvetica', 13, 'bold'), fg='red')
+UserLabelWorkPlan2.pack();
+UserLabelWorkPlan2.place(x=490, y=20);
+
 ##################### Work Plan #####################
 # Work Plan Details label
 WorkPlanLabel = Label(WorkPlanFrame, text = 'Work Plans', font=sub_label_font,fg=label_color)
@@ -4030,6 +4040,16 @@ batchFrame = Frame(root)
 # h = Scrollbar(batchFrame, orient='horizontal')
 batchFrame.pack(fill=X)
 
+# # user label
+UserLabelBatchPage1 = Label(batchFrame, text=f"{Permission.ValidateTypeOfUser} connected:", font=('Helvetica', 13, 'bold'), fg='red')
+UserLabelBatchPage1.pack();
+UserLabelBatchPage1.place(x=350, y=20);
+#
+# # user  connected label
+UserLabelBatchPage2 = Label(batchFrame, text=Permission.user_verified, font=('Helvetica', 13, 'bold'), fg='red')
+UserLabelBatchPage2.pack();
+UserLabelBatchPage2.place(x=490, y=20);
+
 # batch Details label
 BatchLabel = Label(batchFrame, text = 'Batches', font=sub_label_font,fg=label_color)
 Lable_place_x=80
@@ -4102,7 +4122,7 @@ hospitalFrame.forget()
 WorkPlanFrame.forget()
 batchFrame.forget()
 
-################################and of work plan page###############################
+################################end of work plan page###############################
 
 
 

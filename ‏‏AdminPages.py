@@ -52,15 +52,15 @@ PlaceLable_Y=10
 feedLabel.pack(side=LEFT)
 feedLabel.place(x=PlaceLable_X,y=PlaceLable_Y)
 
-# admin label
-AdminLabelHospitalpage1 = Label(hospitalFrame, text=f"{Permission.ValidateTypeOfUser} connected:", font=('Helvetica', 13, 'bold'), fg='red')
-AdminLabelHospitalpage1.pack();
-AdminLabelHospitalpage1.place(x=350, y=20);
-
-# admin connected label
-NameOfAdminLabelHospitalpage2 = Label(hospitalFrame, text=Permission.user_verified, font=('Helvetica', 13, 'bold'), fg='red')
-NameOfAdminLabelHospitalpage2.pack();
-NameOfAdminLabelHospitalpage2.place(x=510, y=20);
+# # admin label
+# AdminLabelHospitalpage1 = Label(hospitalFrame, text=f"{Permission.ValidateTypeOfUser} connected:", font=('Helvetica', 13, 'bold'), fg='red')
+# AdminLabelHospitalpage1.pack();
+# AdminLabelHospitalpage1.place(x=350, y=20);
+#
+# # admin connected label
+# NameOfAdminLabelHospitalpage2 = Label(hospitalFrame, text=Permission.user_verified, font=('Helvetica', 13, 'bold'), fg='red')
+# NameOfAdminLabelHospitalpage2.pack();
+# NameOfAdminLabelHospitalpage2.place(x=510, y=20);
 
 
 
@@ -178,15 +178,6 @@ NameOfAdminLabeLoRDERSpage2 = Label(ordersFrame, text=Permission.user_verified, 
 NameOfAdminLabeLoRDERSpage2.pack();
 NameOfAdminLabeLoRDERSpage2.place(x=510, y=20);
 
-# # user label
-# UserLabelHospitalpage1 = Label(hospitalFrame, text=f"{Permission.ValidateTypeOfUser} connected:", font=('Helvetica', 13, 'bold'), fg='red')
-# UserLabelHospitalpage1.pack();
-# UserLabelHospitalpage1.place(x=350, y=20);
-#
-# # user  connected label
-# NameOfUserLabelHospitalpage2 = Label(hospitalFrame, text=Permission.user_verified, font=('Helvetica', 13, 'bold'), fg='red')
-# NameOfUserLabelHospitalpage2.pack();
-# NameOfUserLabelHospitalpage2.place(x=490, y=20);
 
 
 #my_label=Label(root,text='');
@@ -3858,7 +3849,7 @@ deleteHospitalButton.place(x=lable_place_x + hospital_tabel.winfo_reqwidth() , y
 
 
 
-################work plan page###############################################################
+################ work plan page ###############################################################
 
 #################### Work Plan Page #####################
 #Work Plan frame
@@ -3867,6 +3858,17 @@ WorkPlanFrame = Frame(root)
 WorkPlanFrame.pack(fill=X)
 
 ##################### Work Plan #####################
+# # admin connected label
+AdminLabelWPpage1 = Label(WorkPlanFrame, text=f"{Permission.ValidateTypeOfUser} connected:", font=('Helvetica', 13, 'bold'), fg='red')
+AdminLabelWPpage1.pack();
+AdminLabelWPpage1.place(x=350, y=20);
+
+# # admin connected label
+AdminLabeLWPpage2 = Label(WorkPlanFrame, text=Permission.user_verified, font=('Helvetica', 13, 'bold'), fg='red')
+AdminLabeLWPpage2.pack();
+AdminLabeLWPpage2.place(x=510, y=20);
+
+
 # Work Plan Details label
 WorkPlanLabel = Label(WorkPlanFrame, text = 'Work Plans', font=sub_label_font,fg=label_color)
 Lable_place_x=80
@@ -4036,6 +4038,16 @@ batchFrame = Frame(root)
 # h = Scrollbar(batchFrame, orient='horizontal')
 batchFrame.pack(fill=X)
 
+# # admin connected label
+AdminLabelBAtchlpage1 = Label(batchFrame, text=f"{Permission.ValidateTypeOfUser} connected:", font=('Helvetica', 13, 'bold'), fg='red')
+AdminLabelBAtchlpage1.pack();
+AdminLabelBAtchlpage1.place(x=350, y=20);
+#
+# # admin connected label
+AdminLabeLBatchSpage2 = Label(batchFrame, text=Permission.user_verified, font=('Helvetica', 13, 'bold'), fg='red')
+AdminLabeLBatchSpage2.pack();
+AdminLabeLBatchSpage2.place(x=510, y=20);
+
 # batch Details label
 BatchLabel = Label(batchFrame, text = 'Batches', font=sub_label_font,fg=label_color)
 Lable_place_x=80
@@ -4108,7 +4120,7 @@ hospitalFrame.forget()
 WorkPlanFrame.forget()
 batchFrame.forget()
 
-################################and of work plan page###############################
+################################end of work plan page###############################
 
 
 #####################New toolbar #####################
