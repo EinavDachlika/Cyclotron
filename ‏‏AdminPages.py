@@ -4246,6 +4246,16 @@ mbtn.menu.add_radiobutton(label="Module", command= lambda: menu_item_selected("M
 mbtn.menu.add_radiobutton(label="Material", command= lambda: menu_item_selected("Material"))
 mbtn.menu.add_radiobutton(label="Hospital", command= lambda: menu_item_selected("Hospital"))
 
+if ((Permission.user_verified) and (Permission.password_verfied) and (Permission.ValidateTypeOfUser=='admin')):
+    print("Login successful-Admin");
+    mbtn['state'] = NORMAL ;    #Enable settings button
+
+#root.destroy();
+    #root.deiconify();
+
+elif ((Permission.user_verified) and (Permission.password_verfied) and (Permission.ValidateTypeOfUser=='user')):
+    print("Login successful-User");
+    mbtn['state'] = DISABLED;#Disable settings button
 
 
 # print(mbtn.selection_get())
