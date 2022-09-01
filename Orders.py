@@ -3,7 +3,6 @@ from tkinter import ttk,messagebox
 import tkinter as tk
 from PIL import Image, ImageTk
 import mysql.connector
-from mysql.connector import Error
 from tkinter import filedialog as fd
 import pandas as pd
 from docx.api import Document
@@ -19,7 +18,6 @@ from ConnectToDB import *          #connect to mysql DB
 #import DB_tables                   #create tables ans import them
 #import Permission
 
-#import DB_tables_test
 # def UsersFunction():
 spec = importlib.util.spec_from_file_location("module.name", "D:\PythonProjects\Cyclotron\DB_tables.py")
 foo = importlib.util.module_from_spec(spec)

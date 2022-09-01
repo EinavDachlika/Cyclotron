@@ -497,13 +497,14 @@ def deleteOrderfunc():
 
 
 # Remove button (Icon) -Delete Order
-global imgDelete2;
-deleteIcon = Image.open("‏‏deleteIcon.png/.")
-resizedDeleteIcon = deleteIcon.resize((20,20), Image.ANTIALIAS)
-imgDelete2 = ImageTk.PhotoImage(resizedDeleteIcon)
-deleteButton=Button(ordersFrame, image=imgDelete2, borderwidth=0,command=deleteOrderfunc)
+global ImgDeleteOrder;
+deleteIcon = Image.open("./‏‏deleteIcon.png");
+resizedDeleteIcon = deleteIcon.resize((20,20), Image.ANTIALIAS);
+ImgDeleteOrder = ImageTk.PhotoImage(resizedDeleteIcon,master=ordersFrame);
+deleteButton=Button(ordersFrame, image=ImgDeleteOrder, borderwidth=0,command=deleteOrderfunc);
 deleteButton.pack()
 deleteButton.place(x=560, y=65)
+
 
 OrdersTree.bind('<<TreeviewSelect>>', deleteOrderEvent);
 
