@@ -3,17 +3,16 @@ from tkinter import ttk,messagebox
 import tkinter as tk
 from PIL import Image, ImageTk
 import mysql.connector
-from mysql.connector import Error
 import pandas as pd
 from docx.api import Document
-#import aspose.words as aw
+import aspose.words as aw
 from tkinter import filedialog as fd
 from tkcalendar import DateEntry
 from datetime import date,timedelta,datetime
 import xlrd #Version 1.2.0
 import Permission
 from ConnectToDB import *          #connect to mysql DB
-#import DB_tables                   #create tables
+import DB_tables                   #create tables
 from openpyxl import *
 from openpyxl.styles import *
 from pathlib import Path
@@ -130,7 +129,7 @@ hospitals_list.pack()
 
 #Create a button in the main Window to open the popup
 global imgEdit;
-editIcon = Image.open("D:/PythonProjects/Cyclotron/editIcon.jpg")
+editIcon = Image.open(r"./editIcon.jpg")
 resizedEditIcon = editIcon.resize((20,20), Image.ANTIALIAS)
 imgEdit = ImageTk.PhotoImage(resizedEditIcon,master=hospitalFrame)
 editButton=Button(hospitalFrame,image=imgEdit, borderwidth=0)
@@ -139,7 +138,7 @@ editButton.place(x=425, y=55)
 
 
 # delete button (Icon) - List
-deleteIcon = Image.open("D:\PythonProjects\Cyclotron\‏‏deleteIcon.png")
+deleteIcon = Image.open(r"./‏‏deleteIcon.png")
 resizedDeleteIcon = deleteIcon.resize((20,20), Image.ANTIALIAS)
 imgDelete = ImageTk.PhotoImage(resizedDeleteIcon,master=hospitalFrame)
 deleteButton=Button(hospitalFrame, image=imgDelete, borderwidth=0)
@@ -336,7 +335,7 @@ searchEntry.pack();
 searchEntry.place(x=640, y=65);
 
 #Create search icon
-searchIcon = Image.open("D:\PythonProjects\Cyclotron\Images\SearchButton.png");
+searchIcon = Image.open(r"./Images/SearchButton.png");
 resizedSearchedEditIcon = searchIcon.resize((23,23), Image.ANTIALIAS);
 SearchImg = ImageTk.PhotoImage(resizedSearchedEditIcon);
 SearchLabelicon=Label(image=SearchImg);
@@ -508,7 +507,7 @@ def deleteOrderfunc():
 
 # Remove button (Icon) -Delete Order
 global imgDelete2;
-deleteIcon = Image.open("D:\PythonProjects\Cyclotron\‏‏deleteIcon.png")
+deleteIcon = Image.open("‏‏deleteIcon.png/.")
 resizedDeleteIcon = deleteIcon.resize((20,20), Image.ANTIALIAS)
 imgDelete2 = ImageTk.PhotoImage(resizedDeleteIcon)
 deleteButton=Button(ordersFrame, image=imgDelete2, borderwidth=0,command=deleteOrderfunc)
@@ -582,7 +581,7 @@ def importFileFunc():
         TempNewLISt1=[];
         """This is function for importing Orders files"""
         filename = fd.askopenfilename(
-            initialdir="D:\PythonProjects\Cyclotron",
+            initialdir=r"D:/PythonProjects/Cyclotron",
             title="Open a file",
             filetype=(("Word files","*.docx"),("Word files","*.doc"),("Excel files","*.xlsx"),("All Files","*.*"),("PDF files","*.pdf")))
         #print(filename);
@@ -639,13 +638,13 @@ def importFileFunc():
                         df = df.append([text], ignore_index=True);
 
                 #df.columns = ["Column1", "Column2","Column3","Column4","Column5","Column6","Column7","Column8"]
-                df.to_excel("D:/PythonProjects/Cyclotron/OrderOutputTest.xlsx");
+                df.to_excel(r"./OrderOutputTest.xlsx");
                 #print(df);
 
 
                 #clear_tree();
                 #Get data from excel
-                loc = ("D:/PythonProjects/Cyclotron/OrderOutputTest.xlsx");
+                loc = (r"./OrderOutputTest.xlsx");
                 wb = xlrd.open_workbook(loc);
                 sheet = wb.sheet_by_index(0);
                 sheet.cell_value(0, 0);
@@ -813,7 +812,7 @@ def importFileFunc():
     FileLabel.pack();
     FileLabel.place(x=500, y=65);
 
-    FileIcon = Image.open("D:\PythonProjects\Cyclotron\Images\FileIcon.png")
+    FileIcon = Image.open(r"./Images/FileIcon.png")
     resized_File_Icon = FileIcon.resize((60,60), Image.ANTIALIAS)
     file_Image = ImageTk.PhotoImage(resized_File_Icon)
     FileButton=Button(ImportFilePage, image=file_Image, borderwidth=0,command=ImportFilefunction)
@@ -831,7 +830,7 @@ def importFileFunc():
 
     #Calender
     #add calender icon
-    CalendarIcon = Image.open("D:\PythonProjects\Cyclotron\Images\CalendarIcon.png");
+    CalendarIcon = Image.open(r"./Images/CalendarIcon.png");
     resizedCalenderIcon = CalendarIcon.resize((23,23), Image.ANTIALIAS);
     CalenderImg = ImageTk.PhotoImage(resizedCalenderIcon);
     CalenderLabelicon=Label(ImportFilePage,image=CalenderImg);
@@ -1218,7 +1217,7 @@ def PopUpForNewOrder():
     #Calender
     #add calender icon
     global  CalenderImg1
-    CalendarIcon1 = Image.open("D:\PythonProjects\Cyclotron\Images\CalendarIcon.png");
+    CalendarIcon1 = Image.open(r"./Images/CalendarIcon.png");
     resizedCalenderIcon1 = CalendarIcon1.resize((23,23), Image.ANTIALIAS);
     CalenderImg1 = ImageTk.PhotoImage(resizedCalenderIcon1,master=NewOrderMainPage);
     CalenderLabelicon1=Label(NewOrderMainPage,image=CalenderImg1);
@@ -1579,7 +1578,7 @@ def PopUpForNewOrder():
 
     #Remove button (Icon) - List-ORders page number 2
     global imgDelete2;
-    deleteIcon2 = Image.open("D:\PythonProjects\Cyclotron\‏‏deleteIcon.png");
+    deleteIcon2 = Image.open(r"./‏‏deleteIcon.png");
     resizedDeleteIcon2 = deleteIcon2.resize((25,25), Image.ANTIALIAS);
     imgDelete2 = ImageTk.PhotoImage(resizedDeleteIcon2,master=NewOrdersecondaryPage);
     deleteButton2=Button(NewOrdersecondaryPage,image=imgDelete2,bg="white",font=('Helvetica 14'), borderwidth=0,command=removeRawFunc);
@@ -1597,7 +1596,7 @@ def PopUpForNewOrder():
     AddrowLabel.pack();
     AddrowLabel.place(x=270,y=98);
     #Add row image+button
-    AddrowIcon = Image.open("D:/PythonProjects/Cyclotron/addIcon.png");
+    AddrowIcon = Image.open(r"./addIcon.png");
     resized_add_Row = AddrowIcon.resize((25,25), Image.ANTIALIAS);
     addROWImg = ImageTk.PhotoImage(resized_add_Row,master=NewOrdersecondaryPage);
     AddRowButton=Button(NewOrdersecondaryPage,image=addROWImg, borderwidth=0,command=addRowFunc);
@@ -2009,7 +2008,7 @@ def UpdateOrder():
     ####################Buttons for new order-manual page##########################
     # Remove button (Icon) - List
     global imgDelete2;
-    deleteIcon2 = Image.open("D:\PythonProjects\Cyclotron\‏‏deleteIcon.png");
+    deleteIcon2 = Image.open(r"./‏‏deleteIcon.png");
     resizedDeleteIcon2 = deleteIcon2.resize((25,25), Image.ANTIALIAS);
     imgDelete2 = ImageTk.PhotoImage(resizedDeleteIcon2);
     deleteButton2=Button(EditPage, image=imgDelete2, borderwidth=0,command=removeRawFunc);
@@ -2023,7 +2022,7 @@ def UpdateOrder():
     AddrowLabel.pack();
     AddrowLabel.place(x=280,y=97);
     #Add row image+button
-    AddrowIcon = Image.open("D:/PythonProjects/Cyclotron/addIcon.png");
+    AddrowIcon = Image.open(r"./addIcon.png");
     resized_add_Row = AddrowIcon.resize((25,25), Image.ANTIALIAS);
     addROWImg = ImageTk.PhotoImage(resized_add_Row);
     AddRowButton=Button(EditPage,image=addROWImg, borderwidth=0,command=addRowFunc);
@@ -2034,7 +2033,7 @@ def UpdateOrder():
 #OrdersTree.bind('<<TreeviewOpen>>', UpdateOrder);
 
 global imgEditOrders;
-EditOrdersIcon = Image.open("D:\PythonProjects\Cyclotron\editIcon.jpg");
+EditOrdersIcon = Image.open(r"./editIcon.jpg");
 resizedOrdersEditIcon = EditOrdersIcon.resize((20, 20), Image.ANTIALIAS);
 imgEditOrders = ImageTk.PhotoImage(resizedOrdersEditIcon,master=ordersFrame);
 editOrdersButton = Button(ordersFrame, image=imgEditOrders, borderwidth=0,command=UpdateOrder);
@@ -2343,7 +2342,7 @@ def main_algorithm_calculation(batches,hospitals_output,batches_general_data):
                     batches_general_data[index]["Activity"] += A_Tcal
 
 def export_WP_Excel( selected_material, selected_date, all_batches_output, hospitals_output, batches_general_data):
-    FilePath = "D:\PythonProjects\Cyclotron\FDG format.xlsx"
+    FilePath = r"FDG format.xlsx"
 
     wb = load_workbook(FilePath)
 
@@ -3040,7 +3039,7 @@ class Popup(Toplevel):
                                values=b_r)
 
         #excel
-        excelIcon = Image.open("D:\PythonProjects\Cyclotron\excelIcon.png")
+        excelIcon = Image.open(r"./excelIcon.png");
         resizedExcelIcon = excelIcon.resize((40, 40), Image.ANTIALIAS)
         imgExcel = ImageTk.PhotoImage(resizedExcelIcon)
         # ExcelButton = Button(self, image=imgExcel, borderwidth=0,
@@ -3466,7 +3465,7 @@ def addCyclotronfun():
 #cyclotron buttons
 
 #Create a button in the main Window to add record - cyclotron
-cyclotronAddIcon = Image.open("D:/PythonProjects/Cyclotron/addIcon.png")
+cyclotronAddIcon = Image.open(r"./addIcon.png")
 resizedCycloAddIcon = cyclotronAddIcon.resize((25, 25), Image.ANTIALIAS)
 imgAddCyclotron = ImageTk.PhotoImage(resizedCycloAddIcon)
 addCyclotronButton = Button(cycloSettingsFrame, image=imgAddCyclotron, borderwidth=0, command=lambda : addCyclotronfun())
@@ -3474,7 +3473,7 @@ addCyclotronButton.pack(side= LEFT)
 addCyclotronButton.place(x=table_place_x + cyclo_tabel.winfo_reqwidth() -100, y=table_place_y+14)
 
 #Create a button in the main Window to edit  record (open the popup) - cyclotron
-cyclotronEditIcon = Image.open("D:\PythonProjects\Cyclotron\editIcon.jpg")
+cyclotronEditIcon = Image.open(r"./editIcon.jpg")
 resizedCycloEditIcon = cyclotronEditIcon.resize((20, 20), Image.ANTIALIAS)
 imgEditCyclotron = ImageTk.PhotoImage(resizedCycloEditIcon)
 # editCyclotronButton = Button(ctcloSettingsFrame, image=imgEditCyclotron, borderwidth=0, command= lambda :editCyclotronfun())
@@ -3485,7 +3484,7 @@ editCyclotronButton.place(x=table_place_x + cyclo_tabel.winfo_reqwidth() -50, y=
 
 
 # Create a button in the main Window to Delete record - cyclotron
-cyclotronDeleteIcon = Image.open("D:\PythonProjects\Cyclotron\‏‏deleteIcon.png")
+cyclotronDeleteIcon = Image.open(r"./‏‏deleteIcon.png")
 resizedCycloDeleteIcon = cyclotronDeleteIcon.resize((20, 20), Image.ANTIALIAS)
 imgDeleteCyclotron = ImageTk.PhotoImage(resizedCycloDeleteIcon)
 deleteCyclotronButton = Button(cycloSettingsFrame, image=imgDeleteCyclotron, borderwidth=0, command=lambda : deleteCyclotronfun())
@@ -3593,7 +3592,7 @@ def deleteModulefun():
 #module buttons
 
 #Create a button in the main Window to add record - module
-moduleAddIcon = Image.open("D:/PythonProjects/Cyclotron/addIcon.png")
+moduleAddIcon = Image.open(r"./addIcon.png")
 resizedModuleAddIcon = moduleAddIcon.resize((25, 25), Image.ANTIALIAS)
 imgAddModule = ImageTk.PhotoImage(resizedModuleAddIcon)
 addModuleButton = Button(moduleSettingsFrame, image=imgAddModule, borderwidth=0, command=addModulefun)
@@ -3601,7 +3600,7 @@ addModuleButton.pack(side= LEFT)
 addModuleButton.place(x=table_place_x+ module_tabel.winfo_reqwidth() -100 , y=table_place_y+14)
 
 #Create a button in the main Window to edit  record (open the popup) - module
-moduleEditIcon = Image.open("D:\PythonProjects\Cyclotron\editIcon.jpg")
+moduleEditIcon = Image.open(r"./editIcon.jpg")
 resizedModuleEditIcon = moduleEditIcon.resize((20, 20), Image.ANTIALIAS)
 imgEditModule = ImageTk.PhotoImage(resizedModuleEditIcon)
 editModuleButton = Button(moduleSettingsFrame, image=imgEditModule, borderwidth=0, command=editModulefun)
@@ -3610,7 +3609,7 @@ editModuleButton.place(x=table_place_x+module_tabel.winfo_reqwidth() - 50, y=tab
 
 
 #Create a button in the main Window to Delete record - module
-moduleDeleteIcon = Image.open("D:\PythonProjects\Cyclotron\‏‏deleteIcon.png")
+moduleDeleteIcon = Image.open(r"./‏‏deleteIcon.png")
 resizedModuleDeleteIcon = moduleDeleteIcon.resize((20, 20), Image.ANTIALIAS)
 imgDeleteModule = ImageTk.PhotoImage(resizedModuleDeleteIcon)
 deleteModuleButton = Button(moduleSettingsFrame, image=imgDeleteModule, borderwidth=0, command=deleteModulefun)
@@ -3716,7 +3715,7 @@ def deleteMaterialfun():
 #material buttons
 
 #Create a button in the main Window to add record - material
-materialAddIcon = Image.open("D:/PythonProjects/Cyclotron/addIcon.png")
+materialAddIcon = Image.open(r"./addIcon.png")
 resizedMaterialAddIcon = materialAddIcon.resize((25, 25), Image.ANTIALIAS)
 imgAddMaterial = ImageTk.PhotoImage(resizedMaterialAddIcon)
 addMaterialButton = Button(materialSettingsFrame, image=imgAddModule, borderwidth=0, command=addMaterialfun)
@@ -3724,7 +3723,7 @@ addMaterialButton.pack(side= LEFT)
 addMaterialButton.place(x=table_place_x + material_tabel.winfo_reqwidth() - 95, y=table_place_y+14)
 
 #Create a button in the main Window to edit  record (open the popup) - material
-materialEditIcon = Image.open("D:\PythonProjects\Cyclotron\editIcon.jpg")
+materialEditIcon = Image.open(r"./editIcon.jpg")
 resizedMaterialEditIcon = materialEditIcon.resize((20, 20), Image.ANTIALIAS)
 imgEditMaterial = ImageTk.PhotoImage(resizedMaterialEditIcon)
 editMaterialButton = Button(materialSettingsFrame, image=imgEditMaterial, borderwidth=0, command=editMaterialfun)
@@ -3732,7 +3731,7 @@ editMaterialButton.pack(side= LEFT)
 editMaterialButton.place(x=table_place_x + material_tabel.winfo_reqwidth() - 45, y=table_place_y+15)
 
 #Create a button in the main Window to Delete record - material
-materialDeleteIcon = Image.open("D:\PythonProjects\Cyclotron\‏‏deleteIcon.png")
+materialDeleteIcon = Image.open(r"./‏‏deleteIcon.png")
 resizedMaterialDeleteIcon = materialDeleteIcon.resize((20, 20), Image.ANTIALIAS)
 imgDeleteMaterial = ImageTk.PhotoImage(resizedMaterialDeleteIcon)
 deleteMaterialButton = Button(materialSettingsFrame, image=imgDeleteMaterial, borderwidth=0, command=deleteMaterialfun)
@@ -3830,7 +3829,7 @@ def deleteHospitalfun():
 #hospital buttons
 
 #Create a button in the main Window to add record - hospital
-hospitalAddIcon = Image.open("D:/PythonProjects/Cyclotron/addIcon.png")
+hospitalAddIcon = Image.open(r"./addIcon.png")
 resizedHospitalAddIcon = hospitalAddIcon.resize((25, 25), Image.ANTIALIAS)
 imgAddHospital = ImageTk.PhotoImage(resizedHospitalAddIcon)
 addHospitalButton = Button(hospitalFrame, image=imgAddHospital, borderwidth=0, command=lambda : addHospitalfun())
@@ -3839,7 +3838,7 @@ addHospitalButton.place(x=lable_place_x + hospital_tabel.winfo_reqwidth() - 100,
 
 
 #Create a button in the main Window to edit  record (open the popup) - hospital
-hospitalEditIcon = Image.open("D:\PythonProjects\Cyclotron\editIcon.jpg")
+hospitalEditIcon = Image.open(r"./editIcon.jpg")
 resizedHospitalEditIcon = hospitalEditIcon.resize((20, 20), Image.ANTIALIAS)
 imgEditHospital = ImageTk.PhotoImage(resizedHospitalEditIcon)
 editHospitalButton = Button(hospitalFrame, image=imgEditHospital, borderwidth=0, command= lambda :editHospitalfun())
@@ -3849,7 +3848,7 @@ editHospitalButton.place(x=lable_place_x + hospital_tabel.winfo_reqwidth() - 50,
 
 
 # Create a button in the main Window to Delete record - hospital
-hospitalDeleteIcon = Image.open("D:\PythonProjects\Cyclotron\‏‏deleteIcon.png")
+hospitalDeleteIcon = Image.open(r"./‏‏deleteIcon.png")
 resizedHospitalDeleteIcon = hospitalDeleteIcon.resize((20, 20), Image.ANTIALIAS)
 imgDeleteHospital = ImageTk.PhotoImage(resizedHospitalDeleteIcon)
 deleteHospitalButton = Button(hospitalFrame, image=imgDeleteHospital, borderwidth=0, command=lambda : deleteHospitalfun())
@@ -4013,7 +4012,7 @@ def addWPfun():
 # editWPButton.place(x=table_place_x+450, y=table_place_y+15)
 #
 #Create a button in the main Window to add record - work plan
-wpAddIcon = Image.open("D:/PythonProjects/Cyclotron/addIcon.png")
+wpAddIcon = Image.open(r"./addIcon.png")
 resizedWPAddIcon = wpAddIcon.resize((25, 25), Image.ANTIALIAS)
 
 imgAddWP = ImageTk.PhotoImage(resizedWPAddIcon)
@@ -4023,7 +4022,7 @@ addWPButton.place(x=table_place_x + wp_tabel.winfo_reqwidth() - 45, y=table_plac
 
 
 # Create a button in the main Window to Delete record - work plan
-wpDeleteIcon = Image.open("D:\PythonProjects\Cyclotron\‏‏deleteIcon.png");
+wpDeleteIcon = Image.open(r"./‏‏deleteIcon.png");
 resizedWPDeleteIcon = wpDeleteIcon.resize((20, 20), Image.ANTIALIAS);
 imgDeleteWP = ImageTk.PhotoImage(resizedWPDeleteIcon);
 deleteWPButton = Button(WorkPlanFrame, image=imgDeleteWP, borderwidth=0, command=lambda : deleteWPfun());
@@ -4094,7 +4093,7 @@ def editBatchfun():
 #batch buttons
 
 #Create a button in the main Window to edit  record (open the popup) - hospital
-batchEditIcon = Image.open("D:\PythonProjects\Cyclotron\editIcon.jpg")
+batchEditIcon = Image.open(r"./editIcon.jpg")
 resizedBatchEditIcon = batchEditIcon.resize((20, 20), Image.ANTIALIAS)
 imgEditBatch = ImageTk.PhotoImage(resizedBatchEditIcon)
 editBatchButton = Button(batchFrame, image=imgEditBatch, borderwidth=0, command= lambda :editBatchfun())
@@ -4119,7 +4118,7 @@ toolbar = Frame(root, bg=toolbarbgcolor)
 toolbar.grid(sticky='nesw')
 
 # logo - toolbar
-LogoImagePath = Image.open("D:\PythonProjects\Cyclotron\LogoImage.png")
+LogoImagePath = Image.open(r"./LogoImage.png")
 LogoImageResize = LogoImagePath.resize((120, 57),Image.ANTIALIAS)
 LogoImage = ImageTk.PhotoImage(LogoImageResize)
 Label(toolbar,image=LogoImage).pack(side=LEFT,padx=10,pady=6)
@@ -4173,7 +4172,7 @@ reportsButton.pack(side=LEFT,padx=10,pady=3)
 
 # settings Icon - toolbar
 global imgSettings;
-settingsIcon = Image.open("D:\PythonProjects\Cyclotron\gearIcon.png")
+settingsIcon = Image.open(r"./gearIcon.png")
 resizedSettingsIcon = settingsIcon.resize((35,35), Image.ANTIALIAS)
 imgSettings = ImageTk.PhotoImage(resizedSettingsIcon,master=toolbar)
 # Button(toolbar, image=imgSettings, borderwidth=0).pack(side=RIGHT,padx=10,pady=3)

@@ -2,14 +2,17 @@
 import sys,importlib
 import Permission
 
+# def importAdmin():
+#     sys.path.append("./UserPages.py")
+
 def importAdmin():
-    spec = importlib.util.spec_from_file_location("module.name", "D:\PythonProjects\Cyclotron\‏‏AdminPages.py")
+    spec = importlib.util.spec_from_file_location("module.name", r"‏‏AdminPages.py")
     foo = importlib.util.module_from_spec(spec)
     sys.modules["module.name"] = foo
     spec.loader.exec_module(foo)
 
 def importUser():
-    spec = importlib.util.spec_from_file_location("module.name", "D:/PythonProjects/Cyclotron/UserPages.py")
+    spec = importlib.util.spec_from_file_location("module.name", "./UserPages.py")
     foo = importlib.util.module_from_spec(spec)
     sys.modules["module.name"] = foo
     spec.loader.exec_module(foo)

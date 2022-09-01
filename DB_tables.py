@@ -2,6 +2,9 @@
 from ConnectToDB import *   #connect to mysql DB
 
 dbCursor = db.cursor();
+#Create Cyclotron DB
+dbCursor.execute("CREATE SCHEMA IF NOT EXISTS cyclotron");
+
 #create tables
 #Create table of hospitals
 dbCursor.execute("CREATE TABLE IF NOT EXISTS hospital ("

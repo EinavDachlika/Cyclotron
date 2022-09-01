@@ -118,11 +118,11 @@ topPermissionScreen=Frame();
 topPermissionScreen.configure(bg='white');
 
 Photocanvas= Canvas(topPermissionScreen,width=400,height=250);
-SheriLogoImg=(Image.open("D:\PythonProjects\Cyclotron\Images\logoSheri2.png"))
+SheriLogoImg=(Image.open(r"./Images/logoSheri2.png"))
 resizedSheriLogoimage= SheriLogoImg.resize((400,250), Image.ANTIALIAS)
 ResizedSheriImage=ImageTk.PhotoImage(resizedSheriLogoimage);
 Photocanvas.create_image(0,0,image=ResizedSheriImage,anchor="nw");
-Photocanvas.create_text((210,147),text="Welcome to \n\nS.R.Y Orders System ",fill="red",font=('Halvetica',30))
+Photocanvas.create_text((210,185),text="S.R.Y Orders System ",fill="red",font=('Halvetica',20))
 
 #username label and text entry box
 usernameLabel = Label(topPermissionScreen, text="User Name",font=('Halvetica',10));
