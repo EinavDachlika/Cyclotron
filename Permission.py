@@ -118,7 +118,9 @@ topPermissionScreen=Frame();
 topPermissionScreen.configure(bg='white');
 
 Photocanvas= Canvas(topPermissionScreen,width=400,height=250);
-SheriLogoImg=(Image.open("D:\PythonProjects\Cyclotron\Images\logoSheri2.png"))
+# SheriLogoImg=(Image.open("D:\PythonProjects\Cyclotron\Images\logoSheri2.png"))
+SheriLogoImg=(Image.open("C:/Users/einav/schedule-system---cyclotron/Images/logoSheri2.png"))
+
 resizedSheriLogoimage= SheriLogoImg.resize((400,250), Image.ANTIALIAS)
 ResizedSheriImage=ImageTk.PhotoImage(resizedSheriLogoimage);
 Photocanvas.create_image(0,0,image=ResizedSheriImage,anchor="nw");
