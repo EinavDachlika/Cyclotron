@@ -687,14 +687,25 @@ def importFileFunc():
 
     def HospitalChooseImportFile(HospitalSelectedEvent):
         """Function for create Hospital Drop-Down menu -absorb data from DB"""
-        ChoosenHospitalNewOrder=HospitalSelectedImportFile.get();
-        print("Choosen hospital:",ChoosenHospitalNewOrder);
-        cursor.execute(f'SELECT CAST(idhospital AS SIGNED) FROM hospital WHERE Name="{ChoosenHospitalNewOrder}"');
+        ChoosenHospital_NewOrder=HospitalSelectedImportFile.get();
+        ch1='{';
+        ch2='}';
+        if ch1  in ChoosenHospital_NewOrder:
+            print('Found')
+            NewChoosenHospitalNewOrder1 = ChoosenHospital_NewOrder.replace("{", "");
+            NewChoosenHospitalNewOrder2 = NewChoosenHospitalNewOrder1.replace("}", "");
+            NewChoosenHospitalNewOrder=NewChoosenHospitalNewOrder2;
+            print(NewChoosenHospitalNewOrder)
+        else:
+            NewChoosenHospitalNewOrder=ChoosenHospital_NewOrder;
+
+        print("Choosen hospital:",NewChoosenHospitalNewOrder);
+        cursor.execute(f'SELECT CAST(idhospital AS SIGNED) FROM hospital WHERE Name="{NewChoosenHospitalNewOrder}"');
         IDofHospitalSelected1 = cursor.fetchall();
-        print(IDofHospitalSelected1);
+        print("Choosen ID:",IDofHospitalSelected1);
         TempID=[i[0] for i in IDofHospitalSelected1];#find index number in a list of tuple
         IDofHospitalSelected2=int(TempID[0]);
-        print(f'{IDofHospitalSelected2} : {ChoosenHospitalNewOrder}');
+        print(f'{IDofHospitalSelected2} : {NewChoosenHospitalNewOrder}');
 
         TempList[0]=IDofHospitalSelected2;#HospitalID
         print("Hospital ID selected-import file",TempList[0]);
