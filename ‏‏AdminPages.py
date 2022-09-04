@@ -2195,44 +2195,40 @@ max_activity_batch=7300
 def sortByTout(hospital):
     return hospital["tout_required"]
 
+def sortByToutActually(hospital):
+    return hospital["Tout_actually"]
+
 def sortByTeos(hospital):
     return hospital["eos_req"]
 
-def change_eos_for_tout(hospital_data, diff):
-    Subtract_from_eos = timedelta(minutes=diff)
-    last_eos = hospital_data[0]["eos_req"]
-    update_eos = last_eos - Subtract_from_eos
-    hospital_data[0]["eos_req"] = update_eos
+# def change_eos_for_tout(hospital_data, diff,hospitals_output):
+#     # print(timedelta(minutes=diff))
+#     Subtract_from_eos = timedelta(minutes=diff)
+#     last_eos = hospital_data[0]["eos_req"]
+#     update_eos = last_eos - Subtract_from_eos
+#     hospital_data[0]["eos_req"] = update_eos
+#     print(update_eos)
+#
+#     recursion_for_tout(hospital_data,hospitals_output)
 
-    recursion_for_tout(hospital_data)
-
-def recursion_for_tout(hospital_data,hospitals_output):
-    min_to_add = 0
-    add_to_tout = timedelta(minutes=min_to_add)
-    first_tout = hospital_data[0]["tout_required"]
-    # print('hospital_data(recursion_for_tout): ',hospital_data)
+def recursion_for_tout(hospital_data):
+    min_to_add = 15
+    add_to_teos = timedelta(minutes=min_to_add)
+    first_teos = hospital_data[0]["eos_req"]
     for h in hospital_data:
-        if h["delivery_order"] == 2:  # secound is will be after QC1 - needed 5 min more
-            min_to_add += 5
-            add_to_tout = timedelta(minutes=min_to_add)
-
-        Tout_actually = first_tout + add_to_tout
+        Tout_actually = first_teos + add_to_teos
         if Tout_actually > h["tout_required"]:
-            if  h["delivery_order"]>1:
-                h["delivery_order"]=h["delivery_order"]-1
-
-                recursion_for_tout(hospital_data)
-            else: #change eos req
-                diff = Tout_actually - h["tout_required"]
-                change_eos_for_tout(hospital_data, diff)
-
+            diff = Tout_actually - h["tout_required"]
+            diff_to_int = diff.seconds / 60
+            Subtract_from_eos = timedelta(minutes=diff_to_int)
+            last_eos = hospital_data[0]["eos_req"]
+            updated_eos = last_eos - Subtract_from_eos
+            hospital_data[0]["eos_req"] = updated_eos
+            recursion_for_tout(hospital_data)
 
         h["Tout_actually"] = Tout_actually
         min_to_add += 5
-        add_to_tout = timedelta(minutes=min_to_add)
-
-        hospital_record = next(hospital for hospital in hospitals_output if hospital["Name"] == h['hospital_name'] and hospital['Batch'] == h['batch'] )
-        hospital_record['delivery_order'] = h["delivery_order"]
+        add_to_teos = timedelta(minutes=min_to_add)
 
 def main_algorithm_calculation(batches,hospitals_output,batches_general_data):
     for b in batches: #calculate T1,Tout, Tcal,Teos, delivery_order, activity
@@ -2260,22 +2256,18 @@ def main_algorithm_calculation(batches,hospitals_output,batches_general_data):
                     else:
                         tout_temp = order['injection_time'] - timedelta(minutes=(order['Transport_time_min'])) #T1-Transport_time
                         hospital_data.append({'hospital_name':hospital_name,'batch':index+1, "injection_time": order['injection_time'], "Transport_time": order['Transport_time_min'], "tout_required": tout_temp})
-
+                    # print(hospital_name, " req: ", tout_temp)
             hospital_data.sort( key=sortByTout) #sort hospital_data by tout_temp
-
-            #insert Tout
-            Tout_key = "Tout"
-            i = len(hospital_data[0]) - 1  # last index in the list (Tout_req)
-            t_out_final = hospital_data[0]["tout_required"]  # first tout_temp
-            batches_general_data[index][Tout_key] = t_out_final
 
             Hospital_delivery_order=1
             interval_5 = 15
             minutes_for_eos_cal = timedelta(minutes=interval_5)
-
             for h in hospital_data:
                 #delivery_order
                 h["delivery_order"] = Hospital_delivery_order
+                hospital_record = next(hospital for hospital in hospitals_output if
+                                       hospital["Name"] == h['hospital_name'] and hospital['Batch'] == h['batch'])
+                hospital_record['delivery_order'] = Hospital_delivery_order
                 Hospital_delivery_order+=1
 
                 eos_req = h["tout_required"] - minutes_for_eos_cal  # tout - intervals consider the order
@@ -2285,14 +2277,27 @@ def main_algorithm_calculation(batches,hospitals_output,batches_general_data):
                 # hospital_data.sort(key=sortBy)  # sort hospital_data by tout_eos
 
             hospital_data.sort(key=sortByTeos)  # sort hospital_data by tout_eos
-            recursion_for_tout(hospital_data,hospitals_output)
+            # print(hospital_data)
+            recursion_for_tout(hospital_data)
 
+            #save tout actual for each hospital
+            for h in hospital_data:
+                hospital_record = next(hospital for hospital in hospitals_output if
+                                       hospital["Name"] == h['hospital_name'] and hospital['Batch'] == h['batch'])
+                hospital_record['Tout_actually'] = h['Tout_actually']
+                # print(h["hospital_name"] , " actually: ", h['Tout_actually'])
 
             # insert Teos - new module
             Teos_key = "Teos"
             t_eos_final = hospital_data[0]["eos_req"] #first index in the list is the shortest time of eos (because it's sorted)
             batches_general_data[index][Teos_key] = t_eos_final
 
+            # insert Tout
+            Tout_key = "Tout"
+            hospital_data.sort(key=sortByToutActually)
+            last_index = len(hospital_data)-1
+            t_out_final = hospital_data[last_index]['Tout_actually'] #last tout actually
+            batches_general_data[index][Tout_key] = t_out_final
 
             #insert Tcal - new module
             Tcal_key = "Tcal"
@@ -2301,9 +2306,9 @@ def main_algorithm_calculation(batches,hospitals_output,batches_general_data):
             batches_general_data[index][Tcal_key] = t_cal
 
 
-            # bottles_b = len(hospitals) + 2
-            # bottels_key = "bottles_mum"
-            # batches_general_data[index][bottels_key] = bottles_b
+            bottles_b = len(hospitals)
+            bottels_key = "bottles_mum"
+            batches_general_data[index][bottels_key] = bottles_b
 
             batches_general_data[index]["Activity"] = 0  # define the key
             for order in b:
@@ -2319,6 +2324,7 @@ def main_algorithm_calculation(batches,hospitals_output,batches_general_data):
 
                 if batches_general_data[index]["Activity"] + A_Tcal >= max_activity_batch:
                     batches[index+1].append(order)
+                    batches[index].remove(order)
                     main_algorithm_calculation(batches,hospitals_output,batches_general_data)
 
                 else:
@@ -2329,9 +2335,9 @@ def main_algorithm_calculation(batches,hospitals_output,batches_general_data):
                     hospital = next(h for h in hospitals_output if h["Name"] == order["Name"] and h["Batch"] == index + 1)
                     order[A_Tcal_key] = A_Tcal
                     order['diff_Tcal_injectionT'] = diff
-                    hospital["Activity"] +=A_Tcal # Hagai - calculate for each bath and hospital separately??
+                    hospital["Activity"] +=A_Tcal
 
-                    batches_general_data[index]["Activity"] += A_Tcal
+                    batches_general_data[index]["Activity"] += A_Tcal*1.05
 
 def export_WP_Excel( selected_material, selected_date, all_batches_output, hospitals_output, batches_general_data):
     FilePath = r"FDG format.xlsx"
@@ -3031,7 +3037,7 @@ class Popup(Toplevel):
                                values=b_r)
 
         #excel
-        excelIcon = Image.open(r"./excelIcon.png");
+        excelIcon = Image.open("excelIcon.png")
         resizedExcelIcon = excelIcon.resize((40, 40), Image.ANTIALIAS)
         imgExcel = ImageTk.PhotoImage(resizedExcelIcon)
         # ExcelButton = Button(self, image=imgExcel, borderwidth=0,
