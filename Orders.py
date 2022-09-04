@@ -3,7 +3,6 @@ from tkinter import ttk,messagebox
 import tkinter as tk
 from PIL import Image, ImageTk
 import mysql.connector
-from mysql.connector import Error
 from tkinter import filedialog as fd
 import pandas as pd
 from docx.api import Document
@@ -19,9 +18,8 @@ from ConnectToDB import *          #connect to mysql DB
 #import DB_tables                   #create tables ans import them
 #import Permission
 
-#import DB_tables_test
 # def UsersFunction():
-spec = importlib.util.spec_from_file_location("module.name", "D:\PythonProjects\Cyclotron\‏‏DB_tables_test.py")
+spec = importlib.util.spec_from_file_location("module.name", "D:\PythonProjects\Cyclotron\DB_tables.py")
 foo = importlib.util.module_from_spec(spec)
 sys.modules["module.name"] = foo
 spec.loader.exec_module(foo)
@@ -264,13 +262,13 @@ def SearchOutpout(data):
 #########################Orders main pages buttons###############################
 
 #Create Refresh(DB) button
-global reafreahImg;
-reafreshIcon = Image.open("./Images/regreshButton.png");
-resizedReafreshEditIcon = reafreshIcon.resize((23,23), Image.ANTIALIAS);
-reafreahImg = ImageTk.PhotoImage(resizedReafreshEditIcon);
-ReafrshButton=Button(ordersFrame, image=reafreahImg, borderwidth=0,command=updateOrdersTreeMainPageOutputOnly)
-ReafrshButton.pack();
-ReafrshButton.place(x=530, y=63);
+# global reafreahImg;
+# reafreshIcon = Image.open("./Images/regreshButton.png");
+# resizedReafreshEditIcon = reafreshIcon.resize((23,23), Image.ANTIALIAS);
+# reafreahImg = ImageTk.PhotoImage(resizedReafreshEditIcon);
+# ReafrshButton=Button(ordersFrame, image=reafreahImg, borderwidth=0,command=updateOrdersTreeMainPageOutputOnly)
+# ReafrshButton.pack();
+# ReafrshButton.place(x=530, y=63);
 
 
 #Create Search window
@@ -280,12 +278,13 @@ searchEntry.pack();
 searchEntry.place(x=640, y=65);
 
 #Create search icon
+global SearchImg;
 searchIcon = Image.open("./Images/SearchButton.png");
 resizedSearchedEditIcon = searchIcon.resize((23,23), Image.ANTIALIAS);
-SearchImg = ImageTk.PhotoImage(resizedSearchedEditIcon);
-SearchLabelicon=Label(image=SearchImg);
+SearchImg = ImageTk.PhotoImage(resizedSearchedEditIcon,master=ordersFrame);
+SearchLabelicon=Label(ordersFrame,image=SearchImg);
 SearchLabelicon.pack();
-SearchLabelicon.place(x=610, y=135);
+SearchLabelicon.place(x=610, y=63);
 
 def SearchComponent(event):
       """Function for creating search component """
@@ -382,7 +381,7 @@ def MaterialsSelectedeFilteringFunc(event):
 
 
 MaterialsDropDownFilteringMainPage = ttk.Combobox(ordersFrame,state="readonly",value=Material_in_db,width=9);
-MaterialsDropDownFilteringMainPage.current(2);
+MaterialsDropDownFilteringMainPage.current(0);
 
 MaterialsDropDownFilteringMainPage.bind("<<ComboboxSelected>>",MaterialsSelectedeFilteringFunc)
 MaterialsDropDownFilteringMainPage.pack();
@@ -431,9 +430,9 @@ def deleteOrderfunc():
             cursor = db.cursor(buffered=True);
             for rawselected in rawSelectedToDelete:
                 UpdateSQlQuery=f"UPDATE  orders SET deleted='{RecoredDeletedFlug}' WHERE  hospitalID= '{IDofHospitalSelected2}' AND Date= '{DateSelected}';";
-                DeleteQuery = f"DELETE FROM orders WHERE hospitalID= '{IDofHospitalSelected2}' AND Date= '{DateSelected}';";
+                #DeleteQuery = f"DELETE FROM orders WHERE hospitalID= '{IDofHospitalSelected2}' AND Date= '{DateSelected}';";
                 cursor.execute(UpdateSQlQuery);
-                cursor.execute(DeleteQuery);
+                #cursor.execute(DeleteQuery);
                 OrdersTree.delete(rawselected);
                 print("DB updated successfully-Record add to deleted column ");
                 db.commit();
@@ -451,11 +450,11 @@ def deleteOrderfunc():
 
 
 # Remove button (Icon) -Delete Order
-global imgDelete2;
-deleteIcon = Image.open("./‏‏deleteIcon.png")
-resizedDeleteIcon = deleteIcon.resize((20,20), Image.ANTIALIAS)
-imgDelete2 = ImageTk.PhotoImage(resizedDeleteIcon)
-deleteButton=Button(ordersFrame, image=imgDelete2, borderwidth=0,command=deleteOrderfunc)
+global ImgDeleteOrder;
+deleteIcon = Image.open("./‏‏deleteIcon.png");
+resizedDeleteIcon = deleteIcon.resize((20,20), Image.ANTIALIAS);
+ImgDeleteOrder = ImageTk.PhotoImage(resizedDeleteIcon,master=ordersFrame);
+deleteButton=Button(ordersFrame, image=ImgDeleteOrder, borderwidth=0,command=deleteOrderfunc);
 deleteButton.pack()
 deleteButton.place(x=560, y=65)
 
@@ -466,17 +465,17 @@ OrdersTree.bind('<<TreeviewSelect>>', deleteOrderEvent);
 ###############################################Import File page##################################
 
 
-def WriteToCsv(result):
-    """Function for creating/exporting Excel file"""
-    print("try exporting new excel file...");
-    headers = ['OrderId', 'Date', 'Injection Time', 'Amount','idhospital','batchID','decayCorrected'];
-    with open('orders.csv','a',newline="") as f:
-        w = csv.writer(f,dialect='excel');
-        messagebox.showinfo("message","Excel file was created");
-        # write the headers
-        w.writerow(headers);
-        for record in result:
-            w.writerow(record);
+# def WriteToCsv(result):
+#     """Function for creating/exporting Excel file"""
+#     print("try exporting new excel file...");
+#     headers = ['OrderId', 'Date', 'Injection Time', 'Amount','idhospital','batchID','decayCorrected'];
+#     with open('orders.csv','a',newline="") as f:
+#         w = csv.writer(f,dialect='excel');
+#         messagebox.showinfo("message","Excel file was created");
+#         # write the headers
+#         w.writerow(headers);
+#         for record in result:
+#             w.writerow(record);
 
 
 # Absorb Orders table data from db-for excel export
@@ -484,14 +483,14 @@ cursor = db.cursor();
 cursor.execute("SELECT * FROM orders");
 ordersTable_in_db = cursor.fetchall();
 
-#Create Export to Excel buttton
-global ExportToCSVImg;
-ExportCSVIcon = Image.open("./Images/ExportExcel.png");
-resizedExportCSVIcon = ExportCSVIcon.resize((23,23), Image.ANTIALIAS);
-ExportToCSVImg = ImageTk.PhotoImage(resizedExportCSVIcon);
-ExportToCSVImgicon=Button(ordersFrame, image=ExportToCSVImg, borderwidth=0,command=lambda : WriteToCsv(ordersTable_in_db))
-ExportToCSVImgicon.pack();
-ExportToCSVImgicon.place(x=585, y=63);
+# #Create Export to Excel buttton
+# global ExportToCSVImg;
+# ExportCSVIcon = Image.open("./Images/ExportExcel.png");
+# resizedExportCSVIcon = ExportCSVIcon.resize((23,23), Image.ANTIALIAS);
+# ExportToCSVImg = ImageTk.PhotoImage(resizedExportCSVIcon);
+# ExportToCSVImgicon=Button(ordersFrame, image=ExportToCSVImg, borderwidth=0,command=lambda : WriteToCsv(ordersTable_in_db))
+# ExportToCSVImgicon.pack();
+# ExportToCSVImgicon.place(x=585, y=63);
 
 #Create edit icon
 # global imgEdit;
@@ -632,7 +631,7 @@ def importFileFunc():
     #Create hospital drop-down
     # Absorb hosital list data from db
     cursor = db.cursor();
-    cursor.execute("SELECT idhospital,Name FROM hospital");
+    cursor.execute("SELECT Name FROM hospital");
     hospitals_in_db = cursor.fetchall();
     HospitalList2 = hospitals_in_db;
 
@@ -640,17 +639,16 @@ def importFileFunc():
     def HospitalChooseImportFile(HospitalSelectedEvent):
         """Function for create Hospital Drop-Down menu -absorb data from DB"""
         ChoosenHospitalNewOrder=HospitalSelectedImportFile.get();
-        print(ChoosenHospitalNewOrder);
+        print("Choosen hospital:",ChoosenHospitalNewOrder);
+        cursor.execute(f'SELECT CAST(idhospital AS SIGNED) FROM hospital WHERE Name="{ChoosenHospitalNewOrder}"');
+        IDofHospitalSelected1 = cursor.fetchall();
+        print(IDofHospitalSelected1);
+        TempID=[i[0] for i in IDofHospitalSelected1];#find index number in a list of tuple
+        IDofHospitalSelected2=int(TempID[0]);
+        print(f'{IDofHospitalSelected2} : {ChoosenHospitalNewOrder}');
 
-        #loop for findinf Id number in the string
-        HospitalIDFromChoosenHospital = "";
-        for index in ChoosenHospitalNewOrder:
-            if index.isdigit():
-                HospitalIDFromChoosenHospital = HospitalIDFromChoosenHospital + index;
-
-
-        TempList[0]=HospitalIDFromChoosenHospital;#HospitalID
-        print(TempList[0]);
+        TempList[0]=IDofHospitalSelected2;#HospitalID
+        print("Hospital ID selected-import file",TempList[0]);
 
 
 
@@ -738,8 +736,8 @@ def importFileFunc():
         if AmountListFromDoc:
             try:
                for i in range(1,len(AmountListFromDoc)):
-                ValuseTuple=(counterOrderId,i,TempList[1],InjectionTImeListFromdoc[i],AmountListFromDoc[i], TempList[0],TempList[2],0);#BatchId=null
-                cursor.execute("INSERT INTO orders (idorders,DoseNumber,Date,injection_time,amount,hospitalID,materialID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);",ValuseTuple);#BatchId=null
+                ValuseTuple=(i,TempList[1],InjectionTImeListFromdoc[i],AmountListFromDoc[i], TempList[0],TempList[2]);#BatchId=null
+                cursor.execute("INSERT INTO orders (DoseNumber,Date,injection_time,amount,hospitalID,materialID) VALUES (%s,%s,%s,%s,%s,%s);",ValuseTuple);#BatchId=null
                 counterOrderId=counterOrderId+1;
                #updateOrdersTreeMainPageOutputOnly();##update orders tree main page
             except Exception as e:
@@ -1327,10 +1325,10 @@ def PopUpForNewOrder():
 
             cursor = db.cursor(buffered=True);
             for i in range(1,ListofVal[4]+1):
-                ValuseTuple=(counterOrderId,i, ChoosenDateForManaulOrder, ListofTimeIntervals[i-1], ListofVal[1], ListofVal[5],ListofVal[7],0);#BatchId=null
+                ValuseTuple=(i, ChoosenDateForManaulOrder, ListofTimeIntervals[i-1], ListofVal[1], ListofVal[5],ListofVal[7]);#BatchId=null
                 print("order trying to get in DB-Add pressed");
                 try:
-                    UpdateSQlQuery="INSERT INTO orders (idorders,DoseNumber,Date,injection_time,amount,hospitalID,materialID,DecayCorrected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);";#BatchId=null
+                    UpdateSQlQuery="INSERT INTO orders (DoseNumber,Date,injection_time,amount,hospitalID,materialID) VALUES (%s,%s,%s,%s,%s,%s);";#BatchId=null
                     cursor.execute(UpdateSQlQuery,ValuseTuple);
                     counterOrderId=counterOrderId+1;
                     print("DB updated successfully ");
@@ -1575,8 +1573,9 @@ def PopUpForNewOrder():
 # ####################end of page number 2 -New order #######################################################################
 
 ################################Edit/Update Order main page###################################################################
-def UpdateOrder(event):
+def UpdateOrder():
     global hospitalId;
+
     curItem = OrdersTree.focus();
     DataOfRowSelectedDic=OrdersTree.item(curItem);
     DataOfRowSelectedList=DataOfRowSelectedDic['values'];
@@ -1625,6 +1624,7 @@ def UpdateOrder(event):
     ActivitiyBySpecificOrder = cursor.fetchall();
     TempID=[i[0] for i in ActivitiyBySpecificOrder];#find index number in a list of tuple
     ActivitiyBySpecificOrder2=TempID[0];
+
     print("Activity of Hospital selected:",ActivitiyBySpecificOrder2);
 
 
@@ -1913,7 +1913,11 @@ def UpdateOrder(event):
             messagebox.showerror("Error message","Error !");
             print("Error-Order was not updated-please check MySQL")
 
-
+        cursor = db.cursor(buffered=True);
+        SortQuery="with my_cte as (select DoseNumber, Injection_time, row_number() over(order by Injection_time asc) rn from orders) update orders set DoseNumber = (select  min(rn) from my_cte where orders.DoseNumber = my_cte.DoseNumber and orders.Injection_time=my_cte.Injection_time)";
+        cursor.execute(SortQuery);
+        db.commit();
+        cursor.close();
         #Function to insert data into My-SQL Db
         #EditPage.destroy();#Close import file-manual window
         updateOrdersTreeMainPageOutputOnly();#Refresh/Update Main page
@@ -1999,7 +2003,93 @@ def UpdateOrder(event):
     AddRowButton.place(x=250, y=98);
 
 #Double click on  main order page tree event
-OrdersTree.bind('<<TreeviewOpen>>', UpdateOrder)
+#OrdersTree.bind('<<TreeviewOpen>>', UpdateOrder);
+
+global imgEditOrders;
+EditOrdersIcon = Image.open("editIcon.jpg");
+resizedOrdersEditIcon = EditOrdersIcon.resize((20, 20), Image.ANTIALIAS);
+imgEditOrders = ImageTk.PhotoImage(resizedOrdersEditIcon,master=ordersFrame);
+editOrdersButton = Button(ordersFrame, image=imgEditOrders, borderwidth=0,command=UpdateOrder);
+editOrdersButton.pack();
+editOrdersButton.place(x=587, y=66);
+
+
+
+
+## OrdersTree.bind('<<TreeviewSelect>>', deleteOrderEvent);
+
+# selected_rec = batch_tabel.selected()
+# selected_non = batch_tabel.selected_is_non(selected_rec)
+# if not selected_non:
+#     editBatchPopup = Popup();
+
+# OrderselectedEvent = tk.StringVar();
+# def deleteOrderEvent(event):
+#
+#     """Function for removing order from DB"""
+#     global DoseNum_Selected,DateSelected,InjectionTimeSelected,IDofHospitalSelected2;
+#     row = OrdersTree.focus();
+#
+#     dataofchoosnenRowListEditTree=row;
+#     #print(dataofchoosnenRowListEditTree);
+#     DataOfRowSelectedDicEditTree=OrdersTree.item(dataofchoosnenRowListEditTree);
+#     DataOfRowSelectedList=DataOfRowSelectedDicEditTree['values'];
+#     print("Record/Order selected to delete: ",DataOfRowSelectedList);
+#     hospitalSelected=DataOfRowSelectedList[0];
+#     DateSelected=DataOfRowSelectedList[1];
+#     InjectionTimeSelected=DataOfRowSelectedList[2];
+#
+#     #search hospital by name from hospital table db and get the ID as output
+#     cursor = db.cursor();
+#     cursor.execute(f'SELECT CAST(idhospital AS SIGNED) FROM hospital WHERE Name="{hospitalSelected}"');
+#     IDofHospitalSelected1 = cursor.fetchall();
+#     TempID=[i[0] for i in IDofHospitalSelected1];#find index number in a list of tuple
+#     IDofHospitalSelected2=int(TempID[0]);
+#     print(f'{IDofHospitalSelected2} : {hospitalSelected}');
+#
+# def deleteOrderfunc():
+#     MsgBox = messagebox.askquestion ('Info message','Are you sure you want to cancel/delete the order?',icon = 'warning')
+#     if MsgBox == 'yes':
+#         rawSelectedToDelete=OrdersTree.selection();#selected item:I001,I002,I003....
+#         RecoredDeletedFlug=1;
+#         try:
+#             cursor = db.cursor(buffered=True);
+#             for rawselected in rawSelectedToDelete:
+#                 UpdateSQlQuery=f"UPDATE  orders SET deleted='{RecoredDeletedFlug}' WHERE  hospitalID= '{IDofHospitalSelected2}' AND Date= '{DateSelected}';";
+#                 #DeleteQuery = f"DELETE FROM orders WHERE hospitalID= '{IDofHospitalSelected2}' AND Date= '{DateSelected}';";
+#                 cursor.execute(UpdateSQlQuery);
+#                 #cursor.execute(DeleteQuery);
+#                 OrdersTree.delete(rawselected);
+#                 print("DB updated successfully-Record add to deleted column ");
+#                 db.commit();
+#                 cursor.close();
+#         except mysql.connector.errors.IntegrityError as e:
+#             messagebox.showinfo("info message","Watch out\nThere is workplan that relate to the order you trying to delete/cancel that still active\n,action cancel!");
+#             logging.error(traceback.format_exc())
+#         except Exception as e:
+#             logging.error(traceback.format_exc())
+#             print("Error-Order was not updated-please check MySQL");
+#
+#     else:
+#         messagebox.showinfo('Return','Return to the Orders screen');
+#
+#
+#
+# # Remove button (Icon) -Delete Order
+# global imgDelete2;
+# deleteIcon = Image.open("./‏‏deleteIcon.png")
+# resizedDeleteIcon = deleteIcon.resize((20,20), Image.ANTIALIAS)
+# imgDelete2 = ImageTk.PhotoImage(resizedDeleteIcon)
+# deleteButton=Button(ordersFrame, image=imgDelete2, borderwidth=0,command=deleteOrderfunc)
+# deleteButton.pack()
+# deleteButton.place(x=560, y=65)
+#
+# OrdersTree.bind('<<TreeviewSelect>>', deleteOrderEvent);
+
+
+
+
+
 
 ###############################End of update page#################################################
 
