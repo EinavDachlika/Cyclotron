@@ -2433,7 +2433,7 @@ def export_WP_Excel( selected_material, selected_date, all_batches_output, hospi
                 col_num = 14
 
             sheet.cell(row=1, column=col_num).value = b['Tout']
-            # sheet.cell(row=3, column=col_num).value =  #number of hospitals
+            sheet.cell(row=3, column=col_num).value = b["bottles_mum"] #number of hospitals
             sheet.cell(row=4, column=col_num).value = b['Tcal']
             sheet.cell(row=5, column=col_num).value = b['Teos']
             sheet.cell(row=7, column=col_num).value = b['Activity']
@@ -2448,17 +2448,19 @@ def export_WP_Excel( selected_material, selected_date, all_batches_output, hospi
                 row_num=2
                 b=1
         elif hb['Batch']==2:
-            col_num = 3
+            col_num = 4
             if not b==2:
                 row_num=2
                 b=2
         else:
-            col_num = 5
+            col_num = 6
             if not b==3:
                 row_num=2
                 b=3
+        # print(hb['delivery_order'], " ",hb['Name'], " ",hb['Tout_actually'] )
         sheet2.cell(row=row_num, column=col_num).value =hb['delivery_order']
         sheet2.cell(row=row_num, column=col_num+1).value = hb['Name']
+        sheet2.cell(row=row_num, column=col_num+2).value = hb['Tout_actually']
         row_num+=1
 
     downloads_path = str(Path.home() / "Downloads") + '/'
@@ -3670,14 +3672,14 @@ materialLabel.place(x=Lable_place_x,y=Lable_place_y)
 ###material tabel###
 scroll_width=20
 tab_side=LEFT
-x=420
+x=250
 y= 150
 frame=materialSettingsFrame
 list_height=5
 # table_place_x = 80
 # table_place_y=80
 
-columns_name_list=[' Material ']
+columns_name_list=['    Material   ']
 
 queryMaterial = "SELECT * FROM material WHERE ISNULL(deleted)"
 
@@ -3724,31 +3726,31 @@ def deleteMaterialfun():
 #material buttons
 
 #Create a button in the main Window to add record - material
-materialAddIcon = Image.open(r"./addIcon.png")
+materialAddIcon = Image.open("addIcon.png")
 resizedMaterialAddIcon = materialAddIcon.resize((25, 25), Image.ANTIALIAS)
 imgAddMaterial = ImageTk.PhotoImage(resizedMaterialAddIcon)
 addMaterialButton = Button(materialSettingsFrame, image=imgAddModule, borderwidth=0, command=addMaterialfun)
 addMaterialButton.pack(side= LEFT)
-addMaterialButton.place(x=table_place_x + material_tabel.winfo_reqwidth() - 95, y=table_place_y+14)
+addMaterialButton.place(x=table_place_x + material_tabel.winfo_reqwidth() - 70, y=table_place_y+20)
 
 #Create a button in the main Window to edit  record (open the popup) - material
-materialEditIcon = Image.open(r"./editIcon.jpg")
+materialEditIcon = Image.open("editIcon.jpg")
 resizedMaterialEditIcon = materialEditIcon.resize((20, 20), Image.ANTIALIAS)
 imgEditMaterial = ImageTk.PhotoImage(resizedMaterialEditIcon)
 editMaterialButton = Button(materialSettingsFrame, image=imgEditMaterial, borderwidth=0, command=editMaterialfun)
 editMaterialButton.pack(side= LEFT)
-editMaterialButton.place(x=table_place_x + material_tabel.winfo_reqwidth() - 45, y=table_place_y+15)
+editMaterialButton.place(x=table_place_x + material_tabel.winfo_reqwidth() - 30, y=table_place_y+22)
 
 #Create a button in the main Window to Delete record - material
-materialDeleteIcon = Image.open(r"./‏‏deleteIcon.png")
+materialDeleteIcon = Image.open("‏‏deleteIcon.png")
 resizedMaterialDeleteIcon = materialDeleteIcon.resize((20, 20), Image.ANTIALIAS)
 imgDeleteMaterial = ImageTk.PhotoImage(resizedMaterialDeleteIcon)
 deleteMaterialButton = Button(materialSettingsFrame, image=imgDeleteMaterial, borderwidth=0, command=deleteMaterialfun)
 deleteMaterialButton.pack(side= LEFT)
-deleteMaterialButton.place(x=table_place_x + material_tabel.winfo_reqwidth() , y=table_place_y+15)
+deleteMaterialButton.place(x=table_place_x + material_tabel.winfo_reqwidth() +7, y=table_place_y+22)
 
 
-##################### settings new - Hospitals #####################
+##################### settings - Hospitals #####################
 #hospital frame
 hospitalFrame = Frame(root)
 # hospitalFrame.pack(fill=X)
@@ -3779,8 +3781,8 @@ hospitalLabel.place(x=Lable_place_x,y=Lable_place_y)
 #hospital table
 scroll_width=20
 tab_side=LEFT
-x=650
-y= 160
+x=895
+y= 130
 frame=hospitalFrame
 list_height=30
 c = 80

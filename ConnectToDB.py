@@ -4,23 +4,23 @@ from mysql.connector import Error
 # connect to MySqL
 try:
     #SRY local DB Mysql
-    db = mysql.connector.connect(
-        host="localhost",
-        port=3306,
-        user="root",
-        password="root",
-        database="cyclotron",
-        auth_plugin='mysql_native_password'
-    )
-
-    #
-    # #Maor local DB Mysql
     # db = mysql.connector.connect(
     #     host="localhost",
-    #     port=3308,
+    #     port=3306,
     #     user="root",
     #     password="root",
-    #     database="cyclotron")
+    #     database="cyclotron",
+    #     auth_plugin='mysql_native_password'
+    # )
+
+    #
+    #Maor local DB Mysql
+    db = mysql.connector.connect(
+        host="localhost",
+        port=3308,
+        user="root",
+        password="root",
+        database="cyclotron")
 
     # # # Einav local DB-Mysql
     # db = mysql.connector.connect(
