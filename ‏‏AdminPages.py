@@ -3050,7 +3050,7 @@ class Popup(Toplevel):
                                values=b_r)
 
         #excel
-        excelIcon = Image.open("excelIcon.png")
+        excelIcon = Image.open(r"./excelIcon.png")
         resizedExcelIcon = excelIcon.resize((40, 40), Image.ANTIALIAS)
         imgExcel = ImageTk.PhotoImage(resizedExcelIcon)
         # ExcelButton = Button(self, image=imgExcel, borderwidth=0,
@@ -3726,7 +3726,7 @@ def deleteMaterialfun():
 #material buttons
 
 #Create a button in the main Window to add record - material
-materialAddIcon = Image.open("addIcon.png")
+materialAddIcon = Image.open(r"./addIcon.png")
 resizedMaterialAddIcon = materialAddIcon.resize((25, 25), Image.ANTIALIAS)
 imgAddMaterial = ImageTk.PhotoImage(resizedMaterialAddIcon)
 addMaterialButton = Button(materialSettingsFrame, image=imgAddModule, borderwidth=0, command=addMaterialfun)
@@ -3734,7 +3734,7 @@ addMaterialButton.pack(side= LEFT)
 addMaterialButton.place(x=table_place_x + material_tabel.winfo_reqwidth() - 70, y=table_place_y+20)
 
 #Create a button in the main Window to edit  record (open the popup) - material
-materialEditIcon = Image.open("editIcon.jpg")
+materialEditIcon = Image.open(r"./editIcon.jpg")
 resizedMaterialEditIcon = materialEditIcon.resize((20, 20), Image.ANTIALIAS)
 imgEditMaterial = ImageTk.PhotoImage(resizedMaterialEditIcon)
 editMaterialButton = Button(materialSettingsFrame, image=imgEditMaterial, borderwidth=0, command=editMaterialfun)
@@ -3742,7 +3742,7 @@ editMaterialButton.pack(side= LEFT)
 editMaterialButton.place(x=table_place_x + material_tabel.winfo_reqwidth() - 30, y=table_place_y+22)
 
 #Create a button in the main Window to Delete record - material
-materialDeleteIcon = Image.open("‏‏deleteIcon.png")
+materialDeleteIcon = Image.open(r"./‏‏deleteIcon.png")
 resizedMaterialDeleteIcon = materialDeleteIcon.resize((20, 20), Image.ANTIALIAS)
 imgDeleteMaterial = ImageTk.PhotoImage(resizedMaterialDeleteIcon)
 deleteMaterialButton = Button(materialSettingsFrame, image=imgDeleteMaterial, borderwidth=0, command=deleteMaterialfun)
