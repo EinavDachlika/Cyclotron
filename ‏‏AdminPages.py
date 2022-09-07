@@ -2726,7 +2726,9 @@ class Popup(Toplevel):
 
             if args[len(args) - 1] == 'batch' and lab[0] in ('Time leaves Hadassah','Total EOS','EOS Time'):
                 entry_box.config(state='disabled')
-                p_last_label_y+=entry_box.winfo_reqheight()
+                if lab[1] =='':
+                    p_last_label_y += entry_box.winfo_reqheight()
+
 
             if lab[1] != '':
                 p_label_units = Label(self, text=lab[1])
@@ -2740,8 +2742,10 @@ class Popup(Toplevel):
             # row_num += 1
 
             p_last_label_y += entry_box.winfo_reqheight() + p_label.winfo_reqheight()
+            print(lab, p_last_label_y)
             if args[len(args) - 1] == 'batch' and lab[0] in ('Time leaves Hadassah','Total EOS','EOS Time'):
-                pass
+                if lab[1] != '':
+                    p_last_label_y += entry_box.winfo_reqheight()
             else:
                 # error labels
                 error_label = Label(self, text='', font=('Courier', 8), fg='red')
@@ -2955,7 +2959,6 @@ class Popup(Toplevel):
         batch3_exist = True
 
         for order in data:
-            print(str(order["injection_time"]), order)
             order_time = datetime.strptime(str(order["injection_time"]), '%H:%M:%S').time()
             if order_time < datetime.strptime('15:00:00', '%H:%M:%S').time():  # batch 1
                 batch1.append(order)
@@ -3677,7 +3680,7 @@ tab_side=LEFT
 x=250
 y= 150
 frame=materialSettingsFrame
-list_height=10
+list_height=8
 # table_place_x = 80
 # table_place_y=80
 
@@ -4173,14 +4176,13 @@ def SwipeToWorkPlanPage():
     hospitalFrame.forget();
     cycloSettingsFrame.forget();
 
-# work plan button - toolbar
-workPlanButton = Button(toolbar, text="Work Plans", font='Helvetica 11', command=lambda: SwipeToWorkPlanPage())
-workPlanButton.pack(side=LEFT,padx=10,pady=3)
-
-
 # Orders button - toolbar
 ordersButton = Button (toolbar, text="Orders", font='Helvetica 11', command=SwipeToOrdersPage)
 ordersButton.pack(side=LEFT,padx=10,pady=3)
+
+# work plan button - toolbar
+workPlanButton = Button(toolbar, text="Work Plans", font='Helvetica 11', command=lambda: SwipeToWorkPlanPage())
+workPlanButton.pack(side=LEFT,padx=10,pady=3)
 
 def SwipeToBatchPage():
     ordersButton.config(bg='#F0F0F0');# Orders uttun color default value
@@ -4200,9 +4202,9 @@ BatchButton.pack(side=LEFT,padx=10,pady=3)
 
 
 
-# Reports button - toolbar
-reportsButton = Button (toolbar, text="Reports", font='Helvetica 11')
-reportsButton.pack(side=LEFT,padx=10,pady=3)
+# # Reports button - toolbar
+# reportsButton = Button (toolbar, text="Reports", font='Helvetica 11')
+# reportsButton.pack(side=LEFT,padx=10,pady=3)
 
 # settings Icon - toolbar
 global imgSettings;

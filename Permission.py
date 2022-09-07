@@ -140,8 +140,8 @@ validateLogin = partial(validateLogin, username, password);
 #login button
 loginButton = Button(topPermissionScreen, text="Login", command=validateLogin);
 
-CancelButton=Button(topPermissionScreen,text="Cancel",command=lambda: [root.destroy()]);
-CancelButton.place(x=315,y=480);
+# CancelButton=Button(topPermissionScreen,text="Cancel",command=lambda: [root.destroy()]);
+# CancelButton.place(x=315,y=480);
 
 def LoginButton(event):
     validateLogin();
