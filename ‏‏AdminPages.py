@@ -641,8 +641,8 @@ def importFileFunc():
                 sheet = wb.sheet_by_index(0);
                 sheet.cell_value(0, 0);
                 #Get amount data/column from doc/excel
+                AmountListFromDoc.append(sheet.cell_value(i, 2));
                 for i in range(1,sheet.nrows):
-                    AmountListFromDoc.append(sheet.cell_value(i, 2));
                     print(AmountListFromDoc)
 
                     #Get Injection time data/column from doc/excel-Get Injection time
@@ -3376,9 +3376,10 @@ class table(ttk.Treeview):
 
                 # delete from batch table (show to user)
                 children = batch_tabel.get_children()
-                batch_table_index = [b for b in children if batch_tabel.item(b)['values'][7] in to_delete_batches_list]
 
-                for b_index in batch_table_index:
+                batch_table_index = [b for b in children if batch_tabel.item(b)['values'][8] in to_delete_batches_list]
+
+                for b_index in batch_table_index:  #delete batch from table (in batch page)
                     batch_tabel.delete(b_index)
 
 
