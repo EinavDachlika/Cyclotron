@@ -2955,6 +2955,7 @@ class Popup(Toplevel):
         batch3_exist = True
 
         for order in data:
+            print(str(order["injection_time"]), order)
             order_time = datetime.strptime(str(order["injection_time"]), '%H:%M:%S').time()
             if order_time < datetime.strptime('15:00:00', '%H:%M:%S').time():  # batch 1
                 batch1.append(order)
