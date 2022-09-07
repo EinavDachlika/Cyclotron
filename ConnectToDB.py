@@ -3,7 +3,7 @@ from mysql.connector import Error
 
 # connect to MySqL
 try:
-    # #SRY local DB Mysql
+    #SRY local DB Mysql
     # db = mysql.connector.connect(
     #     host="localhost",
     #     port=3306,
@@ -22,7 +22,7 @@ try:
     #     password="root",
     #     database="cyclotron")
 
-    # # Einav local DB-Mysql
+    # # # Einav local DB-Mysql
     db = mysql.connector.connect(
         host="localhost",
         user="root",

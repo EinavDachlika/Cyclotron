@@ -476,12 +476,12 @@ def deleteOrderfunc():
         try:
             cursor = db.cursor(buffered=True);
             for rawselected in rawSelectedToDelete:
-                UpdateSQlQuery=f"UPDATE  orders SET deleted='{RecoredDeletedFlug}' WHERE  hospitalID= '{IDofHospitalSelected2}' AND Date= '{DateSelected}';";
+                #UpdateSQlQuery=f"UPDATE  orders SET deleted='{RecoredDeletedFlug}' WHERE  hospitalID= '{IDofHospitalSelected2}' AND Date= '{DateSelected}';";
                 DeleteQuery = f"DELETE FROM orders WHERE hospitalID= '{IDofHospitalSelected2}' AND Date= '{DateSelected}';";
-                cursor.execute(UpdateSQlQuery);
+                #cursor.execute(UpdateSQlQuery);
                 cursor.execute(DeleteQuery);
                 OrdersTree.delete(rawselected);
-                print("DB updated successfully-Record add to deleted column ");
+                print(" Order updated successfully ");
                 db.commit();
                 cursor.close();
         except mysql.connector.errors.IntegrityError as e:
