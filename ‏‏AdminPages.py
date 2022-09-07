@@ -641,8 +641,8 @@ def importFileFunc():
                 sheet = wb.sheet_by_index(0);
                 sheet.cell_value(0, 0);
                 #Get amount data/column from doc/excel
+                AmountListFromDoc.append(sheet.cell_value(i, 2));
                 for i in range(1,sheet.nrows):
-                    AmountListFromDoc.append(sheet.cell_value(i, 2));
                     print(AmountListFromDoc)
 
                     #Get Injection time data/column from doc/excel-Get Injection time
@@ -3222,7 +3222,7 @@ class table(ttk.Treeview):
         self.side = side
         scroll = Scrollbar(frame, orient="vertical", width=scroll_width)
         scroll.pack(side=side)
-        scroll.place(x=x_crol, y=y_crol)
+        scroll.place(x=x_crol, y=y_crol, height=150)
 
         ttk.Treeview.__init__(self,frame, yscrollcommand=scroll.set, height=list_height)
         self.pack(side=LEFT, padx=lable_place_x + 30, pady=lable_place_y + 50)
@@ -3328,8 +3328,8 @@ class table(ttk.Treeview):
                     query2 = "UPDATE " + table_name +" SET deleted = True " +"WHERE " + pk_name + "=" + pk_delected_record
                     cursor.execute(query2)
                     db.commit()
-                # self.delete(self.selection()[0])
-                print(self.selection()[0])
+                self.delete(self.selection()[0])
+
 
     def delete_WP_record(self):
         selected_rec = self.selected()
@@ -3376,9 +3376,10 @@ class table(ttk.Treeview):
 
                 # delete from batch table (show to user)
                 children = batch_tabel.get_children()
-                batch_table_index = [b for b in children if batch_tabel.item(b)['values'][7] in to_delete_batches_list]
 
-                for b_index in batch_table_index:
+                batch_table_index = [b for b in children if batch_tabel.item(b)['values'][8] in to_delete_batches_list]
+
+                for b_index in batch_table_index:  #delete batch from table (in batch page)
                     batch_tabel.delete(b_index)
 
 
@@ -3426,7 +3427,7 @@ tab_side=LEFT
 x=613
 y= 140
 frame=cycloSettingsFrame
-list_height=5
+list_height=7
 table_place_x = 80
 table_place_y = 80
 columns_name_list=('Version', 'Capacity (mci/h)', 'Constant Efficiency (mCi/mA)', 'Description')
@@ -3551,7 +3552,7 @@ tab_side=LEFT
 x=420
 y= 150
 frame=moduleSettingsFrame
-list_height=5
+list_height=7
 # table_place_x = 80
 # table_place_y=80
 
@@ -3675,7 +3676,7 @@ tab_side=LEFT
 x=250
 y= 150
 frame=materialSettingsFrame
-list_height=5
+list_height=10
 # table_place_x = 80
 # table_place_y=80
 
@@ -4764,4 +4765,20 @@ toolbar.grid_columnconfigure(1, weight=1)
 #
 # SettingsFrame.pack(fill='both',expand=1)
 
+class FullScreenApp(object):
+    def __init__(self, master, **kwargs):
+        self.master=master
+        pad=3
+        self._geom='200x200+0+0'
+        master.geometry("{0}x{1}+0+0".format(
+            master.winfo_screenwidth()-pad, master.winfo_screenheight()-pad))
+        master.bind('<Escape>',self.toggle_geom)
+    def toggle_geom(self,event):
+        geom=self.master.winfo_geometry()
+        print(geom,self._geom)
+        self.master.geometry(self._geom)
+        self._geom=geom
+
+
+app=FullScreenApp(root)
 root.mainloop()

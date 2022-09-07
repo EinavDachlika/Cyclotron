@@ -298,7 +298,7 @@ def sortByTeos(hospital):
 #     hospital_data[0]["eos_req"] = update_eos
 #     print(update_eos)
 #
-#     recursion_for_tout(hospital_data,hospitals_output)
+#     recursion_for_tout(hospital_data)
 
 def recursion_for_tout(hospital_data):
     min_to_add = 15
@@ -429,6 +429,119 @@ def main_algorithm_calculation(batches,hospitals_output,batches_general_data):
                     hospital["Activity"] +=A_Tcal
 
                     batches_general_data[index]["Activity"] += A_Tcal*1.05
+
+# def main_algorithm_calculation(batches,hospitals_output,batches_general_data,data): #test - Einav
+#     batch = []
+#
+#     hospitals = []
+#
+#     hospital_data = []
+#     index=1
+#     for order in data:
+#         order_time = datetime.strptime(str(order["injection_time"]), '%H:%M:%S').time()
+#         hospital_name = order['Name']
+#         if hospital_name not in hospitals:  # order[1] = hospital name in order
+#             hospitals.append(hospital_name)
+#             # add hospital record to hospitals_output list
+#             try:
+#                 hospital = next(h for h in hospitals_output if h["Name"] == order["Name"] and h["Batch"] == index)
+#             except:
+#                 hospitals_output.append({"Name": order["Name"], "Activity": 0, 'Batch': index})
+#
+#         if index != 1:  # condition for choosing Transport_time (min/max) - according to number of batch
+#             tout_temp = order['injection_time'] - timedelta(minutes=(order['Transport_time_max']))  # T1-Transport_time
+#             hospital_data.append(
+#                 {'hospital_name': hospital_name, 'batch': index, "injection_time": order['injection_time'],
+#                  "Transport_time": order['Transport_time_max'], "tout_required": tout_temp})
+#
+#         else:
+#             tout_temp = order['injection_time'] - timedelta(minutes=(order['Transport_time_min']))  # T1-Transport_time
+#             hospital_data.append(
+#                 {'hospital_name': hospital_name, 'batch': index, "injection_time": order['injection_time'],
+#                  "Transport_time": order['Transport_time_min'], "tout_required": tout_temp})
+#         hospital_data.sort(key=sortByTout)  # sort hospital_data by tout_temp
+#
+#         Hospital_delivery_order = 1
+#         interval_5 = 15
+#         minutes_for_eos_cal = timedelta(minutes=interval_5)
+#         for h in hospital_data:
+#             # delivery_order
+#             h["delivery_order"] = Hospital_delivery_order
+#             hospital_record = next(hospital for hospital in hospitals_output if
+#                                    hospital["Name"] == h['hospital_name'] and hospital['Batch'] == h['batch'])
+#             hospital_record['delivery_order'] = Hospital_delivery_order
+#             Hospital_delivery_order += 1
+#
+#             eos_req = h["tout_required"] - minutes_for_eos_cal  # tout - intervals consider the order
+#             h["eos_req"] = (eos_req)
+#             interval_5 += 5
+#             minutes_for_eos_cal = timedelta(minutes=interval_5)
+#             # hospital_data.sort(key=sortBy)  # sort hospital_data by tout_eos
+#
+#         hospital_data.sort(key=sortByTeos)  # sort hospital_data by tout_eos
+#         # print(hospital_data)
+#         recursion_for_tout(hospital_data)
+#
+#         # save tout actual for each hospital
+#         for h in hospital_data:
+#             hospital_record = next(hospital for hospital in hospitals_output if
+#                                    hospital["Name"] == h['hospital_name'] and hospital['Batch'] == h['batch'])
+#             hospital_record['Tout_actually'] = h['Tout_actually']
+#             # print(h["hospital_name"] , " actually: ", h['Tout_actually'])
+#
+#         # insert Teos - new module
+#         Teos_key = "Teos"
+#         t_eos_final = hospital_data[0][
+#             "eos_req"]  # first index in the list is the shortest time of eos (because it's sorted)
+#         batches_general_data[index][Teos_key] = t_eos_final
+#
+#         # insert Tout
+#         Tout_key = "Tout"
+#         hospital_data.sort(key=sortByToutActually)
+#         last_index = len(hospital_data) - 1
+#         t_out_final = hospital_data[last_index]['Tout_actually']  # last tout actually
+#         batches_general_data[index][Tout_key] = t_out_final
+#
+#         # insert Tcal - new module
+#         Tcal_key = "Tcal"
+#         minutes_for_Tcal_cal = timedelta(minutes=30)
+#         t_cal = t_out_final + minutes_for_Tcal_cal
+#         batches_general_data[index][Tcal_key] = t_cal
+#
+#         bottles_b = len(hospitals)
+#         bottels_key = "bottles_mum"
+#         batches_general_data[index][bottels_key] = bottles_b
+#
+#         batches_general_data[index]["Activity"] = 0  # define the key
+#         for order in data:
+#             # insert (A) Activity_Tcal - Activity for Tcal time
+#             A_Tcal_key = "Activity_Tcal"
+#             injection_time = order["injection_time"]
+#             T_cal = batches_general_data[index]["Tcal"]
+#             A = order["Fixed_activity_level"]
+#
+#             diff = (injection_time - T_cal).total_seconds() / 60  # convert to minutes and then to float
+#             A_Tcal = math.ceil(A * math.pow((math.e), diff * lamda))  # math.ceil is round up
+#
+#             if batches_general_data[index]["Activity"] + A_Tcal >= max_activity_batch:
+#                 batches[index + 1].append(order)
+#                 batches[index].remove(order)
+#                 main_algorithm_calculation(batches, hospitals_output, batches_general_data)
+#
+#             else:
+#
+#                 hospital = next(h for h in hospitals_output if h["Name"] == order["Name"] and h["Batch"] == index + 1)
+#                 order[A_Tcal_key] = A_Tcal
+#                 order['diff_Tcal_injectionT'] = diff
+#                 hospital["Activity"] += A_Tcal
+#
+#                 batch.append(order)
+#
+#                 batches_general_data[index]["Activity"] += A_Tcal * 1.05
+#
+#         index+=1
+#         batches.append(batch)
+
 
 def export_WP_Excel( selected_material, selected_date, all_batches_output, hospitals_output, batches_general_data):
     FilePath = "FDG format.xlsx"
@@ -1034,15 +1147,15 @@ class Popup(Toplevel):
         batch3 = []
         batch3_exist = True
 
-        for order in data:
-            order_time = datetime.strptime(str(order["injection_time"]), '%H:%M:%S').time()
-            if order_time < datetime.strptime('15:00:00', '%H:%M:%S').time():  # batch 1
-                batch1.append(order)
-
-            elif order_time < datetime.strptime('23:00:00', '%H:%M:%S').time():  # batch 2
-                batch2.append(order)
-            else:  # batch 3
-                batch3.append(order)
+        # for order in data:
+        #     order_time = datetime.strptime(str(order["injection_time"]), '%H:%M:%S').time()
+        #     if order_time < datetime.strptime('15:00:00', '%H:%M:%S').time():  # batch 1
+        #         batch1.append(order)
+        #
+        #     elif order_time < datetime.strptime('23:00:00', '%H:%M:%S').time():  # batch 2
+        #         batch2.append(order)
+        #     else:  # batch 3
+        #         batch3.append(order)
 
         dict_batch1_general = {}
         dict_batch2_general = {}
@@ -1052,7 +1165,8 @@ class Popup(Toplevel):
 
 
         hospitals_output = []  # for output
-        main_algorithm_calculation(batches, hospitals_output, batches_general_data)
+        # main_algorithm_calculation(batches, hospitals_output, batches_general_data)
+        main_algorithm_calculation(batches, hospitals_output, batches_general_data, data)
         hospitals_output.sort(key=lambda hb:(hb['Batch'],hb['delivery_order']))
         print("batches: ",batches)
         print("hospitals_output: ",hospitals_output)
@@ -1406,8 +1520,8 @@ class table(ttk.Treeview):
                     query2 = "UPDATE " + table_name +" SET deleted = True " +"WHERE " + pk_name + "=" + pk_delected_record
                     cursor.execute(query2)
                     db.commit()
-                # self.delete(self.selection()[0])
-                print(self.selection()[0])
+                self.delete(self.selection()[0])
+
 
     def delete_WP_record(self):
         selected_rec = self.selected()
